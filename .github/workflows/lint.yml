@@ -1,0 +1,21 @@
+name: Lint
+
+on: push
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: Python lint
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Install autopep8
+      run: pip install autopep8
+
+    - name: Check code format
+      run: autopep8 --exit-code --diff -aaar .
