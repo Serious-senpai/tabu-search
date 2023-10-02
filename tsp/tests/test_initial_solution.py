@@ -6,7 +6,7 @@ from ..errors import ProblemParsingException, UnsupportedEdgeWeightType
 from ..solutions import PathSolution
 
 
-def test_import() -> None:
+def test_initial_solution() -> None:
     for file in os.listdir("problems"):
         if file.endswith(".tsp"):
             problem = file.removesuffix(".tsp")
