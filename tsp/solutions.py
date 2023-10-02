@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import random
 import re
 from collections import deque
 from math import sqrt
@@ -39,7 +40,7 @@ class PathSolution(BaseSolution):
         x: Tuple[float, ...]
         y: Tuple[float, ...]
 
-    def __init__(self, before: Iterable[int], after: Iterable[int], *, cost: Optional[float] = None) -> None:
+    def __init__(self, *, after: Iterable[int], before: Iterable[int], cost: Optional[float] = None) -> None:
         self.after = tuple(after)
         self.before = tuple(before)
 
@@ -85,16 +86,27 @@ class PathSolution(BaseSolution):
         pyplot.legend()
         pyplot.show()
 
+    def get_path(self) -> Tuple[int]:
+        path = [0]
+        current = self.after[0]
+        while current != 0:
+            path.append(current)
+            current = self.after[current]
+
+        return tuple(path)
+
     @classmethod
     def initial(cls) -> PathSolution:
         after = [-1] * cls.dimension
         before = [-1] * cls.dimension
 
+        indices = list(range(cls.dimension))
+        random.shuffle(indices)
         for index in range(cls.dimension):
-            after[index] = (index + 1) % cls.dimension
-            before[index] = (index - 1 + cls.dimension) % cls.dimension
+            after[indices[index]] = indices[(index + 1) % cls.dimension]
+            before[indices[index]] = indices[(index - 1 + cls.dimension) % cls.dimension]
 
-        return cls(before, after)
+        return cls(after=after, before=before)
 
     @classmethod
     def import_problem(cls, problem: str, /) -> None:
@@ -167,26 +179,39 @@ class SwapNeighborhood(BaseNeighborhood[PathSolution]):
         before[x], before[y] = before_y, before_x
         after[x], after[y] = after_y, after_x
 
-        return PathSolution(before, after, cost=cost)
+        after[before_x] = before[after_x] = y
+        after[before_y] = before[after_y] = x
 
-    def generate(self) -> Iterable[PathSolution]:
+        return PathSolution(after=after, before=before, cost=cost)
+
+    def find_best_candidate(self) -> Optional[PathSolution]:
+        result: Optional[PathSolution] = None
+        min_pair: Optional[Tuple[int, int]] = None
         for first, second in itertools.combinations(range(self._solution.dimension), 2):
-            if self._solution.after[first] == second or self._solution.after[second] == first:
+            after = self._solution.after.__getitem__
+            if after(first) == second or after(second) == first or after(after(first)) == second or after(after(second)) == first:
                 continue
 
             pair = (first, second)
             if pair not in self.__tabu_set:
-                yield self.swap(first, second)
-                self._add_to_tabu(pair)
+                swapped = self.swap(first, second)
+                if result is None or swapped < result:
+                    result = swapped
+                    min_pair = pair
+
+        if min_pair is not None:
+            self.add_to_tabu(min_pair)
+
+        return result
 
     @classmethod
-    def _add_to_tabu(cls, pair: Tuple[int, int]) -> None:
+    def add_to_tabu(cls, pair: Tuple[int, int]) -> None:
         cls.__tabu_set.add(pair)
         cls.__tabu_list.append(pair)
-        cls._remove_from_tabu()
+        cls.remove_from_tabu()
 
     @classmethod
-    def _remove_from_tabu(cls) -> None:
+    def remove_from_tabu(cls) -> None:
         while len(cls.__tabu_set) > cls.__maxlen:
             try:
                 cls.__tabu_set.remove(cls.__tabu_list.popleft())
@@ -196,4 +221,4 @@ class SwapNeighborhood(BaseNeighborhood[PathSolution]):
     @classmethod
     def reset_tabu(cls, *, maxlen: int = 100) -> None:
         cls.__maxlen = maxlen
-        cls._remove_from_tabu()
+        cls.remove_from_tabu()

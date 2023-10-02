@@ -20,8 +20,8 @@ if __name__ == "__main__":
         pass
     else:
         SwapNeighborhood.reset_tabu(maxlen=tabu_size)
-        print(f"Tabu size was set to {tabu_size}")
+        print(f"Tabu size was set to {tabu_size}.")
 
     solution = PathSolution.tabu_search(iterations_count=iteration_count)
-    print(f"Solution cost = {solution.cost()}")
+    print(f"Solution cost = {solution.cost()}\nSolution path: {solution.get_path()}")
     solution.plot()

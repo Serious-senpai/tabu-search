@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import total_ordering
-from typing import Any, Generic, Iterable, TypeVar, TYPE_CHECKING
+from typing import Any, Generic, Iterable, Optional, TypeVar, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from typing_extensions import Self
@@ -42,26 +42,17 @@ class BaseSolution:
     @classmethod
     def tabu_search(cls, *, iterations_count: int = 50) -> Self:
         result = cls.initial()
-        try:
-            for _ in range(iterations_count):
-                best_candidate = None
-                for neighborhood in result.get_neighborhoods():
-                    for candidate in neighborhood.generate():
-                        if best_candidate is None:
-                            best_candidate = candidate
-                        else:
-                            best_candidate = min(best_candidate, candidate)
+        for _ in range(iterations_count):
+            best_candidate: Optional[Self] = None
+            for neighborhood in result.get_neighborhoods():
+                best_candidate = neighborhood.find_best_candidate()
 
-                if best_candidate is None:
-                    break
+            if best_candidate is None:
+                break
 
-                result = min(result, best_candidate)
+            result = min(result, best_candidate)
 
-            return result.post_optimization()
-
-        except KeyboardInterrupt:
-            print("Terminated.")
-            return result
+        return result.post_optimization()
 
     def __hash__(self) -> int:
         raise NotImplementedError
@@ -97,8 +88,8 @@ class BaseNeighborhood(Generic[T]):
     def __init__(self, solution: T, /) -> None:
         self._solution = solution
 
-    def generate(self) -> Iterable[T]:
-        """Return all feasible solutions in the neighborhood of the current solution.
+    def find_best_candidate(self) -> Optional[T]:
+        """Find the best candidate solution within the neighborhood of the current one.
 
         Subclasses should implement the tabu logic internally.
         """
