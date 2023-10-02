@@ -6,9 +6,14 @@ permissions:
   contents: read
 
 jobs:
-  python:
+  test:
     name: Run Python tests
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        problem: [a280, berlin52, bier127, ch130, ch150, d1291]
+        iterations: [200, 400, 600, 800, 1000]
+        tabu_size: [10, 50, 100, 200, 400, 800, 1000]
 
     steps:
     - name: Checkout repository
@@ -19,5 +24,5 @@ jobs:
     - name: Install dependencies
       run: pip install -r requirements.txt
 
-    - name: Run tests
-      run: pytest -s
+    - name: Test sample 
+      run: python main.py ${{ matrix.problem }} ${{ matrix.iterations }} ${{ matrix.tabu_size }}
