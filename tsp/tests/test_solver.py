@@ -23,3 +23,4 @@ def test_import() -> None:
 
             else:
                 print(f"Successfully parsed problem {problem!r}")
+                print("Generated initial solution:", PathSolution.initial())

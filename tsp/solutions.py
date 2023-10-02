@@ -3,7 +3,9 @@ from __future__ import annotations
 import re
 from math import sqrt
 from os import path
-from typing import ClassVar, Tuple, TYPE_CHECKING
+from typing import ClassVar, Iterable, Optional, Tuple, TYPE_CHECKING
+
+from matplotlib import axes, pyplot
 
 from .abc import BaseSolution
 from .errors import ProblemNotFound, ProblemParsingException, UnsupportedEdgeWeightType
@@ -16,12 +18,74 @@ __all__ = (
 
 class PathSolution(BaseSolution):
 
-    __slots__ = ()
+    __slots__ = (
+        "__cost",
+        "after",
+        "before",
+    )
     if TYPE_CHECKING:
+        __cost: float
+        after: Tuple[int, ...]
+        before: Tuple[int, ...]
+
         problem_name: ClassVar[str]
         dimension: ClassVar[int]
         edge_weight_type: ClassVar[str]
         distances: ClassVar[Tuple[Tuple[float, ...], ...]]
+
+        x: Tuple[float, ...]
+        y: Tuple[float, ...]
+
+    def __init__(self, before: Iterable[int], after: Iterable[int], *, cost: Optional[float] = None) -> None:
+        self.after = tuple(after)
+        self.before = tuple(before)
+
+        if cost is not None:
+            self.__cost = cost
+
+    def cost(self) -> float:
+        if self.__cost is not None:
+            return self.__cost
+
+        result = 0.0
+        last, current = 0, self.after[0]
+        while current != 0:
+            result += self.distances[last][current]
+
+        result += self.distances[last][current]
+        self.__cost = result
+        return result
+
+    def plot(self) -> None:
+        _, ax = pyplot.subplots()
+        assert isinstance(ax, axes.Axes)
+
+        quiver_kwargs = {
+            "color": "darkblue",
+            "angles": "xy",
+            "scale_units": "xy",
+            "scale": 1,
+        }
+        for index in range(self.dimension):
+            next = self.after[index]
+            ax.quiver(self.x[index], self.y[index], self.x[next] - self.x[index], self.y[next] - self.y[index], **quiver_kwargs)
+
+        ax.scatter(self.x, self.y, c="blue", label="City")
+        ax.grid(True)
+
+        pyplot.legend()
+        pyplot.show()
+
+    @classmethod
+    def initial(cls) -> PathSolution:
+        after = [-1] * cls.dimension
+        before = [-1] * cls.dimension
+
+        for index in range(cls.dimension):
+            after[index] = (index + cls.dimension - 1) % cls.dimension
+            before[index] = (index + 1) % cls.dimension
+
+        return cls(before, after)
 
     @classmethod
     def import_problem(cls, problem: str, /) -> None:
@@ -46,6 +110,9 @@ class PathSolution(BaseSolution):
                     x.append(_x)
                     y.append(_y)
 
+                cls.x = tuple(x)
+                cls.y = tuple(y)
+
                 for i in range(cls.dimension):
                     for j in range(i + 1, cls.dimension):
                         distances[i][j] = distances[j][i] = sqrt((x[i] - x[j]) ** 2 + (y[i] - y[j]) ** 2)
@@ -57,3 +124,6 @@ class PathSolution(BaseSolution):
 
         except Exception as exc:
             raise ProblemParsingException(problem, exc) from exc
+
+    def __hash__(self) -> int:
+        return hash(self.after)
