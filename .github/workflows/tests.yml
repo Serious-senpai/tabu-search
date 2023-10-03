@@ -12,9 +12,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        problem: [a280, berlin52, bier127, d198, d493, d657, d1291, d1655, d15112]
-        iterations: [200, 1500]
-        tabu_size: [100, 500, 1000, 5000]
+        problem: [a280, berlin52, bier127, ch130, ch150, eil101, eil51, eil76]
+        iterations: [200, 500, 1500]
+        tabu_size: [5, 6, 7, 8, 9, 10]
 
     steps:
     - name: Checkout repository

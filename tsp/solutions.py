@@ -100,11 +100,17 @@ class PathSolution(BaseSolution):
         after = [-1] * cls.dimension
         before = [-1] * cls.dimension
 
-        indices = list(range(cls.dimension))
-        random.shuffle(indices)
+        path = [0]
+        cities = set(range(1, cls.dimension))
+        while len(cities) > 0:
+            current = path[-1]
+            insert = min(cities, key=cls.distances[current].__getitem__)
+            path.append(insert)
+            cities.remove(insert)
+
         for index in range(cls.dimension):
-            after[indices[index]] = indices[(index + 1) % cls.dimension]
-            before[indices[index]] = indices[(index - 1 + cls.dimension) % cls.dimension]
+            after[path[index]] = path[(index + 1) % cls.dimension]
+            before[path[index]] = path[(index - 1 + cls.dimension) % cls.dimension]
 
         return cls(after=after, before=before)
 
@@ -139,6 +145,8 @@ class PathSolution(BaseSolution):
                         distances[i][j] = distances[j][i] = abs(x[i] - x[j]) + abs(y[i] - y[j])
 
                 cls.distances = tuple(tuple(row) for row in distances)
+
+                print(f"Found {cls.dimension} cities.")
 
             else:
                 raise UnsupportedEdgeWeightType(cls.edge_weight_type)
