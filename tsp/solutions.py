@@ -136,7 +136,7 @@ class PathSolution(BaseSolution):
 
                 for i in range(cls.dimension):
                     for j in range(i + 1, cls.dimension):
-                        distances[i][j] = distances[j][i] = sqrt((x[i] - x[j]) ** 2 + (y[i] - y[j]) ** 2)
+                        distances[i][j] = distances[j][i] = abs(x[i] - x[j]) + abs(y[i] - y[j])
 
                 cls.distances = tuple(tuple(row) for row in distances)
 
