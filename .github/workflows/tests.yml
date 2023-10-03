@@ -10,6 +10,7 @@ jobs:
     name: Run Python tests
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         problem: [a280, berlin52, bier127, d198, d493, d657, d1291, d1655, d15112]
         iterations: [200, 1500]
