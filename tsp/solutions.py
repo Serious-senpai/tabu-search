@@ -59,7 +59,12 @@ class PathSolution(BaseSolution):
         return result
 
     def get_neighborhoods(self) -> Iterable[BaseNeighborhood[PathSolution]]:
-        return [SwapNeighborhood(self), SegmentShift(self)]
+        return [
+            SwapNeighborhood(self),
+            SegmentShift(self, segment_length=1),
+            SegmentShift(self, segment_length=2),
+            SegmentShift(self, segment_length=3),
+        ]
 
     def plot(self) -> None:
         _, ax = pyplot.subplots()
@@ -246,11 +251,18 @@ class SwapNeighborhood(_BasePathNeighborhood[Tuple[int, int]]):
 
 class SegmentShift(_BasePathNeighborhood[Tuple[int, int]]):
 
-    __slots__ = ()
+    __slots__ = (
+        "__segment_length",
+    )
     _maxlen: ClassVar[int] = 100
     _tabu_list: ClassVar[Deque[Tuple[int, int]]] = deque()
     _tabu_set: ClassVar[Set[Tuple[int, int]]] = set()
-    SEGMENT_LENGTH: ClassVar[int] = 3
+    if TYPE_CHECKING:
+        __segment_length: int
+
+    def __init__(self, solution: PathSolution, *, segment_length: int) -> None:
+        super().__init__(solution)
+        self.__segment_length = segment_length
 
     def insert_after(self, segment: List[int], x: int) -> PathSolution:
         solution = self._solution
@@ -278,7 +290,7 @@ class SegmentShift(_BasePathNeighborhood[Tuple[int, int]]):
 
     def find_best_candidate(self) -> Optional[PathSolution]:
         solution = self._solution
-        if solution.dimension + 2 < self.SEGMENT_LENGTH:
+        if solution.dimension + 2 < self.__segment_length:
             return None
 
         result: Optional[PathSolution] = None
@@ -287,7 +299,7 @@ class SegmentShift(_BasePathNeighborhood[Tuple[int, int]]):
         path = self._solution.get_path()
         for index in range(solution.dimension):
             segment: List[int] = []
-            for d in range(self.SEGMENT_LENGTH):
+            for d in range(self.__segment_length):
                 segment.append(path[(index + d) % solution.dimension])
 
             for index in range(solution.dimension):
