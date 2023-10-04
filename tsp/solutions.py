@@ -15,6 +15,7 @@ from .errors import ProblemNotFound, ProblemParsingException, UnsupportedEdgeWei
 __all__ = (
     "PathSolution",
     "SwapNeighborhood",
+    "SegmentShift",
 )
 
 
@@ -25,12 +26,12 @@ class PathSolution(BaseSolution):
         "after",
         "before",
     )
+    problem_name: ClassVar[Optional[str]] = None
     if TYPE_CHECKING:
         __cost: Optional[float]
         after: Tuple[int, ...]
         before: Tuple[int, ...]
 
-        problem_name: ClassVar[str]
         dimension: ClassVar[int]
         edge_weight_type: ClassVar[str]
         distances: ClassVar[Tuple[Tuple[float, ...], ...]]
@@ -118,7 +119,7 @@ class PathSolution(BaseSolution):
         return cls(after=after, before=before)
 
     @classmethod
-    def import_problem(cls, problem: str, /) -> None:
+    def import_problem(cls, problem: str, *, precalculated_distances: Optional[Tuple[Tuple[float, ...], ...]] = None) -> None:
         archive_file = path.join("problems", f"{problem}.tsp", f"{problem}.tsp")
         if not path.isfile(archive_file):
             raise ProblemNotFound(problem)
@@ -132,7 +133,6 @@ class PathSolution(BaseSolution):
             cls.edge_weight_type = re.search(r"EDGE_WEIGHT_TYPE\s*:\s*(\w+)", data).group(1)
 
             if cls.edge_weight_type == "EUC_2D":
-                distances = [[0.0] * cls.dimension for _ in range(cls.dimension)]
                 x = []
                 y = []
                 for match in re.finditer(r"^\s*\d+\s+([\d\.\-+e]+\s+[\d\.\-+e]+)\s*?$", data, flags=re.MULTILINE):
@@ -143,13 +143,16 @@ class PathSolution(BaseSolution):
                 cls.x = tuple(x)
                 cls.y = tuple(y)
 
-                for i in range(cls.dimension):
-                    for j in range(i + 1, cls.dimension):
-                        distances[i][j] = distances[j][i] = abs(x[i] - x[j]) + abs(y[i] - y[j])
+                if precalculated_distances is None:
+                    distances = [[0.0] * cls.dimension for _ in range(cls.dimension)]
+                    for i in range(cls.dimension):
+                        for j in range(i + 1, cls.dimension):
+                            distances[i][j] = distances[j][i] = abs(x[i] - x[j]) + abs(y[i] - y[j])
 
-                cls.distances = tuple(tuple(row) for row in distances)
+                    cls.distances = tuple(tuple(row) for row in distances)
 
-                print(f"Found {cls.dimension} cities.")
+                else:
+                    cls.distances = precalculated_distances
 
             else:
                 raise UnsupportedEdgeWeightType(cls.edge_weight_type)
@@ -171,6 +174,15 @@ class _BasePathNeighborhood(BaseNeighborhood[PathSolution], Generic[TABU_T]):
         _maxlen: ClassVar[int]
         _tabu_list: ClassVar[Deque[TABU_T]]
         _tabu_set: ClassVar[Set[TABU_T]]
+
+    def __init__(self, solution: PathSolution, /) -> None:
+        super().__init__(solution)
+        self.extras["problem"] = solution.problem_name
+        self.extras["distances"] = solution.distances
+
+    def _ensure_imported_data(self) -> None:
+        if PathSolution.problem_name is None:
+            PathSolution.import_problem(self.extras["problem"], precalculated_distances=self.extras["distances"])
 
     @classmethod
     def add_to_tabu(cls, target: TABU_T) -> None:
@@ -227,6 +239,8 @@ class SwapNeighborhood(_BasePathNeighborhood[Tuple[int, int]]):
         return PathSolution(after=after, before=before, cost=cost)
 
     def find_best_candidate(self) -> Optional[PathSolution]:
+        self._ensure_imported_data()
+
         result: Optional[PathSolution] = None
         min_pair: Optional[Tuple[int, int]] = None
         for first, second in itertools.combinations(range(self._solution.dimension), 2):
@@ -289,6 +303,7 @@ class SegmentShift(_BasePathNeighborhood[Tuple[int, int]]):
         return PathSolution(after=after, before=before, cost=cost)
 
     def find_best_candidate(self) -> Optional[PathSolution]:
+        self._ensure_imported_data()
         solution = self._solution
         if solution.dimension + 2 < self.__segment_length:
             return None

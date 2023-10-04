@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from functools import total_ordering
-from typing import Any, Generic, Iterable, Optional, TypeVar, TYPE_CHECKING
+from multiprocessing import Pool
+from typing import Any, Dict, Generic, Iterable, Optional, TypeVar, TYPE_CHECKING
 
 from tqdm import tqdm
 if TYPE_CHECKING:
@@ -47,15 +48,18 @@ class BaseSolution:
         if use_tqdm:
             iterations = tqdm(iterations, ascii=True)
 
-        for _ in iterations:
-            best_candidate: Optional[Self] = None
-            for neighborhood in result.get_neighborhoods():
-                best_candidate = neighborhood.find_best_candidate()
+        with Pool() as pool:
+            for _ in iterations:
+                best_candidates = pool.map(BaseNeighborhood.static_find_best_candidate, result.get_neighborhoods())
+                best_candidate: Optional[Self] = None
+                for candidate in best_candidates:
+                    if best_candidate is None or candidate < best_candidate:
+                        best_candidate = candidate
 
-            if best_candidate is None:
-                break
+                if best_candidate is None:
+                    break
 
-            result = min(result, best_candidate)
+                result = min(result, best_candidate)
 
         return result.post_optimization()
 
@@ -86,12 +90,15 @@ class BaseNeighborhood(Generic[T]):
 
     __slots__ = (
         "_solution",
+        "extras",
     )
     if TYPE_CHECKING:
         _solution: T
+        extras: Dict[Any, Any]
 
     def __init__(self, solution: T, /) -> None:
         self._solution = solution
+        self.extras = {}
 
     def find_best_candidate(self) -> Optional[T]:
         """Find the best candidate solution within the neighborhood of the current one.
@@ -99,3 +106,7 @@ class BaseNeighborhood(Generic[T]):
         Subclasses should implement the tabu logic internally.
         """
         raise NotImplementedError
+
+    @staticmethod
+    def static_find_best_candidate(neighborhood: BaseNeighborhood[T]) -> Optional[T]:
+        return neighborhood.find_best_candidate()
