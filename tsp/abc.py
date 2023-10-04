@@ -3,6 +3,7 @@ from __future__ import annotations
 from functools import total_ordering
 from typing import Any, Generic, Iterable, Optional, TypeVar, TYPE_CHECKING
 
+from tqdm import tqdm
 if TYPE_CHECKING:
     from typing_extensions import Self
 
@@ -40,9 +41,13 @@ class BaseSolution:
         raise NotImplementedError
 
     @classmethod
-    def tabu_search(cls, *, iterations_count: int = 50) -> Self:
+    def tabu_search(cls, *, iterations_count: int = 50, use_tqdm: bool = True) -> Self:
         result = cls.initial()
-        for _ in range(iterations_count):
+        iterations = range(iterations_count)
+        if use_tqdm:
+            iterations = tqdm(iterations, ascii=True)
+
+        for _ in iterations:
             best_candidate: Optional[Self] = None
             for neighborhood in result.get_neighborhoods():
                 best_candidate = neighborhood.find_best_candidate()
