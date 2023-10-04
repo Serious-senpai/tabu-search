@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import itertools
-import random
 import re
 from collections import deque
-from math import sqrt
 from os import path
-from typing import ClassVar, Deque, Iterable, Optional, Set, Tuple, TYPE_CHECKING
+from typing import ClassVar, Deque, Generic, Iterable, List, Optional, Set, Tuple, TypeVar, TYPE_CHECKING
 
 from matplotlib import axes, pyplot
 
@@ -61,7 +59,7 @@ class PathSolution(BaseSolution):
         return result
 
     def get_neighborhoods(self) -> Iterable[BaseNeighborhood[PathSolution]]:
-        return [SwapNeighborhood(self)]
+        return [SwapNeighborhood(self), SegmentShift(self)]
 
     def plot(self) -> None:
         _, ax = pyplot.subplots()
@@ -158,12 +156,43 @@ class PathSolution(BaseSolution):
         return hash(self.after)
 
 
-class SwapNeighborhood(BaseNeighborhood[PathSolution]):
+TABU_T = TypeVar("TABU_T")
+
+
+class _BasePathNeighborhood(BaseNeighborhood[PathSolution], Generic[TABU_T]):
 
     __slots__ = ()
-    __maxlen: ClassVar[int] = 100
-    __tabu_list: ClassVar[Deque[Tuple[int, int]]] = deque()
-    __tabu_set: ClassVar[Set[Tuple[int, int]]] = set()
+    if TYPE_CHECKING:
+        _maxlen: ClassVar[int]
+        _tabu_list: ClassVar[Deque[TABU_T]]
+        _tabu_set: ClassVar[Set[TABU_T]]
+
+    @classmethod
+    def add_to_tabu(cls, target: TABU_T) -> None:
+        cls._tabu_set.add(target)
+        cls._tabu_list.append(target)
+        cls.remove_from_tabu()
+
+    @classmethod
+    def remove_from_tabu(cls) -> None:
+        while len(cls._tabu_set) > cls._maxlen:
+            try:
+                cls._tabu_set.remove(cls._tabu_list.popleft())
+            except KeyError:
+                pass
+
+    @classmethod
+    def reset_tabu(cls, *, maxlen: int = 100) -> None:
+        cls._maxlen = maxlen
+        cls.remove_from_tabu()
+
+
+class SwapNeighborhood(_BasePathNeighborhood[Tuple[int, int]]):
+
+    __slots__ = ()
+    _maxlen: ClassVar[int] = 100
+    _tabu_list: ClassVar[Deque[Tuple[int, int]]] = deque()
+    _tabu_set: ClassVar[Set[Tuple[int, int]]] = set()
 
     def swap(self, x: int, y: int) -> PathSolution:
         solution = self._solution
@@ -176,9 +205,9 @@ class SwapNeighborhood(BaseNeighborhood[PathSolution]):
         after_x = after[x]
         after_y = after[y]
 
-        cost = solution.cost()
-        cost += (
-            solution.distances[before_x][y] + solution.distances[y][after_x]
+        cost = (
+            solution.cost()
+            + solution.distances[before_x][y] + solution.distances[y][after_x]
             + solution.distances[before_y][x] + solution.distances[x][after_y]
             - solution.distances[before_x][x] - solution.distances[x][after_x]
             - solution.distances[before_y][y] - solution.distances[y][after_y]
@@ -196,12 +225,14 @@ class SwapNeighborhood(BaseNeighborhood[PathSolution]):
         result: Optional[PathSolution] = None
         min_pair: Optional[Tuple[int, int]] = None
         for first, second in itertools.combinations(range(self._solution.dimension), 2):
+            # first < second due to itertools.combinations implementation
+
             after = self._solution.after.__getitem__
             if after(first) == second or after(second) == first or after(after(first)) == second or after(after(second)) == first:
                 continue
 
             pair = (first, second)
-            if pair not in self.__tabu_set:
+            if pair not in self._tabu_set:
                 swapped = self.swap(first, second)
                 if result is None or swapped < result:
                     result = swapped
@@ -212,21 +243,63 @@ class SwapNeighborhood(BaseNeighborhood[PathSolution]):
 
         return result
 
-    @classmethod
-    def add_to_tabu(cls, pair: Tuple[int, int]) -> None:
-        cls.__tabu_set.add(pair)
-        cls.__tabu_list.append(pair)
-        cls.remove_from_tabu()
 
-    @classmethod
-    def remove_from_tabu(cls) -> None:
-        while len(cls.__tabu_set) > cls.__maxlen:
-            try:
-                cls.__tabu_set.remove(cls.__tabu_list.popleft())
-            except KeyError:
-                pass
+class SegmentShift(_BasePathNeighborhood[Tuple[int, int]]):
 
-    @classmethod
-    def reset_tabu(cls, *, maxlen: int = 100) -> None:
-        cls.__maxlen = maxlen
-        cls.remove_from_tabu()
+    __slots__ = ()
+    _maxlen: ClassVar[int] = 100
+    _tabu_list: ClassVar[Deque[Tuple[int, int]]] = deque()
+    _tabu_set: ClassVar[Set[Tuple[int, int]]] = set()
+    SEGMENT_LENGTH: ClassVar[int] = 3
+
+    def insert_after(self, segment: List[int], x: int) -> PathSolution:
+        solution = self._solution
+
+        before = list(solution.before)
+        after = list(solution.after)
+
+        before_segment = before[segment[0]]
+        after_segment = after[segment[-1]]
+        after_x = after[x]
+
+        cost = (
+            solution.cost()
+            + solution.distances[before_segment][after_segment]
+            + solution.distances[x][segment[0]] + solution.distances[segment[-1]][after_x]
+            - solution.distances[before_segment][segment[0]] - solution.distances[segment[-1]][after_segment]
+            - solution.distances[x][after_x]
+        )
+
+        after[before_segment], before[after_segment] = after_segment, before_segment
+        after[x], before[segment[0]] = segment[0], x
+        after[segment[-1]], before[after_x] = after_x, segment[-1]
+
+        return PathSolution(after=after, before=before, cost=cost)
+
+    def find_best_candidate(self) -> Optional[PathSolution]:
+        solution = self._solution
+        if solution.dimension + 2 < self.SEGMENT_LENGTH:
+            return None
+
+        result: Optional[PathSolution] = None
+        min_pair: Optional[Tuple[int, int]] = None
+
+        path = self._solution.get_path()
+        for index in range(solution.dimension):
+            segment: List[int] = []
+            for d in range(self.SEGMENT_LENGTH):
+                segment.append(path[(index + d) % solution.dimension])
+
+            for index in range(solution.dimension):
+                if index != solution.before[segment[0]] and index != solution.after[segment[-1]] and index not in segment:  # For small length segments only, ~O(1) for checking existence
+                    pair = (segment[0], index)
+                    if pair not in self._tabu_set:
+                        inserted = self.insert_after(segment, index)
+                        if result is None or inserted < result:
+                            result = inserted
+                            min_pair = pair
+
+        if min_pair is not None:
+            self.add_to_tabu(min_pair)
+
+        return result
