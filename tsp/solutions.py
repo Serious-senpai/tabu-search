@@ -16,6 +16,7 @@ __all__ = (
     "PathSolution",
     "SwapNeighborhood",
     "SegmentShift",
+    "SegmentReverse",
 )
 
 
@@ -65,6 +66,7 @@ class PathSolution(BaseSolution):
             SegmentShift(self, segment_length=1),
             SegmentShift(self, segment_length=2),
             SegmentShift(self, segment_length=3),
+            SegmentReverse(self, segment_length=5),
         ]
 
     def plot(self) -> None:
@@ -328,5 +330,69 @@ class SegmentShift(_BasePathNeighborhood[Tuple[int, int]]):
 
         if min_pair is not None:
             self.add_to_tabu(min_pair)
+
+        return result
+
+
+class SegmentReverse(_BasePathNeighborhood[int]):
+
+    __slots__ = (
+        "__segment_length",
+    )
+    _maxlen: ClassVar[int] = 100
+    _tabu_list: ClassVar[Deque[Tuple[int, int]]] = deque()
+    _tabu_set: ClassVar[Set[Tuple[int, int]]] = set()
+    if TYPE_CHECKING:
+        __segment_length: int
+
+    def __init__(self, solution: PathSolution, *, segment_length: int) -> None:
+        super().__init__(solution)
+        self.__segment_length = segment_length
+        if segment_length < 3:
+            raise ValueError("Segment length must be 3 or more")
+
+    def reverse(self, segment: List[int]) -> PathSolution:
+        solution = self._solution
+
+        before = list(solution.before)
+        after = list(solution.after)
+
+        before_segment = before[segment[0]]
+        after_segment = after[segment[-1]]
+
+        cost = (
+            solution.cost()
+            + solution.distances[before_segment][segment[-1]] + solution.distances[segment[0]][after_segment]
+            - solution.distances[before_segment][segment[0]] - solution.distances[segment[-1]][after_segment]
+        )
+
+        for index in segment:
+            before[index], after[index] = after[index], before[index]
+
+        before[segment[-1]], after[before_segment] = before_segment, segment[-1]
+        before[after_segment], after[segment[0]] = segment[0], after_segment
+
+        return PathSolution(after=after, before=before, cost=cost)
+
+    def find_best_candidate(self) -> Optional[PathSolution]:
+        self._ensure_imported_data()
+        solution = self._solution
+
+        result: Optional[PathSolution] = None
+        min_index: Optional[int] = None
+
+        path = self._solution.get_path()
+        for index in range(solution.dimension):
+            segment: List[int] = []
+            for d in range(self.__segment_length):
+                segment.append(path[(index + d) % solution.dimension])
+
+            reversed = self.reverse(segment)
+            if result is None or reversed < result:
+                result = reversed
+                min_index = index
+
+        if min_index is not None:
+            self.add_to_tabu(min_index)
 
         return result
