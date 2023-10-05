@@ -78,7 +78,7 @@ class PathSolution(BaseSolution):
         for index in tqdm(indices[:self.dimension // 3], desc="Shuffle", ascii=" █", colour="red"):
             other = random.choice(indices)
             after = result.after.__getitem__
-            while other == index or after(other) == index or after(index) == other:
+            while other == index or after(other) == index or after(after(other)) == index or after(index) == other or after(after(index)) == other:
                 other += 1
 
             result = SwapNeighborhood(result).swap(index, other)
