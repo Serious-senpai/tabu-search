@@ -31,4 +31,4 @@ jobs:
       run: pip install -r requirements.txt
 
     - name: Test sample 
-      run: python main.py ${{ matrix.problem }} ${{ matrix.iterations }} ${{ matrix.tabu_size }}
+      run: python main.py ${{ matrix.problem }} ${{ matrix.iterations }} ${{ matrix.tabu_size }} silent

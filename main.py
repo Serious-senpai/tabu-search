@@ -1,6 +1,6 @@
 import sys
 
-from tsp import PathSolution, SwapNeighborhood
+from tsp import PathSolution, SwapNeighborhood, SegmentShift, SegmentReverse
 
 
 if __name__ == "__main__":
@@ -10,7 +10,7 @@ if __name__ == "__main__":
     try:
         iteration_count = int(sys.argv[2])
     except IndexError:
-        iteration_count = 30
+        iteration_count = 500
     else:
         print(f"Running tabu search with {iteration_count} iterations.")
 
@@ -20,8 +20,15 @@ if __name__ == "__main__":
         pass
     else:
         SwapNeighborhood.reset_tabu(maxlen=tabu_size)
+        SegmentShift.reset_tabu(maxlen=tabu_size)
+        SegmentReverse.reset_tabu(maxlen=tabu_size)
         print(f"Tabu size was set to {tabu_size}.")
 
-    solution = PathSolution.tabu_search(iterations_count=iteration_count)
+    try:
+        use_tqdm = not sys.argv[4] == "silent"
+    except IndexError:
+        use_tqdm = True
+
+    solution = PathSolution.tabu_search(iterations_count=iteration_count, use_tqdm=use_tqdm)
     print(f"Solution cost = {solution.cost()}\nSolution path: {solution.get_path()}")
     solution.plot()

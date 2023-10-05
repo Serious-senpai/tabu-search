@@ -64,6 +64,9 @@ class BaseSolution:
                 best_candidates = pool.map(BaseNeighborhood.static_find_best_candidate, current.get_neighborhoods())
                 best_candidate: Optional[Self] = None
                 for candidate in best_candidates:
+                    if candidate is None:
+                        continue
+
                     if best_candidate is None or candidate < best_candidate:
                         best_candidate = candidate
 
