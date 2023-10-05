@@ -18,7 +18,7 @@ class Namespace(argparse.Namespace):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Tabu search algorithm for TSP problems")
     parser.add_argument("problem", type=str, help="The problem name (e.g. \"a280\", \"berlin52\", ...)")
-    parser.add_argument("-i", "--iter",  type=int, required=True, help="The number of iterations to run the tabu search for")
+    parser.add_argument("-i", "--iter", type=int, required=True, help="The number of iterations to run the tabu search for")
     parser.add_argument("-s", "--tabu-size", type=int, required=True, help="The tabu size for every neighborhood")
     parser.add_argument("-v", "--verbose", action="store_true", help="Whether to display the progress bar")
 
