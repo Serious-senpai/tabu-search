@@ -46,7 +46,7 @@ class BaseSolution:
         result = cls.initial()
         iterations = range(iterations_count)
         if use_tqdm:
-            iterations = tqdm(iterations, ascii=True)
+            iterations = tqdm(iterations, ascii=" █")
 
         with Pool() as pool:
             for _ in iterations:
