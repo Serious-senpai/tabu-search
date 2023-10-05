@@ -12,7 +12,7 @@ if __name__ == "__main__":
     except IndexError:
         iteration_count = 30
     else:
-        print(f"Running tabu search with {iteration_count} iterations. Press Ctrl-C to terminate.")
+        print(f"Running tabu search with {iteration_count} iterations.")
 
     try:
         tabu_size = int(sys.argv[3])

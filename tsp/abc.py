@@ -29,6 +29,16 @@ class BaseSolution:
         """Returns all neighborhoods of the current solution"""
         raise NotImplementedError
 
+    def shuffle(self) -> Self:
+        """Shuffle the current solution
+
+        After a certain (or random) number of iterations and the solution does not improve,
+        shuffle it randomly.
+
+        The default implementation does nothing.
+        """
+        return self
+
     def post_optimization(self) -> Self:
         """Perform post-optimization for this solution
 
@@ -42,15 +52,16 @@ class BaseSolution:
         raise NotImplementedError
 
     @classmethod
-    def tabu_search(cls, *, iterations_count: int = 50, use_tqdm: bool = True) -> Self:
-        result = cls.initial()
+    def tabu_search(cls, *, iterations_count: int, use_tqdm: bool = True, shuffle_after: int = 50) -> Self:
+        result = current = cls.initial()
         iterations = range(iterations_count)
         if use_tqdm:
-            iterations = tqdm(iterations, ascii=" █")
+            iterations = tqdm(iterations, desc="Tabu search", ascii=" █")
 
         with Pool() as pool:
-            for _ in iterations:
-                best_candidates = pool.map(BaseNeighborhood.static_find_best_candidate, result.get_neighborhoods())
+            last_improved = 0
+            for iteration in iterations:
+                best_candidates = pool.map(BaseNeighborhood.static_find_best_candidate, current.get_neighborhoods())
                 best_candidate: Optional[Self] = None
                 for candidate in best_candidates:
                     if best_candidate is None or candidate < best_candidate:
@@ -59,7 +70,14 @@ class BaseSolution:
                 if best_candidate is None:
                     break
 
-                result = min(result, best_candidate)
+                if best_candidate < current:
+                    current = best_candidate
+                    last_improved = iteration
+
+                result = min(result, current)
+
+                if iteration - last_improved >= shuffle_after:
+                    current = current.shuffle()
 
         return result.post_optimization()
 

@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import itertools
+import random
 import re
 from collections import deque
 from os import path
 from typing import ClassVar, Deque, Generic, Iterable, List, Optional, Set, Tuple, TypeVar, TYPE_CHECKING
 
 from matplotlib import axes, pyplot
+from tqdm import tqdm
 
 from .abc import BaseNeighborhood, BaseSolution
 from .errors import ProblemNotFound, ProblemParsingException, UnsupportedEdgeWeightType
@@ -23,13 +25,13 @@ __all__ = (
 class PathSolution(BaseSolution):
 
     __slots__ = (
-        "__cost",
+        "_cost",
         "after",
         "before",
     )
     problem_name: ClassVar[Optional[str]] = None
     if TYPE_CHECKING:
-        __cost: Optional[float]
+        _cost: Optional[float]
         after: Tuple[int, ...]
         before: Tuple[int, ...]
 
@@ -44,11 +46,11 @@ class PathSolution(BaseSolution):
         self.after = tuple(after)
         self.before = tuple(before)
 
-        self.__cost = cost
+        self._cost = cost
 
     def cost(self) -> float:
-        if self.__cost is not None:
-            return self.__cost
+        if self._cost is not None:
+            return self._cost
 
         result = 0.0
         last, current = 0, self.after[0]
@@ -57,7 +59,7 @@ class PathSolution(BaseSolution):
             last, current = current, self.after[current]
 
         result += self.distances[last][current]
-        self.__cost = result
+        self._cost = result
         return result
 
     def get_neighborhoods(self) -> Iterable[BaseNeighborhood[PathSolution]]:
@@ -68,6 +70,20 @@ class PathSolution(BaseSolution):
             SegmentShift(self, segment_length=3),
             SegmentReverse(self, segment_length=5),
         ]
+
+    def shuffle(self) -> PathSolution:
+        indices = list(range(self.dimension))
+        random.shuffle(indices)
+        result = self
+        for index in tqdm(indices[:self.dimension // 3], desc="Shuffle", ascii=" █", colour="red"):
+            other = random.choice(indices)
+            after = result.after.__getitem__
+            while other == index or after(other) == index or after(index) == other:
+                other += 1
+
+            result = SwapNeighborhood(result).swap(index, other)
+
+        return result
 
     def plot(self) -> None:
         _, ax = pyplot.subplots()
@@ -179,12 +195,16 @@ class _BasePathNeighborhood(BaseNeighborhood[PathSolution], Generic[TABU_T]):
 
     def __init__(self, solution: PathSolution, /) -> None:
         super().__init__(solution)
+        self.extras["cost"] = solution.cost()
+
         self.extras["problem"] = solution.problem_name
         self.extras["distances"] = solution.distances
 
     def _ensure_imported_data(self) -> None:
         if PathSolution.problem_name is None:
             PathSolution.import_problem(self.extras["problem"], precalculated_distances=self.extras["distances"])
+
+        self._solution._cost = self.extras["cost"]
 
     @classmethod
     def add_to_tabu(cls, target: TABU_T) -> None:
