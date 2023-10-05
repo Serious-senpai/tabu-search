@@ -29,13 +29,18 @@ class BaseSolution:
         """Returns all neighborhoods of the current solution"""
         raise NotImplementedError
 
-    def shuffle(self) -> Self:
+    def shuffle(self, use_tqdm: bool = True) -> Self:
         """Shuffle the current solution
 
         After a certain (or random) number of iterations and the solution does not improve,
         shuffle it randomly.
 
         The default implementation does nothing.
+
+        Parameters
+        -----
+        use_tqdm: `bool`
+            Whether to display the progress bar
         """
         return self
 
@@ -80,7 +85,7 @@ class BaseSolution:
                 result = min(result, current)
 
                 if iteration - last_improved >= shuffle_after:
-                    current = current.shuffle()
+                    current = current.shuffle(use_tqdm=use_tqdm)
 
         return result.post_optimization()
 

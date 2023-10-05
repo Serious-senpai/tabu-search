@@ -71,11 +71,16 @@ class PathSolution(BaseSolution):
             SegmentReverse(self, segment_length=5),
         ]
 
-    def shuffle(self) -> PathSolution:
+    def shuffle(self, use_tqdm: bool = True) -> PathSolution:
         indices = list(range(self.dimension))
         random.shuffle(indices)
         result = self
-        for index in tqdm(indices[:self.dimension // 3], desc="Shuffle", ascii=" █", colour="red"):
+
+        iterations = indices[:self.dimension // 3]
+        if use_tqdm:
+            iterations = tqdm(iterations, desc="Shuffle", ascii=" █", colour="red")
+
+        for index in iterations:
             other = random.choice(indices)
             after = result.after.__getitem__
             while other == index or after(other) == index or after(after(other)) == index or after(index) == other or after(after(index)) == other:
