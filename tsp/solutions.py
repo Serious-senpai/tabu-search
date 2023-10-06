@@ -63,13 +63,15 @@ class PathSolution(BaseSolution):
         return result
 
     def get_neighborhoods(self) -> Iterable[BaseNeighborhood[PathSolution]]:
-        return [
+        return (
             SwapNeighborhood(self),
-            SegmentShift(self, segment_length=1),
             SegmentShift(self, segment_length=2),
             SegmentShift(self, segment_length=3),
+            SegmentShift(self, segment_length=5),
+            SegmentShift(self, segment_length=7),
             SegmentReverse(self, segment_length=5),
-        ]
+            SegmentReverse(self, segment_length=7),
+        )
 
     def shuffle(self, use_tqdm: bool = True) -> PathSolution:
         indices = list(range(self.dimension))
