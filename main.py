@@ -4,7 +4,7 @@ import argparse
 import sys
 from typing import TYPE_CHECKING
 
-from tsp import PathSolution, SwapNeighborhood, SegmentShift, SegmentReverse
+from tsp import PathSolution, Swap, SegmentShift, SegmentReverse
 
 
 class Namespace(argparse.Namespace):
@@ -22,9 +22,9 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--tabu-size", type=int, required=True, help="The tabu size for every neighborhood")
     parser.add_argument("-v", "--verbose", action="store_true", help="Whether to display the progress bar")
 
-    namespace: Namespace = parser.parse_args()
+    namespace: Namespace = parser.parse_args()  # type: ignore
     PathSolution.import_problem(namespace.problem)
-    SwapNeighborhood.reset_tabu(maxlen=namespace.tabu_size)
+    Swap.reset_tabu(maxlen=namespace.tabu_size)
     SegmentShift.reset_tabu(maxlen=namespace.tabu_size)
     SegmentReverse.reset_tabu(maxlen=namespace.tabu_size)
 

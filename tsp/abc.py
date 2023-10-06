@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import itertools
 from functools import total_ordering
-from multiprocessing import Pool
-from typing import Any, Dict, Generic, Iterable, Optional, TypeVar, TYPE_CHECKING
+from multiprocessing import Pool, pool
+from typing import Any, Dict, Generic, Optional, Tuple, Type, TypeVar, Union, TYPE_CHECKING
 
 from tqdm import tqdm
 if TYPE_CHECKING:
@@ -25,7 +26,7 @@ class BaseSolution:
         """Calculate the cost for this solution"""
         raise NotImplementedError
 
-    def get_neighborhoods(self) -> Iterable[BaseNeighborhood[Self]]:
+    def get_neighborhoods(self) -> Tuple[BaseNeighborhood[Self], ...]:
         """Returns all neighborhoods of the current solution"""
         raise NotImplementedError
 
@@ -59,21 +60,16 @@ class BaseSolution:
     @classmethod
     def tabu_search(cls, *, iterations_count: int, use_tqdm: bool = True, shuffle_after: int = 50) -> Self:
         result = current = cls.initial()
-        iterations = range(iterations_count)
+        iterations: Union[range, tqdm[int]] = range(iterations_count)
         if use_tqdm:
             iterations = tqdm(iterations, desc="Tabu search", ascii=" █")
 
         with Pool() as pool:
             last_improved = 0
+            neighborhood_iterations = itertools.cycle(range(len(current.get_neighborhoods())))
             for iteration in iterations:
-                best_candidates = pool.map(BaseNeighborhood.static_find_best_candidate, current.get_neighborhoods())
-                best_candidate: Optional[Self] = None
-                for candidate in best_candidates:
-                    if candidate is None:
-                        continue
-
-                    if best_candidate is None or candidate < best_candidate:
-                        best_candidate = candidate
+                neighborhoods = current.get_neighborhoods()
+                best_candidate = neighborhoods[next(neighborhood_iterations)].find_best_candidate(pool=pool)
 
                 if best_candidate is None:
                     break
@@ -126,13 +122,13 @@ class BaseNeighborhood(Generic[T]):
         self._solution = solution
         self.extras = {}
 
-    def find_best_candidate(self) -> Optional[T]:
+    @property
+    def cls(self) -> Type[T]:
+        return type(self._solution)
+
+    def find_best_candidate(self, *, pool: pool.Pool) -> Optional[T]:
         """Find the best candidate solution within the neighborhood of the current one.
 
         Subclasses should implement the tabu logic internally.
         """
         raise NotImplementedError
-
-    @staticmethod
-    def static_find_best_candidate(neighborhood: BaseNeighborhood[T]) -> Optional[T]:
-        return neighborhood.find_best_candidate()
