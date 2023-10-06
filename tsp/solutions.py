@@ -65,6 +65,7 @@ class PathSolution(BaseSolution):
     def get_neighborhoods(self) -> Iterable[BaseNeighborhood[PathSolution]]:
         return (
             SwapNeighborhood(self),
+            SegmentShift(self, segment_length=1),
             SegmentShift(self, segment_length=2),
             SegmentShift(self, segment_length=3),
             SegmentShift(self, segment_length=5),
