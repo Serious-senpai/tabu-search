@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        problem: [a280, berlin52, bier127, ch130, ch150, eil101, eil51, eil76]
+        problem: [a280, berlin52, bier127, ch130, ch150, eil101, eil51, eil76, att48, bayg29, bays29, brazil58, brg180, burma14, d198, dantzig42, eil101, fri26, gr120, gr137, gr17, gr24, gr48, gr96, hk48, kroA100, kroA150, kroA200, kroB100, kro150, kroB200, kroD100, kroE100, lin105, pr107, pr124, pr136, pr144, pr152, pr76, rat195, rat99, rd100, si175, st70, swiss42, u159,  ulysses16, ulysses22]
         iterations: [500, 1000, 2000]
         tabu_size: [5, 6, 7, 8, 9, 10, 500]
 
