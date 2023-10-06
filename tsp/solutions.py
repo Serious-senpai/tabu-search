@@ -64,9 +64,13 @@ class PathSolution(BaseSolution):
             SegmentShift(self, segment_length=1),
             SegmentShift(self, segment_length=2),
             SegmentShift(self, segment_length=3),
+            SegmentShift(self, segment_length=4),
             SegmentShift(self, segment_length=5),
+            SegmentShift(self, segment_length=6),
             SegmentShift(self, segment_length=7),
+            SegmentReverse(self, segment_length=4),
             SegmentReverse(self, segment_length=5),
+            SegmentReverse(self, segment_length=6),
             SegmentReverse(self, segment_length=7),
         )
 

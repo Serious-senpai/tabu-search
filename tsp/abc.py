@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import itertools
+import random
 from functools import total_ordering
 from multiprocessing import Pool, pool
 from typing import Any, Dict, Generic, Optional, Tuple, Type, TypeVar, Union, TYPE_CHECKING
@@ -66,22 +66,23 @@ class BaseSolution:
 
         with Pool() as pool:
             last_improved = 0
-            neighborhood_iterations = itertools.cycle(range(len(current.get_neighborhoods())))
             for iteration in iterations:
-                neighborhoods = current.get_neighborhoods()
-                best_candidate = neighborhoods[next(neighborhood_iterations)].find_best_candidate(pool=pool)
+                neighborhoods = list(current.get_neighborhoods())
+                random.shuffle(neighborhoods)
+                for neighborhood in neighborhoods[:4]:
+                    best_candidate = neighborhood.find_best_candidate(pool=pool)
 
-                if best_candidate is None:
-                    break
+                    if best_candidate is None:
+                        break
 
-                if best_candidate < current:
-                    current = best_candidate
-                    last_improved = iteration
+                    if best_candidate < current:
+                        current = best_candidate
+                        last_improved = iteration
 
-                result = min(result, current)
+                    result = min(result, current)
 
-                if iteration - last_improved >= shuffle_after:
-                    current = current.shuffle(use_tqdm=use_tqdm)
+                    if iteration - last_improved >= shuffle_after:
+                        current = current.shuffle(use_tqdm=use_tqdm)
 
         return result.post_optimization()
 
