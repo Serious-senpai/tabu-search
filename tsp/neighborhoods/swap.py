@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 __all__ = ("Swap",)
 
 
-class Swap(BasePathNeighborhood):
+class Swap(BasePathNeighborhood[Tuple[int, int]]):
 
     __slots__ = ()
     _maxlen: ClassVar[int] = 100

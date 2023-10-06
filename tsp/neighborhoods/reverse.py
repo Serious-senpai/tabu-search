@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 __all__ = ("SegmentReverse",)
 
 
-class SegmentReverse(BasePathNeighborhood):
+class SegmentReverse(BasePathNeighborhood[Tuple[int, int]]):
 
     __slots__ = (
         "_segment_length",

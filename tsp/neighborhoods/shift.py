@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 __all__ = ("SegmentShift",)
 
 
-class SegmentShift(BasePathNeighborhood):
+class SegmentShift(BasePathNeighborhood[Tuple[int, int, int]]):
 
     __slots__ = (
         "_segment_length",
