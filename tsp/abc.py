@@ -69,9 +69,9 @@ class BaseSolution:
             for iteration in iterations:
                 neighborhoods = list(current.get_neighborhoods())
                 random.shuffle(neighborhoods)
-                for neighborhood in neighborhoods[:4]:
-                    best_candidate = neighborhood.find_best_candidate(pool=pool)
 
+                for neighborhood in neighborhoods[:5]:
+                    best_candidate = neighborhood.find_best_candidate(pool=pool)
                     if best_candidate is None:
                         break
 
@@ -81,8 +81,8 @@ class BaseSolution:
 
                     result = min(result, current)
 
-                    if iteration - last_improved >= shuffle_after:
-                        current = current.shuffle(use_tqdm=use_tqdm)
+                if iteration - last_improved >= shuffle_after:
+                    current = current.shuffle(use_tqdm=use_tqdm)
 
         return result.post_optimization()
 

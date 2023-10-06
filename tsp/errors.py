@@ -8,6 +8,7 @@ __all__ = (
     "ProblemNotFound",
     "ProblemParsingException",
     "UnsupportedEdgeWeightType",
+    "OptimalSolutionNotFound",
 )
 
 
@@ -20,8 +21,7 @@ class ProblemNotFound(SolverException):
     """Exception raised when the problem is not found within the archive"""
 
     def __init__(self, problem: Any, /) -> None:
-        super().__init__(
-            f"Cannot find any problems with the given name: {problem!r}")
+        super().__init__(f"Cannot find any problems with the given name: {problem!r}")
 
 
 class ProblemParsingException(SolverException):
@@ -49,3 +49,10 @@ class UnsupportedEdgeWeightType(SolverException):
     def __init__(self, edge_weight_type: str, /) -> None:
         self.edge_weight_type = edge_weight_type
         super().__init__(f"Unsupported edge_weight_type {edge_weight_type!r}")
+
+
+class OptimalSolutionNotFound(SolverException):
+    """Exception raised when the *.opt.tour file not found for the current problem"""
+
+    def __init__(self, problem: Any, /) -> None:
+        super().__init__(f"Cannot find the optimal solution file for the given problem: {problem!r}")

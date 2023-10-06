@@ -9,7 +9,7 @@ from matplotlib import axes, pyplot
 from tqdm import tqdm
 
 from .abc import BaseNeighborhood, BaseSolution
-from .errors import ProblemNotFound, ProblemParsingException, UnsupportedEdgeWeightType
+from .errors import OptimalSolutionNotFound, ProblemNotFound, ProblemParsingException, UnsupportedEdgeWeightType
 from .neighborhoods import SegmentReverse, SegmentShift, Swap
 
 
@@ -143,6 +143,35 @@ class PathSolution(BaseSolution):
             before[path[index]] = path[(index - 1 + cls.dimension) % cls.dimension]
 
         return cls(after=after, before=before)
+
+    @classmethod
+    def read_optimal_solution(cls) -> PathSolution:
+        archive_file = path.join("problems", f"{cls.problem_name}.opt.tour", f"{cls.problem_name}.opt.tour")
+        if not path.isfile(archive_file):
+            raise OptimalSolutionNotFound(cls.problem_name)
+
+        with open(archive_file, "r") as file:
+            spath: List[int] = []
+            parse_start = False
+            for line in file.readlines():
+                if parse_start:
+                    index = int(line) - 1
+                    if index >= 0:
+                        spath.append(index)
+                    else:
+                        break
+
+                if line.strip() == "TOUR_SECTION":
+                    parse_start = True
+
+        after = [-1] * cls.dimension
+        before = [-1] * cls.dimension
+        for index in range(cls.dimension):
+            current = spath[index]
+            after[current] = spath[(index + 1) % cls.dimension]
+            before[current] = spath[(index + cls.dimension - 1) % cls.dimension]
+
+        return PathSolution(after=after, before=before)
 
     @classmethod
     def import_problem(cls, problem: str, *, precalculated_distances: Optional[Tuple[Tuple[float, ...], ...]] = None) -> None:
