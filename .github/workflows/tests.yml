@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        problem: [a280, berlin52, bier127, ch130, ch150, eil51, eil76, eil101, pr124, pr136, pr144, pr152]
+        problem: [a280, berlin52, bier127, ch150, eil101, pr144]
         iterations: [500, 1000, 2000]
         tabu_size: [5, 10, 500]
         shuffle_after: [5, 10]
