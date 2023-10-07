@@ -7,7 +7,7 @@ permissions:
 
 jobs:
   test:
-    name: Run Python tests
+    name: Run against tests
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -32,4 +32,25 @@ jobs:
       run: pip install -r requirements.txt
 
     - name: Test sample 
-      run: python main.py ${{ matrix.problem }} --iter ${{ matrix.iterations }} --tabu-size ${{ matrix.tabu_size }} --shuffle-after ${{ matrix.shuffle_after }}
+      run: python main.py ${{ matrix.problem }} --iter ${{ matrix.iterations }} --tabu-size ${{ matrix.tabu_size }} --shuffle-after ${{ matrix.shuffle_after }} --dump output-${{ matrix.problem }}-${{ matrix.tabu_size }}-${{ matrix.shuffle_after }}.json
+
+    - name: Upload solution
+      uses: actions/upload-artifact@v3
+      with:
+        name: summary
+        path: output-${{ matrix.problem }}-${{ matrix.tabu_size }}-${{ matrix.shuffle_after }}.json
+
+  summary:
+    name: Summarize solutions
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+    - name: Download solutions
+      uses: actions/download-artifact@v3
+      with:
+        name: summary
+        path: summary/
+
+    - name: View downloaded artifacts
+      run: ls summary/
