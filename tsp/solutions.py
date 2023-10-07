@@ -1,7 +1,9 @@
 from __future__ import annotations
+from multiprocessing import pool
 
 import random
 import re
+from multiprocessing import pool
 from os import path
 from typing import ClassVar, Iterable, List, Optional, Tuple, Union, TYPE_CHECKING
 
@@ -24,12 +26,14 @@ class PathSolution(BaseSolution):
         "_cost",
         "after",
         "before",
+        "path",
     )
     problem_name: ClassVar[Optional[str]] = None
     if TYPE_CHECKING:
         _cost: Optional[float]
         after: Tuple[int, ...]
         before: Tuple[int, ...]
+        path: Optional[Tuple[int, ...]]
 
         dimension: ClassVar[int]
         edge_weight_type: ClassVar[str]
@@ -43,6 +47,14 @@ class PathSolution(BaseSolution):
         self.before = tuple(before)
 
         self._cost = cost
+
+        path = [0]
+        current = self.after[0]
+        while current != 0:
+            path.append(current)
+            current = self.after[current]
+
+        self.path = tuple(path)
 
     def cost(self) -> float:
         if self._cost is not None:
@@ -58,38 +70,47 @@ class PathSolution(BaseSolution):
         self._cost = result
         return result
 
+    def post_optimization(self, *, pool: pool.Pool, use_tqdm: bool) -> PathSolution:
+        result = self
+        iterations: Union[Tuple[BaseNeighborhood[PathSolution], ...], tqdm[BaseNeighborhood[PathSolution]]] = self.get_neighborhoods()
+        if use_tqdm:
+            iterations = tqdm(iterations, desc="Post-optimization", ascii=" █", colour="blue")
+
+        for neighborhood in iterations:
+            result = min(result, neighborhood.find_best_candidate(pool=pool))
+
+        return result
+
     def get_neighborhoods(self) -> Tuple[BaseNeighborhood[PathSolution], ...]:
         return (
-            Swap(self),
+            Swap(self, first_length=1, second_length=1),
+            Swap(self, first_length=2, second_length=1),
+            Swap(self, first_length=3, second_length=1),
+            Swap(self, first_length=3, second_length=2),
             SegmentShift(self, segment_length=1),
             SegmentShift(self, segment_length=2),
             SegmentShift(self, segment_length=3),
-            SegmentShift(self, segment_length=4),
-            SegmentShift(self, segment_length=5),
-            SegmentShift(self, segment_length=6),
-            SegmentShift(self, segment_length=7),
             SegmentReverse(self, segment_length=4),
             SegmentReverse(self, segment_length=5),
             SegmentReverse(self, segment_length=6),
-            SegmentReverse(self, segment_length=7),
         )
 
     def shuffle(self, use_tqdm: bool = True) -> PathSolution:
-        indices = list(range(self.dimension))
-        random.shuffle(indices)
-        result = self
+        def adjacent_distance(index: int) -> float:
+            return abs(self.distances[index][self.after[index]] - self.distances[index][self.before[index]])
 
-        iterations: Union[List[int], tqdm[int]] = indices[:self.dimension // 3]
+        indices = sorted(range(self.dimension), key=adjacent_distance, reverse=True)[:self.dimension // 2]
+        iterations: Union[List[int], tqdm[int]] = indices
         if use_tqdm:
             iterations = tqdm(iterations, desc="Shuffle", ascii=" █", colour="red")
 
+        result = self
         for index in iterations:
             other = random.choice(indices)
-            after = result.after.__getitem__
-            while other == index or after(other) == index or after(after(other)) == index or after(index) == other or after(after(index)) == other:
+            if other == index:
                 other = (other + 1) % self.dimension
 
-            result = Swap(result).swap(index, other)
+            result = Swap(result, first_length=1, second_length=1).swap(index, index, other, other)
 
         return result
 
@@ -115,15 +136,6 @@ class PathSolution(BaseSolution):
 
         pyplot.legend()
         pyplot.show()
-
-    def get_path(self) -> Tuple[int, ...]:
-        path = [0]
-        current = self.after[0]
-        while current != 0:
-            path.append(current)
-            current = self.after[current]
-
-        return tuple(path)
 
     @classmethod
     def initial(cls) -> PathSolution:

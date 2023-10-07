@@ -15,88 +15,121 @@ if TYPE_CHECKING:
 __all__ = ("Swap",)
 
 
-class Swap(BasePathNeighborhood[Tuple[int, int]]):
+class Swap(BasePathNeighborhood[Tuple[int, int, int, int]]):
 
-    __slots__ = ()
+    __slots__ = (
+        "_first_length",
+        "_second_length",
+    )
     _maxlen: ClassVar[int] = 100
     _tabu_list: ClassVar[Deque[Tuple[int, int]]] = deque()
     _tabu_set: ClassVar[Set[Tuple[int, int]]] = set()
+    if TYPE_CHECKING:
+        _first_length: int
+        _second_length: int
 
-    def swap(self, x: int, y: int) -> PathSolution:
+    def __init__(self, solution: PathSolution, *, first_length: int, second_length: int) -> None:
+        super().__init__(solution)
+        self._first_length = first_length
+        self._second_length = second_length
+
+    def swap(self, first_head: int, first_tail: int, second_head: int, second_tail: int) -> PathSolution:
         solution = self._solution
 
         before = list(solution.before)
         after = list(solution.after)
 
-        if after[y] == x:
-            x, y = y, x
+        if first_head == after[second_tail]:
+            first_head, first_tail, second_head, second_tail = second_head, second_tail, first_head, first_tail
 
-        before_x = before[x]
-        before_y = before[y]
-        after_x = after[x]
-        after_y = after[y]
+        if first_tail == before[second_head]:
+            before_first = before[first_head]
+            after_second = after[second_tail]
 
-        if after_x == y:
             cost = (
                 solution.cost()
-                + solution.distances[before_x][y] + solution.distances[x][after_y]
-                - solution.distances[before_x][x] - solution.distances[y][after_y]
+                + solution.distances[before_first][second_head]
+                + solution.distances[second_tail][first_head]
+                + solution.distances[first_tail][after_second]
+                - solution.distances[before_first][first_head]
+                - solution.distances[first_tail][second_head]
+                - solution.distances[second_tail][after_second]
             )
 
-            after[before_x], before[y] = y, before_x
-            after[y], before[x] = x, y
-            after[x], before[after_y] = after_y, x
+            after[before_first], before[second_head] = second_head, before_first
+            after[second_tail], before[first_head] = first_head, second_tail
+            after[first_tail], before[after_second] = after_second, first_tail
 
         else:
+            before_first = before[first_head]
+            before_second = before[second_head]
+            after_first = after[first_tail]
+            after_second = after[second_tail]
+
             cost = (
                 solution.cost()
-                + solution.distances[before_x][y] + solution.distances[y][after_x]
-                + solution.distances[before_y][x] + solution.distances[x][after_y]
-                - solution.distances[before_x][x] - solution.distances[x][after_x]
-                - solution.distances[before_y][y] - solution.distances[y][after_y]
+                + solution.distances[before_first][second_head] + solution.distances[second_tail][after_first]
+                + solution.distances[before_second][first_head] + solution.distances[first_tail][after_second]
+                - solution.distances[before_first][first_head] - solution.distances[first_tail][after_first]
+                - solution.distances[before_second][second_head] - solution.distances[second_tail][after_second]
             )
 
-            before[x], before[y] = before_y, before_x
-            after[x], after[y] = after_y, after_x
-
-            after[before_x] = before[after_x] = y
-            after[before_y] = before[after_y] = x
+            after[before_first], before[second_head] = second_head, before_first
+            after[before_second], before[first_head] = first_head, before_second
+            after[second_tail], before[after_first] = after_first, second_tail
+            after[first_tail], before[after_second] = after_second, first_tail
 
         return self.cls(after=after, before=before, cost=cost)
 
     def find_best_candidate(self, *, pool: pool.Pool) -> Optional[PathSolution]:
         concurrency = os.cpu_count() or 1
-        args: List[IPCBundle[Swap, List[Tuple[int, int]]]] = [IPCBundle(self, []) for _ in range(concurrency)]
-        for first, second in itertools.combinations(range(self._solution.dimension), 2):
-            # first < second due to itertools.combinations implementation
-            args[(first + second) % concurrency].data.append((first, second))
+        solution = self._solution
+
+        args: List[IPCBundle[Swap, List[Tuple[int, int, int, int]]]] = [IPCBundle(self, []) for _ in range(concurrency)]
+        args_index_iteration = itertools.cycle(range(concurrency))
+
+        for first_head_index in range(solution.dimension):
+            first_tail_index = (first_head_index + self._first_length - 1) % solution.dimension
+
+            for d in range(solution.dimension - self._first_length - self._second_length + 1):
+                second_head_index = (first_tail_index + d + 1) % solution.dimension
+                second_tail_index = (second_head_index + self._second_length - 1) % solution.dimension
+
+                # Guaranteed order: first_head - first_tail - second_head - second_tail
+                arg = (
+                    solution.path[first_head_index],
+                    solution.path[first_tail_index],
+                    solution.path[second_head_index],
+                    solution.path[second_tail_index],
+                )
+                args[next(args_index_iteration)].data.append(arg)
 
         result: Optional[PathSolution] = None
-        min_pair: Optional[Tuple[int, int]] = None
-        for result_temp, min_pair_temp in pool.map(self.static_find_best_candidate, args):
-            if result_temp is None or min_pair_temp is None:
+        min_swap: Optional[Tuple[int, int, int, int]] = None
+        for result_temp, min_swap_temp in pool.map(self.static_find_best_candidate, args):
+            if result_temp is None or min_swap_temp is None:
                 continue
 
             if result is None or result_temp < result:
                 result = result_temp
-                min_pair = min_pair_temp
+                min_swap = min_swap_temp
 
-        if min_pair is not None:
-            self.add_to_tabu(min_pair)
+        if min_swap is not None:
+            self.add_to_tabu(min_swap)
 
         return result
 
     @staticmethod
-    def static_find_best_candidate(bundle: IPCBundle[Swap, List[Tuple[int, int]]]) -> Tuple[Optional[PathSolution], Optional[Tuple[int, int]]]:
+    def static_find_best_candidate(bundle: IPCBundle[Swap, List[Tuple[int, int, int, int]]]) -> Tuple[Optional[PathSolution], Optional[Tuple[int, int, int, int]]]:
         neighborhood = bundle.neighborhood
         neighborhood._ensure_imported_data()
 
         result: Optional[PathSolution] = None
-        min_pair: Optional[Tuple[int, int]] = None
-        for pair in bundle.data:
-            swapped = neighborhood.swap(*pair)
+        min_swap: Optional[Tuple[int, int, int, int]] = None
+        for swap in bundle.data:
+            swapped = neighborhood.swap(*swap)
             if result is None or swapped < result:
                 result = swapped
-                min_pair = pair
+                min_swap = swap
 
-        return result, min_pair
+        return result, min_swap

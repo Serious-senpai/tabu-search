@@ -63,12 +63,11 @@ class SegmentShift(BasePathNeighborhood[Tuple[int, int, int]]):
         args: List[IPCBundle[SegmentShift, List[Tuple[int, int, int]]]] = [IPCBundle(self, []) for _ in range(concurrency)]
         args_index_iteration = itertools.cycle(range(concurrency))
 
-        path = solution.get_path()
         for segment_first_index in range(solution.dimension):
             segment_end_index = (segment_first_index + self._segment_length - 1) % solution.dimension
-            for d in range(solution.dimension - self._segment_length - 2):
-                index = (segment_end_index + d + 2) % solution.dimension
-                args[next(args_index_iteration)].data.append((path[segment_first_index], path[segment_end_index], path[index]))
+            for d in range(solution.dimension - self._segment_length - 1):
+                index = (segment_end_index + d + 1) % solution.dimension
+                args[next(args_index_iteration)].data.append((solution.path[segment_first_index], solution.path[segment_end_index], solution.path[index]))
 
         result: Optional[PathSolution] = None
         min_pair: Optional[Tuple[int, int, int]] = None

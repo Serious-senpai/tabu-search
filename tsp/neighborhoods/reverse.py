@@ -62,11 +62,10 @@ class SegmentReverse(BasePathNeighborhood[Tuple[int, int]]):
         args: List[IPCBundle[SegmentReverse, List[List[int]]]] = [IPCBundle(self, []) for _ in range(concurrency)]
         args_index_iteration = itertools.cycle(range(concurrency))
 
-        path = solution.get_path()
         for start in range(solution.dimension):
             segment = []
             for d in range(self._segment_length):
-                segment.append(path[(start + d) % solution.dimension])
+                segment.append(solution.path[(start + d) % solution.dimension])
 
             args[next(args_index_iteration)].data.append(segment)
 

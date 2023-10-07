@@ -30,7 +30,7 @@ class BaseSolution:
         """Returns all neighborhoods of the current solution"""
         raise NotImplementedError
 
-    def shuffle(self, use_tqdm: bool = True) -> Self:
+    def shuffle(self, *, use_tqdm: bool) -> Self:
         """Shuffle the current solution
 
         After a certain (or random) number of iterations and the solution does not improve,
@@ -45,10 +45,17 @@ class BaseSolution:
         """
         return self
 
-    def post_optimization(self) -> Self:
+    def post_optimization(self, *, pool: pool.Pool, use_tqdm: bool) -> Self:
         """Perform post-optimization for this solution
 
         The default implementation does nothing.
+
+        Parameters
+        -----
+        pool: `pool.Pool`
+            The process pool to perform post-optimization
+        use_tqdm: `bool`
+            Whether to display the progress bar
         """
         return self
 
@@ -58,19 +65,22 @@ class BaseSolution:
         raise NotImplementedError
 
     @classmethod
-    def tabu_search(cls, *, iterations_count: int, use_tqdm: bool = True, shuffle_after: int = 50) -> Self:
+    def tabu_search(cls, *, iterations_count: int, use_tqdm: bool, shuffle_after: int) -> Self:
         result = current = cls.initial()
         iterations: Union[range, tqdm[int]] = range(iterations_count)
         if use_tqdm:
-            iterations = tqdm(iterations, desc="Tabu search", ascii=" █")
+            iterations = tqdm(iterations, ascii=" █")
 
         with Pool() as pool:
             last_improved = 0
             for iteration in iterations:
+                if isinstance(iterations, tqdm):
+                    iterations.set_description_str(f"Tabu search ({current.cost()}/{result.cost()})")
+
                 neighborhoods = list(current.get_neighborhoods())
                 random.shuffle(neighborhoods)
 
-                for neighborhood in neighborhoods[:5]:
+                for neighborhood in neighborhoods:
                     best_candidate = neighborhood.find_best_candidate(pool=pool)
                     if best_candidate is None:
                         break
@@ -84,7 +94,7 @@ class BaseSolution:
                 if iteration - last_improved >= shuffle_after:
                     current = current.shuffle(use_tqdm=use_tqdm)
 
-        return result.post_optimization()
+            return result.post_optimization(pool=pool, use_tqdm=use_tqdm)
 
     def __hash__(self) -> int:
         raise NotImplementedError
@@ -131,5 +141,10 @@ class BaseNeighborhood(Generic[T]):
         """Find the best candidate solution within the neighborhood of the current one.
 
         Subclasses should implement the tabu logic internally.
+
+        Parameters
+        -----
+        pool: `pool.Pool`
+            The process pool to perform post-optimization
         """
         raise NotImplementedError

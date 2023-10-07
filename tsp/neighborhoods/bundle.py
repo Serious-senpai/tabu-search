@@ -22,3 +22,6 @@ class IPCBundle(Generic[_NT, _T]):
     def __init__(self, neighborhood: _NT, data: _T) -> None:
         self.neighborhood = neighborhood
         self.data = data
+
+    def __repr__(self) -> str:
+        return f"<IPCBundle({self.neighborhood.__class__.__name__}) data={self.data!r}>"
