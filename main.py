@@ -20,7 +20,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Tabu search algorithm for TSP problems")
     parser.add_argument("problem", type=str, help="the problem name (e.g. \"a280\", \"berlin52\", ...)")
     parser.add_argument("-i", "--iter", default=500, type=int, help="the number of iterations to run the tabu search for (default: 500)")
-    parser.add_argument("-s", "--shuffle-after", default=50, type=int, help="after the specified number of non-improved iterations, shuffle the solution (default: 50)")
+    parser.add_argument("-s", "--shuffle-after", default=10, type=int, help="after the specified number of non-improved iterations, shuffle the solution (default: 10)")
     parser.add_argument("-t", "--tabu-size", default=10, type=int, help="the tabu size for every neighborhood (default: 10)")
     parser.add_argument("-o", "--optimal", action="store_true", help="read the optimal solution from the problem archive")
     parser.add_argument("-v", "--verbose", action="store_true", help="whether to display the progress bar and plot the solution")
@@ -33,6 +33,7 @@ if __name__ == "__main__":
         solution = PathSolution.read_optimal_solution()
 
     else:
+        print(f"Set all tabu size to {namespace.tabu_size}")
         Swap.reset_tabu(maxlen=namespace.tabu_size)
         SegmentShift.reset_tabu(maxlen=namespace.tabu_size)
         SegmentReverse.reset_tabu(maxlen=namespace.tabu_size)

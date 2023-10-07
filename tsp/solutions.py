@@ -30,10 +30,10 @@ class PathSolution(BaseSolution):
     )
     problem_name: ClassVar[Optional[str]] = None
     if TYPE_CHECKING:
-        _cost: Optional[float]
+        _cost: float
         after: Tuple[int, ...]
         before: Tuple[int, ...]
-        path: Optional[Tuple[int, ...]]
+        path: Tuple[int, ...]
 
         dimension: ClassVar[int]
         edge_weight_type: ClassVar[str]
@@ -46,7 +46,18 @@ class PathSolution(BaseSolution):
         self.after = tuple(after)
         self.before = tuple(before)
 
-        self._cost = cost
+        if cost is None:
+            result = 0.0
+            last, current = 0, self.after[0]
+            while current != 0:
+                result += self.distances[last][current]
+                last, current = current, self.after[current]
+
+            result += self.distances[last][current]
+            self._cost = result
+
+        else:
+            self._cost = cost
 
         path = [0]
         current = self.after[0]
@@ -57,18 +68,7 @@ class PathSolution(BaseSolution):
         self.path = tuple(path)
 
     def cost(self) -> float:
-        if self._cost is not None:
-            return self._cost
-
-        result = 0.0
-        last, current = 0, self.after[0]
-        while current != 0:
-            result += self.distances[last][current]
-            last, current = current, self.after[current]
-
-        result += self.distances[last][current]
-        self._cost = result
-        return result
+        return self._cost
 
     def post_optimization(self, *, pool: pool.Pool, use_tqdm: bool) -> PathSolution:
         result = self
@@ -77,7 +77,9 @@ class PathSolution(BaseSolution):
             iterations = tqdm(iterations, desc="Post-optimization", ascii=" █", colour="blue")
 
         for neighborhood in iterations:
-            result = min(result, neighborhood.find_best_candidate(pool=pool))
+            candidate = neighborhood.find_best_candidate(pool=pool)
+            if candidate is not None:
+                result = min(result, candidate)
 
         return result
 
@@ -95,9 +97,9 @@ class PathSolution(BaseSolution):
             SegmentReverse(self, segment_length=6),
         )
 
-    def shuffle(self, use_tqdm: bool = True) -> PathSolution:
+    def shuffle(self, *, use_tqdm: bool = True) -> PathSolution:
         def adjacent_distance(index: int) -> float:
-            return abs(self.distances[index][self.after[index]] - self.distances[index][self.before[index]])
+            return self.distances[index][self.after[index]] + self.distances[index][self.before[index]]
 
         indices = sorted(range(self.dimension), key=adjacent_distance, reverse=True)[:self.dimension // 2]
         iterations: Union[List[int], tqdm[int]] = indices

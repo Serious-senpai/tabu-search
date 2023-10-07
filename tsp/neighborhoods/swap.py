@@ -22,8 +22,8 @@ class Swap(BasePathNeighborhood[Tuple[int, int, int, int]]):
         "_second_length",
     )
     _maxlen: ClassVar[int] = 100
-    _tabu_list: ClassVar[Deque[Tuple[int, int]]] = deque()
-    _tabu_set: ClassVar[Set[Tuple[int, int]]] = set()
+    _tabu_list: ClassVar[Deque[Tuple[int, int, int, int]]] = deque()
+    _tabu_set: ClassVar[Set[Tuple[int, int, int, int]]] = set()
     if TYPE_CHECKING:
         _first_length: int
         _second_length: int

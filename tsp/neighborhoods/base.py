@@ -20,16 +20,12 @@ class BasePathNeighborhood(BaseNeighborhood["PathSolution"], Generic[_T]):
 
     def __init__(self, solution: PathSolution, /) -> None:
         super().__init__(solution)
-        self.extras["cost"] = solution.cost()
-
         self.extras["problem"] = solution.problem_name
         self.extras["distances"] = solution.distances
 
     def _ensure_imported_data(self) -> None:
         if self.cls.problem_name is None:
             self.cls.import_problem(self.extras["problem"], precalculated_distances=self.extras["distances"])
-
-        self._solution._cost = self.extras["cost"]
 
     @classmethod
     def add_to_tabu(cls, target: _T) -> None:
