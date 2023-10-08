@@ -32,13 +32,13 @@ jobs:
       run: pip install -r requirements.txt
 
     - name: Test sample 
-      run: python main.py ${{ matrix.problem }} --iter ${{ matrix.iterations }} --tabu-size ${{ matrix.tabu_size }} --shuffle-after ${{ matrix.shuffle_after }} --dump output-${{ matrix.problem }}-${{ matrix.tabu_size }}-${{ matrix.shuffle_after }}.json
+      run: python main.py ${{ matrix.problem }} --iter ${{ matrix.iterations }} --tabu-size ${{ matrix.tabu_size }} --shuffle-after ${{ matrix.shuffle_after }} --dump output-${{ matrix.problem }}-${{ matrix.iterations }}-${{ matrix.tabu_size }}-${{ matrix.shuffle_after }}.json
 
     - name: Upload solution
       uses: actions/upload-artifact@v3
       with:
         name: summary
-        path: output-${{ matrix.problem }}-${{ matrix.tabu_size }}-${{ matrix.shuffle_after }}.json
+        path: output-${{ matrix.problem }}-${{ matrix.iterations }}-${{ matrix.tabu_size }}-${{ matrix.shuffle_after }}.json
 
   summary:
     name: Summarize solutions
@@ -54,3 +54,12 @@ jobs:
 
     - name: View downloaded artifacts
       run: ls summary/
+
+    - name: Summarize solutions
+      run: python summary.py summary.csv
+
+    - name: Upload CSV file
+      uses: actions/upload-artifact@v3
+      with:
+        name: csv-summary
+        path: summary/summary.csv
