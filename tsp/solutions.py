@@ -96,6 +96,7 @@ class PathSolution(BaseSolution):
             Swap(self, first_length=1, second_length=1),
             Swap(self, first_length=2, second_length=1),
             Swap(self, first_length=2, second_length=2),
+            Swap(self, first_length=3, second_length=1),
             Swap(self, first_length=3, second_length=2),
             SegmentShift(self, segment_length=1),
             SegmentShift(self, segment_length=2),

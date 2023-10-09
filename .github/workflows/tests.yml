@@ -14,7 +14,7 @@ jobs:
       matrix:
         problem: [a280, berlin52, bier127, ch150, eil101, pr144]
         iterations: [500, 1000, 2000]
-        tabu_size: [5, 10, 500]
+        tabu_size: [5, 10, 40, 80]
         shuffle_after: [5, 10]
 
     steps:
