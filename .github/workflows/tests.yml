@@ -46,6 +46,11 @@ jobs:
     needs: test
 
     steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
     - name: Download solutions
       uses: actions/download-artifact@v3
       with:
