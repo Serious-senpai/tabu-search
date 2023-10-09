@@ -78,16 +78,15 @@ class BaseSolution:
                     iterations.set_description_str(f"Tabu search ({current.cost()}/{result.cost()})")
 
                 neighborhoods = current.get_neighborhoods()
-                for neighborhood in random.sample(neighborhoods, min(4, len(neighborhoods))):
-                    best_candidate = neighborhood.find_best_candidate(pool=pool)
-                    if best_candidate is None:
-                        break
+                best_candidate = random.choice(neighborhoods).find_best_candidate(pool=pool)
+                if best_candidate is None:
+                    break
 
-                    if best_candidate < current:
-                        current = best_candidate
-                        last_improved = iteration
+                if best_candidate < current:
+                    last_improved = iteration
 
-                    result = min(result, current)
+                current = best_candidate
+                result = min(result, current)
 
                 if iteration - last_improved >= shuffle_after:
                     current = current.shuffle(use_tqdm=use_tqdm)

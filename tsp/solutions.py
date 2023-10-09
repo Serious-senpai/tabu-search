@@ -173,27 +173,31 @@ class PathSolution(BaseSolution):
             raise OptimalSolutionNotFound(cls.problem_name)
 
         with open(archive_file, "r") as file:
-            spath: List[int] = []
+            sol_path: List[int] = []
             parse_start = False
             for line in file.readlines():
                 if parse_start:
                     index = int(line) - 1
                     if index >= 0:
-                        spath.append(index)
+                        sol_path.append(index)
                     else:
                         break
 
                 if line.strip() == "TOUR_SECTION":
                     parse_start = True
 
+        return cls.from_path(sol_path)
+
+    @classmethod
+    def from_path(cls, path: Union[List[int], Tuple[int, ...]], /) -> PathSolution:
         after = [-1] * cls.dimension
         before = [-1] * cls.dimension
         for index in range(cls.dimension):
-            current = spath[index]
-            after[current] = spath[(index + 1) % cls.dimension]
-            before[current] = spath[(index + cls.dimension - 1) % cls.dimension]
+            current = path[index]
+            after[current] = path[(index + 1) % cls.dimension]
+            before[current] = path[(index + cls.dimension - 1) % cls.dimension]
 
-        return PathSolution(after=after, before=before)
+        return cls(after=after, before=before)
 
     @classmethod
     def import_problem(cls, problem: str, *, precalculated_distances: Optional[Tuple[Tuple[float, ...], ...]] = None) -> None:
