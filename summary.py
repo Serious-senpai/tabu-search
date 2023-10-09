@@ -4,10 +4,7 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import Dict, Literal, Tuple, overload
-
-
-HeaderT = Literal["Problem", "Iterations", "Tabu size", "Shuffle after", "Cost", "Path"]
+from typing import Dict
 
 
 summary_dir = Path("summary/")
@@ -16,12 +13,8 @@ field_names = ("Problem", "Iterations", "Tabu size", "Shuffle after", "Cost", "P
 filename_pattern = re.compile(r"output-([a-z0-9]+)-(\d+)-(\d+)-(\d+)\.json")
 
 
-@overload
-def to_map(problem: str, iterations: str, tabu_size: str, shuffle_after: str, cost: str, path: str, /) -> Dict[HeaderT, str]: ...
-
-
-def to_map(*args: Tuple[str]) -> Dict[HeaderT, str]:
-    result: Dict[HeaderT, str] = {}
+def to_map(*args: str) -> Dict[str, str]:
+    result: Dict[str, str] = {}
     for index, key in enumerate(field_names):
         result[key] = args[index]
 
