@@ -61,7 +61,7 @@ jobs:
       run: ls summary/
 
     - name: Summarize solutions
-      run: python summary.py summary.csv
+      run: python summary.py summary/summary.csv
 
     - name: Upload CSV file
       uses: actions/upload-artifact@v3

@@ -28,11 +28,11 @@ def to_map(*args: Tuple[str]) -> Dict[HeaderT, str]:
     return result
 
 
-with open(summary_dir / output, "w", newline="") as csvfile:
+with open(output, "w", newline="") as csvfile:
     writer = csv.DictWriter(csvfile, fieldnames=field_names)
     writer.writeheader()
 
-    for file in os.listdir(summary_dir):
+    for file in sorted(os.listdir(summary_dir)):
         if match := filename_pattern.fullmatch(file):
             problem, iterations, tabu_size, shuffle_after = match.groups()
 
