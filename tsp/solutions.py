@@ -34,7 +34,7 @@ class PathSolution(BaseSolution):
         _path: Optional[Tuple[int, ...]]
         after: Tuple[int, ...]
         before: Tuple[int, ...]
-        
+
         dimension: ClassVar[int]
         edge_weight_type: ClassVar[str]
         distances: ClassVar[Tuple[Tuple[float, ...], ...]]
@@ -95,7 +95,7 @@ class PathSolution(BaseSolution):
         return (
             Swap(self, first_length=1, second_length=1),
             Swap(self, first_length=2, second_length=1),
-            Swap(self, first_length=3, second_length=1),
+            Swap(self, first_length=2, second_length=2),
             Swap(self, first_length=3, second_length=2),
             SegmentShift(self, segment_length=1),
             SegmentShift(self, segment_length=2),
