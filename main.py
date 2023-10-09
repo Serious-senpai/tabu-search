@@ -30,7 +30,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "-e", "--euclide",
         action="store_true",
-        help="calculate using Euclidean distance sqrt(dx ^ 2 + dy ^ 2) instead of dx + dy, note that all distances are rounded to integers and numerical roundings varies according to different machines",
+        help="calculate using Euclidean distance sqrt(dx ^ 2 + dy ^ 2) instead of dx + dy, note that all distances are rounded to integers"
+        "and numerical roundings may vary according to different machines",
     )
     parser.add_argument("-p", "--profile", action="store_true", help="run in profile mode and exit immediately")
     parser.add_argument("-o", "--optimal", action="store_true", help="read the optimal solution from the problem archive")
@@ -77,6 +78,7 @@ if __name__ == "__main__":
                 "iterations": namespace.iterations,
                 "tabu-size": namespace.tabu_size,
                 "shuffle-after": namespace.shuffle_after,
+                "euclide": namespace.euclide,
                 "cost": solution.cost(),
                 "path": solution.path,
             }
