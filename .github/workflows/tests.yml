@@ -7,12 +7,12 @@ permissions:
 
 jobs:
   test:
-    name: Run Python tests
+    name: Run against tests
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        problem: [a280, berlin52, bier127, ch130, ch150, eil51, eil76, eil101, pr124, pr136, pr144, pr152]
+        problem: [a280, berlin52, bier127, ch150, eil101, pr144]
         iterations: [500, 1000, 2000]
         tabu_size: [5, 10, 500]
         shuffle_after: [5, 10]
@@ -32,4 +32,39 @@ jobs:
       run: pip install -r requirements.txt
 
     - name: Test sample 
-      run: python main.py ${{ matrix.problem }} --iter ${{ matrix.iterations }} --tabu-size ${{ matrix.tabu_size }} --shuffle-after ${{ matrix.shuffle_after }}
+      run: python main.py ${{ matrix.problem }} --iter ${{ matrix.iterations }} --tabu-size ${{ matrix.tabu_size }} --shuffle-after ${{ matrix.shuffle_after }} --dump output-${{ matrix.problem }}-${{ matrix.iterations }}-${{ matrix.tabu_size }}-${{ matrix.shuffle_after }}.json
+
+    - name: Upload solution
+      uses: actions/upload-artifact@v3
+      with:
+        name: summary
+        path: output-${{ matrix.problem }}-${{ matrix.iterations }}-${{ matrix.tabu_size }}-${{ matrix.shuffle_after }}.json
+
+  summary:
+    name: Summarize solutions
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
+    - name: Download solutions
+      uses: actions/download-artifact@v3
+      with:
+        name: summary
+        path: summary/
+
+    - name: View downloaded artifacts
+      run: ls summary/
+
+    - name: Summarize solutions
+      run: python summary.py summary/summary.csv
+
+    - name: Upload CSV file
+      uses: actions/upload-artifact@v3
+      with:
+        name: csv-summary
+        path: summary/summary.csv

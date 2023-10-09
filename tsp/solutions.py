@@ -24,16 +24,16 @@ class PathSolution(BaseSolution):
 
     __slots__ = (
         "_cost",
+        "_path",
         "after",
         "before",
-        "path",
     )
     problem_name: ClassVar[Optional[str]] = None
     if TYPE_CHECKING:
         _cost: float
+        _path: Optional[Tuple[int, ...]]
         after: Tuple[int, ...]
         before: Tuple[int, ...]
-        path: Tuple[int, ...]
 
         dimension: ClassVar[int]
         edge_weight_type: ClassVar[str]
@@ -59,13 +59,21 @@ class PathSolution(BaseSolution):
         else:
             self._cost = cost
 
+        self._path = None
+
+    @property
+    def path(self) -> Tuple[int, ...]:
+        if self._path is not None:
+            return self._path
+
         path = [0]
         current = self.after[0]
         while current != 0:
             path.append(current)
             current = self.after[current]
 
-        self.path = tuple(path)
+        self._path = tuple(path)
+        return self._path
 
     def cost(self) -> float:
         return self._cost
@@ -87,7 +95,7 @@ class PathSolution(BaseSolution):
         return (
             Swap(self, first_length=1, second_length=1),
             Swap(self, first_length=2, second_length=1),
-            Swap(self, first_length=3, second_length=1),
+            Swap(self, first_length=2, second_length=2),
             Swap(self, first_length=3, second_length=2),
             SegmentShift(self, segment_length=1),
             SegmentShift(self, segment_length=2),
