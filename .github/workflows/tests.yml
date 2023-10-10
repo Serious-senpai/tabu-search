@@ -13,9 +13,12 @@ jobs:
       fail-fast: false
       matrix:
         problem: [a280, berlin52, bier127, ch150, eil101, pr144]
-        iterations: [500, 1000, 2000]
+        iterations: [1000, 2000, 4000]
         tabu_size: [5, 10, 40, 80]
-        shuffle_after: [5, 10]
+        shuffle_after: [3, 5, 10]
+        exclude:
+          - problem: a280
+            iterations: 4000
 
     steps:
     - name: Checkout repository
