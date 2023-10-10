@@ -80,14 +80,14 @@ class PathSolution(BaseSolution):
     def cost(self) -> float:
         return self._cost
 
-    def post_optimization(self, *, pool: pool.Pool, use_tqdm: bool) -> PathSolution:
+    def post_optimization(self, *, pool: pool.Pool, pool_size: int, use_tqdm: bool) -> PathSolution:
         result = self
         iterations: Union[Tuple[BaseNeighborhood[PathSolution], ...], tqdm[BaseNeighborhood[PathSolution]]] = self.get_neighborhoods()
         if use_tqdm:
             iterations = tqdm(iterations, desc="Post-optimization", ascii=" █", colour="blue")
 
         for neighborhood in iterations:
-            candidate = neighborhood.find_best_candidate(pool=pool)
+            candidate = neighborhood.find_best_candidate(pool=pool, pool_size=pool_size)
             if candidate is not None:
                 result = min(result, candidate)
 

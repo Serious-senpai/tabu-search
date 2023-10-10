@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import itertools
-import os
 from collections import deque
 from multiprocessing import pool
 from typing import ClassVar, Deque, List, Optional, Tuple, Set, TYPE_CHECKING
@@ -81,12 +80,11 @@ class Swap(BasePathNeighborhood[Tuple[int, int, int, int]]):
 
         return self.cls(after=after, before=before, cost=cost)
 
-    def find_best_candidate(self, *, pool: pool.Pool) -> Optional[PathSolution]:
-        concurrency = os.cpu_count() or 1
+    def find_best_candidate(self, *, pool: pool.Pool, pool_size: int) -> Optional[PathSolution]:
         solution = self._solution
 
-        args: List[IPCBundle[Swap, List[Tuple[int, int, int, int]]]] = [IPCBundle(self, []) for _ in range(concurrency)]
-        args_index_iteration = itertools.cycle(range(concurrency))
+        args: List[IPCBundle[Swap, List[Tuple[int, int, int, int]]]] = [IPCBundle(self, []) for _ in range(pool_size)]
+        args_index_iteration = itertools.cycle(range(pool_size))
 
         for first_head_index in range(solution.dimension):
             first_tail_index = (first_head_index + self._first_length - 1) % solution.dimension

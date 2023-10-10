@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import cProfile
 import json
+import os
 from typing import Optional, TYPE_CHECKING
 
 from tsp import PathSolution, Swap, SegmentShift, SegmentReverse
@@ -19,6 +20,7 @@ class Namespace(argparse.Namespace):
         optimal: bool
         verbose: bool
         dump: Optional[str]
+        pool_size: int
 
 
 if __name__ == "__main__":
@@ -37,6 +39,9 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--optimal", action="store_true", help="read the optimal solution from the problem archive")
     parser.add_argument("-v", "--verbose", action="store_true", help="whether to display the progress bar and plot the solution")
     parser.add_argument("-d", "--dump", type=str, help="dump the solution to a file")
+
+    default_pool_size = os.cpu_count() or 1
+    parser.add_argument("--pool-size", default=default_pool_size, type=int, help=f"the size of the process pool (default: {default_pool_size})")
 
     namespace: Namespace = parser.parse_args()  # type: ignore
     print(namespace)
@@ -61,6 +66,7 @@ if __name__ == "__main__":
             exit(0)
         else:
             solution = PathSolution.tabu_search(
+                pool_size=namespace.pool_size,
                 iterations_count=namespace.iterations,
                 use_tqdm=namespace.verbose,
                 shuffle_after=namespace.shuffle_after,
