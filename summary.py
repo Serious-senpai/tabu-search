@@ -1,9 +1,11 @@
-import csv
 import json
 import os
 import re
+from io import TextIOWrapper
 from pathlib import Path
 from typing import Dict
+
+from tsp import OptimalSolutionNotFound, PathSolution
 
 
 summary_dir = Path("summary/")
@@ -20,9 +22,9 @@ def to_map(*args: str) -> Dict[str, str]:
     return result
 
 
-def write_to_csv(
+def write_row(
     *,
-    writer: csv.DictWriter,
+    file: TextIOWrapper,
     path: Path,
     problem: str,
     iterations: str,
@@ -37,24 +39,45 @@ def write_to_csv(
     assert tabu_size == str(data["tabu-size"])
     assert shuffle_after == str(data["shuffle-after"])
 
-    writer.writerow(to_map(problem, iterations, tabu_size, shuffle_after, str(data["cost"]), str(data["path"])))
+    file.write(",".join((problem, iterations, tabu_size, shuffle_after, str(data["cost"]), "\"" + str(data["path"]) + "\"")) + "\n")
 
 
-with open(summary_dir / "non-euclidean.csv", "w", newline="") as csvfile:
-    writer = csv.DictWriter(csvfile, fieldnames=field_names)
-    writer.writeheader()
+def write_summary_rows(
+    *,
+    file: TextIOWrapper,
+    problem: str,
+) -> None:
+    PathSolution.import_problem(problem)
+    file.write("Minimum\nAverage\nOptimal")
+    try:
+        solution = PathSolution.read_optimal_solution()
+        file.write(f",,,,{solution.cost()}")
+    except OptimalSolutionNotFound:
+        pass
 
+    file.write("\n")
+
+
+with open(summary_dir / "non-euclidean.csv", "w") as csv:
+    csv.write(",".join(field_names) + "\n")
     for file in sorted(os.listdir(summary_dir)):
         if match := non_euc_pattern.fullmatch(file):
             problem, iterations, tabu_size, shuffle_after = match.groups()
-            write_to_csv(writer=writer, path=summary_dir / file, problem=problem, iterations=iterations, tabu_size=tabu_size, shuffle_after=shuffle_after)
+            write_row(file=csv, path=summary_dir / file, problem=problem, iterations=iterations, tabu_size=tabu_size, shuffle_after=shuffle_after)
 
 
-with open(summary_dir / "euclidean.csv", "w", newline="") as csvfile:
-    writer = csv.DictWriter(csvfile, fieldnames=field_names)
-    writer.writeheader()
+with open(summary_dir / "euclidean.csv", "w") as csv:
+    csv.write(",".join(field_names) + "\n")
 
+    last_problem = None
     for file in sorted(os.listdir(summary_dir)):
         if match := euc_pattern.fullmatch(file):
             problem, iterations, tabu_size, shuffle_after = match.groups()
-            write_to_csv(writer=writer, path=summary_dir / file, problem=problem, iterations=iterations, tabu_size=tabu_size, shuffle_after=shuffle_after)
+            if last_problem is not None and problem != last_problem:
+                write_summary_rows(file=csv, problem=last_problem)
+
+            write_row(file=csv, path=summary_dir / file, problem=problem, iterations=iterations, tabu_size=tabu_size, shuffle_after=shuffle_after)
+            last_problem = problem
+
+    if problem is not None:
+        write_summary_rows(file=csv, problem=last_problem)
