@@ -6,7 +6,7 @@ import json
 import os
 from typing import Optional, TYPE_CHECKING
 
-from tsp import PathSolution, Swap, SegmentShift, SegmentReverse
+from ts import tsp
 
 
 class Namespace(argparse.Namespace):
@@ -32,8 +32,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-e", "--euclide",
         action="store_true",
-        help="calculate using Euclidean distance sqrt(dx ^ 2 + dy ^ 2) instead of dx + dy, note that all distances are rounded to integers"
-        "and numerical roundings may vary according to different machines",
+        help="calculate using Euclidean distances instead of Manhattan, note that all distances are rounded to integers and numerical roundings may vary according to different machines",
     )
     parser.add_argument("-p", "--profile", action="store_true", help="run in profile mode and exit immediately")
     parser.add_argument("-o", "--optimal", action="store_true", help="read the optimal solution from the problem archive")
@@ -45,7 +44,7 @@ if __name__ == "__main__":
 
     namespace: Namespace = parser.parse_args()  # type: ignore
     print(namespace)
-    PathSolution.import_problem(namespace.problem, euclide=namespace.euclide)
+    tsp.TSPPathSolution.import_problem(namespace.problem, euclide=namespace.euclide)
 
     if namespace.optimal:
         print("Reading optimal solution from the archive")
@@ -53,19 +52,19 @@ if __name__ == "__main__":
             cProfile.run("PathSolution.read_optimal_solution()")
             exit(0)
         else:
-            solution = PathSolution.read_optimal_solution()
+            solution = tsp.TSPPathSolution.read_optimal_solution()
 
     else:
-        Swap.reset_tabu(maxlen=namespace.tabu_size)
-        SegmentShift.reset_tabu(maxlen=namespace.tabu_size)
-        SegmentReverse.reset_tabu(maxlen=namespace.tabu_size)
+        tsp.Swap.reset_tabu(maxlen=namespace.tabu_size)
+        tsp.SegmentShift.reset_tabu(maxlen=namespace.tabu_size)
+        tsp.SegmentReverse.reset_tabu(maxlen=namespace.tabu_size)
 
         eval_func = f"PathSolution.tabu_search(iterations_count={namespace.iterations}, use_tqdm={namespace.verbose}, shuffle_after={namespace.shuffle_after})"
         if namespace.profile:
             cProfile.run(eval_func)
             exit(0)
         else:
-            solution = PathSolution.tabu_search(
+            solution = tsp.TSPPathSolution.tabu_search(
                 pool_size=namespace.pool_size,
                 iterations_count=namespace.iterations,
                 use_tqdm=namespace.verbose,

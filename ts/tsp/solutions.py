@@ -12,17 +12,18 @@ from typing import ClassVar, Iterable, List, Optional, Tuple, Union, TYPE_CHECKI
 from matplotlib import axes, pyplot
 from tqdm import tqdm
 
-from .abc import BaseNeighborhood, BaseSolution
 from .errors import OptimalSolutionNotFound, ProblemNotFound, ProblemParsingException, UnsupportedEdgeWeightType
 from .neighborhoods import SegmentReverse, SegmentShift, Swap
+from ..abc import BaseNeighborhood, BaseSolution
 
 
 __all__ = (
-    "PathSolution",
+    "TSPPathSolution",
 )
 
 
-class PathSolution(BaseSolution):
+class TSPPathSolution(BaseSolution):
+    """Represents a solution to the TSP problem"""
 
     __slots__ = (
         "_cost",
@@ -80,9 +81,9 @@ class PathSolution(BaseSolution):
     def cost(self) -> float:
         return self._cost
 
-    def post_optimization(self, *, pool: pool.Pool, pool_size: int, use_tqdm: bool) -> PathSolution:
+    def post_optimization(self, *, pool: pool.Pool, pool_size: int, use_tqdm: bool) -> TSPPathSolution:
         result = self
-        iterations: Union[Tuple[BaseNeighborhood[PathSolution], ...], tqdm[BaseNeighborhood[PathSolution]]] = self.get_neighborhoods()
+        iterations: Union[Tuple[BaseNeighborhood[TSPPathSolution], ...], tqdm[BaseNeighborhood[TSPPathSolution]]] = self.get_neighborhoods()
         if use_tqdm:
             iterations = tqdm(iterations, desc="Post-optimization", ascii=" █", colour="blue")
 
@@ -93,7 +94,7 @@ class PathSolution(BaseSolution):
 
         return result
 
-    def get_neighborhoods(self) -> Tuple[BaseNeighborhood[PathSolution], ...]:
+    def get_neighborhoods(self) -> Tuple[BaseNeighborhood[TSPPathSolution], ...]:
         return (
             Swap(self, first_length=1, second_length=1),
             Swap(self, first_length=2, second_length=1),
@@ -108,7 +109,7 @@ class PathSolution(BaseSolution):
             SegmentReverse(self, segment_length=6),
         )
 
-    def shuffle(self, *, use_tqdm: bool = True) -> PathSolution:
+    def shuffle(self, *, use_tqdm: bool = True) -> TSPPathSolution:
         def adjacent_distance(index: int) -> float:
             return self.distances[index][self.after[index]] + self.distances[index][self.before[index]]
 
@@ -151,7 +152,7 @@ class PathSolution(BaseSolution):
         pyplot.show()
 
     @classmethod
-    def initial(cls) -> PathSolution:
+    def initial(cls) -> TSPPathSolution:
         after = [-1] * cls.dimension
         before = [-1] * cls.dimension
 
@@ -170,7 +171,7 @@ class PathSolution(BaseSolution):
         return cls(after=after, before=before)
 
     @classmethod
-    def read_optimal_solution(cls) -> PathSolution:
+    def read_optimal_solution(cls) -> TSPPathSolution:
         archive_file = path.join("problems", f"{cls.problem_name}.opt.tour", f"{cls.problem_name}.opt.tour")
         if not path.isfile(archive_file):
             raise OptimalSolutionNotFound(cls.problem_name)
@@ -192,7 +193,7 @@ class PathSolution(BaseSolution):
         return cls.from_path(sol_path)
 
     @classmethod
-    def from_path(cls, path: Union[List[int], Tuple[int, ...]], /) -> PathSolution:
+    def from_path(cls, path: Union[List[int], Tuple[int, ...]], /) -> TSPPathSolution:
         after = [-1] * cls.dimension
         before = [-1] * cls.dimension
         for index in range(cls.dimension):

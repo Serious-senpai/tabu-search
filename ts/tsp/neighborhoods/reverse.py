@@ -6,9 +6,9 @@ from multiprocessing import pool
 from typing import ClassVar, Deque, List, Optional, Tuple, Set, TYPE_CHECKING
 
 from .base import BasePathNeighborhood
-from .bundle import IPCBundle
+from ...bundle import IPCBundle
 if TYPE_CHECKING:
-    from ..solutions import PathSolution
+    from ..solutions import TSPPathSolution
 
 
 __all__ = ("SegmentReverse",)
@@ -25,13 +25,13 @@ class SegmentReverse(BasePathNeighborhood[Tuple[int, int]]):
     if TYPE_CHECKING:
         _segment_length: int
 
-    def __init__(self, solution: PathSolution, *, segment_length: int) -> None:
+    def __init__(self, solution: TSPPathSolution, *, segment_length: int) -> None:
         super().__init__(solution)
         self._segment_length = segment_length
         if segment_length < 3:
             raise ValueError("Segment length must be 3 or more")
 
-    def reverse(self, segment: List[int]) -> PathSolution:
+    def reverse(self, segment: List[int]) -> TSPPathSolution:
         solution = self._solution
 
         before = list(solution.before)
@@ -54,7 +54,7 @@ class SegmentReverse(BasePathNeighborhood[Tuple[int, int]]):
 
         return self.cls(after=after, before=before, cost=cost)
 
-    def find_best_candidate(self, *, pool: pool.Pool, pool_size: int) -> Optional[PathSolution]:
+    def find_best_candidate(self, *, pool: pool.Pool, pool_size: int) -> Optional[TSPPathSolution]:
         solution = self._solution
 
         args: List[IPCBundle[SegmentReverse, List[List[int]]]] = [IPCBundle(self, []) for _ in range(pool_size)]
@@ -67,7 +67,7 @@ class SegmentReverse(BasePathNeighborhood[Tuple[int, int]]):
 
             args[next(args_index_iteration)].data.append(segment)
 
-        result: Optional[PathSolution] = None
+        result: Optional[TSPPathSolution] = None
         min_pair: Optional[Tuple[int, int]] = None
         for result_temp, min_pair_temp in pool.map(self.static_find_best_candidate, args):
             if result_temp is None or min_pair_temp is None:
@@ -83,11 +83,11 @@ class SegmentReverse(BasePathNeighborhood[Tuple[int, int]]):
         return result
 
     @staticmethod
-    def static_find_best_candidate(bundle: IPCBundle[SegmentReverse, List[List[int]]]) -> Tuple[Optional[PathSolution], Optional[Tuple[int, int]]]:
+    def static_find_best_candidate(bundle: IPCBundle[SegmentReverse, List[List[int]]]) -> Tuple[Optional[TSPPathSolution], Optional[Tuple[int, int]]]:
         neighborhood = bundle.neighborhood
         neighborhood._ensure_imported_data()
 
-        result: Optional[PathSolution] = None
+        result: Optional[TSPPathSolution] = None
         min_pair: Optional[Tuple[int, int]] = None
         for segment in bundle.data:
             shifted = neighborhood.reverse(segment)

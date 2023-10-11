@@ -6,9 +6,9 @@ from multiprocessing import pool
 from typing import ClassVar, Deque, List, Optional, Tuple, Set, TYPE_CHECKING
 
 from .base import BasePathNeighborhood
-from .bundle import IPCBundle
+from ...bundle import IPCBundle
 if TYPE_CHECKING:
-    from ..solutions import PathSolution
+    from ..solutions import TSPPathSolution
 
 
 __all__ = ("SegmentShift",)
@@ -25,13 +25,13 @@ class SegmentShift(BasePathNeighborhood[Tuple[int, int, int]]):
     if TYPE_CHECKING:
         _segment_length: int
 
-    def __init__(self, solution: PathSolution, *, segment_length: int) -> None:
+    def __init__(self, solution: TSPPathSolution, *, segment_length: int) -> None:
         super().__init__(solution)
         self._segment_length = segment_length
         if segment_length > solution.dimension + 2:
             raise ValueError(f"Segment length {segment_length} is too low.")
 
-    def insert_after(self, segment_first: int, segment_last: int, x: int) -> PathSolution:
+    def insert_after(self, segment_first: int, segment_last: int, x: int) -> TSPPathSolution:
         solution = self._solution
 
         before = list(solution.before)
@@ -55,7 +55,7 @@ class SegmentShift(BasePathNeighborhood[Tuple[int, int, int]]):
 
         return self.cls(after=after, before=before, cost=cost)
 
-    def find_best_candidate(self, *, pool: pool.Pool, pool_size: int) -> Optional[PathSolution]:
+    def find_best_candidate(self, *, pool: pool.Pool, pool_size: int) -> Optional[TSPPathSolution]:
         solution = self._solution
 
         args: List[IPCBundle[SegmentShift, List[Tuple[int, int, int]]]] = [IPCBundle(self, []) for _ in range(pool_size)]
@@ -67,7 +67,7 @@ class SegmentShift(BasePathNeighborhood[Tuple[int, int, int]]):
                 index = (segment_end_index + d + 1) % solution.dimension
                 args[next(args_index_iteration)].data.append((solution.path[segment_first_index], solution.path[segment_end_index], solution.path[index]))
 
-        result: Optional[PathSolution] = None
+        result: Optional[TSPPathSolution] = None
         min_pair: Optional[Tuple[int, int, int]] = None
         for result_temp, min_pair_temp in pool.map(self.static_find_best_candidate, args):
             if result_temp is None or min_pair_temp is None:
@@ -83,11 +83,11 @@ class SegmentShift(BasePathNeighborhood[Tuple[int, int, int]]):
         return result
 
     @staticmethod
-    def static_find_best_candidate(bundle: IPCBundle[SegmentShift, List[Tuple[int, int, int]]]) -> Tuple[Optional[PathSolution], Optional[Tuple[int, int, int]]]:
+    def static_find_best_candidate(bundle: IPCBundle[SegmentShift, List[Tuple[int, int, int]]]) -> Tuple[Optional[TSPPathSolution], Optional[Tuple[int, int, int]]]:
         neighborhood = bundle.neighborhood
         neighborhood._ensure_imported_data()
 
-        result: Optional[PathSolution] = None
+        result: Optional[TSPPathSolution] = None
         min_args: Optional[Tuple[int, int, int]] = None
         for args in bundle.data:
             shifted = neighborhood.insert_after(*args)

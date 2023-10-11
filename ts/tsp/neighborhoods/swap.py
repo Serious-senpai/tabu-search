@@ -6,9 +6,9 @@ from multiprocessing import pool
 from typing import ClassVar, Deque, List, Optional, Tuple, Set, TYPE_CHECKING
 
 from .base import BasePathNeighborhood
-from .bundle import IPCBundle
+from ...bundle import IPCBundle
 if TYPE_CHECKING:
-    from ..solutions import PathSolution
+    from ..solutions import TSPPathSolution
 
 
 __all__ = ("Swap",)
@@ -27,12 +27,12 @@ class Swap(BasePathNeighborhood[Tuple[int, int, int, int]]):
         _first_length: int
         _second_length: int
 
-    def __init__(self, solution: PathSolution, *, first_length: int, second_length: int) -> None:
+    def __init__(self, solution: TSPPathSolution, *, first_length: int, second_length: int) -> None:
         super().__init__(solution)
         self._first_length = first_length
         self._second_length = second_length
 
-    def swap(self, first_head: int, first_tail: int, second_head: int, second_tail: int) -> PathSolution:
+    def swap(self, first_head: int, first_tail: int, second_head: int, second_tail: int) -> TSPPathSolution:
         solution = self._solution
 
         before = list(solution.before)
@@ -80,7 +80,7 @@ class Swap(BasePathNeighborhood[Tuple[int, int, int, int]]):
 
         return self.cls(after=after, before=before, cost=cost)
 
-    def find_best_candidate(self, *, pool: pool.Pool, pool_size: int) -> Optional[PathSolution]:
+    def find_best_candidate(self, *, pool: pool.Pool, pool_size: int) -> Optional[TSPPathSolution]:
         solution = self._solution
 
         args: List[IPCBundle[Swap, List[Tuple[int, int, int, int]]]] = [IPCBundle(self, []) for _ in range(pool_size)]
@@ -102,7 +102,7 @@ class Swap(BasePathNeighborhood[Tuple[int, int, int, int]]):
                 )
                 args[next(args_index_iteration)].data.append(arg)
 
-        result: Optional[PathSolution] = None
+        result: Optional[TSPPathSolution] = None
         min_swap: Optional[Tuple[int, int, int, int]] = None
         for result_temp, min_swap_temp in pool.map(self.static_find_best_candidate, args):
             if result_temp is None or min_swap_temp is None:
@@ -118,11 +118,11 @@ class Swap(BasePathNeighborhood[Tuple[int, int, int, int]]):
         return result
 
     @staticmethod
-    def static_find_best_candidate(bundle: IPCBundle[Swap, List[Tuple[int, int, int, int]]]) -> Tuple[Optional[PathSolution], Optional[Tuple[int, int, int, int]]]:
+    def static_find_best_candidate(bundle: IPCBundle[Swap, List[Tuple[int, int, int, int]]]) -> Tuple[Optional[TSPPathSolution], Optional[Tuple[int, int, int, int]]]:
         neighborhood = bundle.neighborhood
         neighborhood._ensure_imported_data()
 
-        result: Optional[PathSolution] = None
+        result: Optional[TSPPathSolution] = None
         min_swap: Optional[Tuple[int, int, int, int]] = None
         for swap in bundle.data:
             swapped = neighborhood.swap(*swap)

@@ -5,7 +5,7 @@ from io import TextIOWrapper
 from pathlib import Path
 from typing import Dict
 
-from tsp import OptimalSolutionNotFound, PathSolution
+from ts import tsp
 
 
 summary_dir = Path("summary/")
@@ -47,12 +47,12 @@ def write_summary_rows(
     file: TextIOWrapper,
     problem: str,
 ) -> None:
-    PathSolution.import_problem(problem, euclide=True)
+    tsp.TSPPathSolution.import_problem(problem, euclide=True)
     file.write("Minimum\nAverage\nOptimal")
     try:
-        solution = PathSolution.read_optimal_solution()
+        solution = tsp.TSPPathSolution.read_optimal_solution()
         file.write(f",,,,{solution.cost()}")
-    except OptimalSolutionNotFound:
+    except tsp.OptimalSolutionNotFound:
         pass
 
     file.write("\n")
@@ -79,5 +79,5 @@ with open(summary_dir / "euclidean.csv", "w") as csv:
             write_row(file=csv, path=summary_dir / file, problem=problem, iterations=iterations, tabu_size=tabu_size, shuffle_after=shuffle_after)
             last_problem = problem
 
-    if problem is not None:
+    if last_problem is not None:
         write_summary_rows(file=csv, problem=last_problem)

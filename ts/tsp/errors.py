@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from typing import Any, TYPE_CHECKING
 
+from ..errors import TabuSearchException
+
 
 __all__ = (
-    "SolverException",
+    "TSPException",
     "ProblemNotFound",
     "ProblemParsingException",
     "UnsupportedEdgeWeightType",
@@ -12,19 +14,19 @@ __all__ = (
 )
 
 
-class SolverException(Exception):
-    """Base class for all exceptions from this library"""
+class TSPException(TabuSearchException):
+    """Base class for all exceptions from the TSP solver"""
     pass
 
 
-class ProblemNotFound(SolverException):
+class ProblemNotFound(TSPException):
     """Exception raised when the problem is not found within the archive"""
 
     def __init__(self, problem: Any, /) -> None:
         super().__init__(f"Cannot find any problems with the given name: {problem!r}")
 
 
-class ProblemParsingException(SolverException):
+class ProblemParsingException(TSPException):
     """Exception raised when parsing the problem input fails"""
 
     __slots__ = (
@@ -38,7 +40,8 @@ class ProblemParsingException(SolverException):
         self.original = original
 
 
-class UnsupportedEdgeWeightType(SolverException):
+class UnsupportedEdgeWeightType(TSPException):
+    """Exception raised when attempting to import a problem with an unsupported edge weight type"""
 
     __slots__ = (
         "edge_weight_type",
@@ -51,8 +54,8 @@ class UnsupportedEdgeWeightType(SolverException):
         super().__init__(f"Unsupported edge_weight_type {edge_weight_type!r}")
 
 
-class OptimalSolutionNotFound(SolverException):
-    """Exception raised when the *.opt.tour file not found for the current problem"""
+class OptimalSolutionNotFound(TSPException):
+    """Exception raised when the *.opt.tour solution file cannot be found for the current problem"""
 
     def __init__(self, problem: Any, /) -> None:
         super().__init__(f"Cannot find the optimal solution file for the given problem: {problem!r}")

@@ -2,15 +2,15 @@ from __future__ import annotations
 
 from typing import ClassVar, Deque, Generic, Set, TypeVar, TYPE_CHECKING
 
-from ..abc import BaseNeighborhood
+from ...abc import BaseNeighborhood
 if TYPE_CHECKING:
-    from ..solutions import PathSolution
+    from ..solutions import TSPPathSolution
 
 
 _T = TypeVar("_T")
 
 
-class BasePathNeighborhood(BaseNeighborhood["PathSolution"], Generic[_T]):
+class BasePathNeighborhood(BaseNeighborhood["TSPPathSolution"], Generic[_T]):
 
     __slots__ = ()
     if TYPE_CHECKING:
@@ -18,7 +18,7 @@ class BasePathNeighborhood(BaseNeighborhood["PathSolution"], Generic[_T]):
         _tabu_list: ClassVar[Deque[_T]]  # type: ignore
         _tabu_set: ClassVar[Set[_T]]  # type: ignore
 
-    def __init__(self, solution: PathSolution, /) -> None:
+    def __init__(self, solution: TSPPathSolution, /) -> None:
         super().__init__(solution)
         self.extras["problem"] = solution.problem_name
         self.extras["distances"] = solution.distances

@@ -2,14 +2,19 @@ from __future__ import annotations
 
 from typing import Generic, TypeVar, TYPE_CHECKING
 
-from .base import BasePathNeighborhood
+from .abc import BaseNeighborhood
 
 
 _T = TypeVar("_T")
-_NT = TypeVar("_NT", bound=BasePathNeighborhood)
+_NT = TypeVar("_NT", bound=BaseNeighborhood)
 
 
 class IPCBundle(Generic[_NT, _T]):
+    """Instances holding neighborhood additional data for IPC
+
+    There are 2 ways to pass data to another process: the first way is to use an instance from this
+    class, and the second way is to utilize `neighborhood.extras`.
+    """
 
     __slots__ = (
         "neighborhood",
