@@ -8,9 +8,13 @@ if TYPE_CHECKING:
 
 
 _T = TypeVar("_T")
+if TYPE_CHECKING:
+    _BaseNeighborhood = BaseNeighborhood[TSPPathSolution]
+else:
+    _BaseNeighborhood = BaseNeighborhood
 
 
-class BaseTSPNeighborhood(BaseNeighborhood["TSPPathSolution"], Generic[_T]):
+class BaseTSPNeighborhood(_BaseNeighborhood, Generic[_T]):
 
     __slots__ = ()
     if TYPE_CHECKING:
