@@ -47,7 +47,7 @@ def write_summary_rows(
     file: TextIOWrapper,
     problem: str,
 ) -> None:
-    PathSolution.import_problem(problem)
+    PathSolution.import_problem(problem, euclide=True)
     file.write("Minimum\nAverage\nOptimal")
     try:
         solution = PathSolution.read_optimal_solution()
