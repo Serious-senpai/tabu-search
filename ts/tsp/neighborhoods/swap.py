@@ -5,7 +5,7 @@ from collections import deque
 from multiprocessing import pool
 from typing import ClassVar, Deque, List, Optional, Tuple, Set, TYPE_CHECKING
 
-from .base import BasePathNeighborhood
+from .base import BaseTSPNeighborhood
 from ...bundle import IPCBundle
 if TYPE_CHECKING:
     from ..solutions import TSPPathSolution
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 __all__ = ("Swap",)
 
 
-class Swap(BasePathNeighborhood[Tuple[int, int, int, int]]):
+class Swap(BaseTSPNeighborhood[Tuple[int, int, int, int]]):
 
     __slots__ = (
         "_first_length",

@@ -5,7 +5,7 @@ from collections import deque
 from multiprocessing import pool
 from typing import ClassVar, Deque, List, Optional, Tuple, Set, TYPE_CHECKING
 
-from .base import BasePathNeighborhood
+from .base import BaseTSPNeighborhood
 from ...bundle import IPCBundle
 if TYPE_CHECKING:
     from ..solutions import TSPPathSolution
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 __all__ = ("SegmentReverse",)
 
 
-class SegmentReverse(BasePathNeighborhood[Tuple[int, int]]):
+class SegmentReverse(BaseTSPNeighborhood[Tuple[int, int]]):
 
     __slots__ = (
         "_segment_length",

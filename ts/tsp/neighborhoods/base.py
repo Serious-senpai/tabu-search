@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 _T = TypeVar("_T")
 
 
-class BasePathNeighborhood(BaseNeighborhood["TSPPathSolution"], Generic[_T]):
+class BaseTSPNeighborhood(BaseNeighborhood["TSPPathSolution"], Generic[_T]):
 
     __slots__ = ()
     if TYPE_CHECKING:
