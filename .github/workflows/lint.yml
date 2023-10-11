@@ -7,15 +7,24 @@ permissions:
 
 jobs:
   python:
-    name: Python lint
+    name: Check code format and typings
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Install autopep8
-      run: pip install autopep8
+    - name: Install checkers
+      run: pip install autopep8 mypy
+
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    - name: Install stub packages
+      run: mypy --install-types --non-interactive
 
     - name: Check code format
       run: autopep8 --exit-code --diff -aaar .
+
+    - name: Check typings
+      run: mypy .
