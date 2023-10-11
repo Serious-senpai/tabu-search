@@ -21,7 +21,7 @@ jobs:
       run: pip install -r requirements.txt
 
     - name: Install stub packages
-      run: mypy --install-types --non-interactive
+      run: pip install types-tqdm
 
     - name: Check code format
       run: autopep8 --exit-code --diff -aaar .
