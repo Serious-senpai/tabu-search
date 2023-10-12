@@ -34,7 +34,7 @@ jobs:
     - name: Install dependencies
       run: pip install -r requirements.txt
 
-    - name: Test samples
+    - name: Test sample
       run: python tsp.py ${{ matrix.problem }} --iter ${{ matrix.iterations }} --tabu-size ${{ matrix.tabu_size }} --shuffle-after ${{ matrix.shuffle_after }} --dump output-${{ matrix.problem }}-${{ matrix.iterations }}-${{ matrix.tabu_size }}-${{ matrix.shuffle_after }}.json
 
     - name: Upload solution
