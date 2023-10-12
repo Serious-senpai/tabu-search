@@ -204,7 +204,7 @@ class TSPPathSolution(BaseSolution):
         return cls(after=after, before=before)
 
     @classmethod
-    def import_problem(cls, problem: str, *, euclide: bool = False, precalculated_distances: Optional[Tuple[Tuple[float, ...], ...]] = None) -> None:
+    def import_problem(cls, problem: str, *, precalculated_distances: Optional[Tuple[Tuple[float, ...], ...]] = None) -> None:
         archive_file = path.join("problems", "tsp", f"{problem}.tsp", f"{problem}.tsp")
         if not path.isfile(archive_file):
             raise ProblemNotFound(problem)
@@ -230,12 +230,8 @@ class TSPPathSolution(BaseSolution):
 
                 if precalculated_distances is None:
                     distances = [[0.0] * cls.dimension for _ in range(cls.dimension)]
-                    if euclide:
-                        for i, j in itertools.combinations(range(cls.dimension), 2):
-                            distances[i][j] = distances[j][i] = int(sqrt((x[i] - x[j]) ** 2 + (y[i] - y[j]) ** 2))
-                    else:
-                        for i, j in itertools.combinations(range(cls.dimension), 2):
-                            distances[i][j] = distances[j][i] = abs(x[i] - x[j]) + abs(y[i] - y[j])
+                    for i, j in itertools.combinations(range(cls.dimension), 2):
+                        distances[i][j] = distances[j][i] = int(sqrt((x[i] - x[j]) ** 2 + (y[i] - y[j]) ** 2))
 
                     cls.distances = tuple(tuple(row) for row in distances)
 

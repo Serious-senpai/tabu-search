@@ -10,8 +10,7 @@ from ts import tsp
 
 summary_dir = Path("summary/")
 field_names = ("Problem", "Iterations", "Tabu size", "Shuffle after", "Cost", "Path")
-non_euc_pattern = re.compile(r"output-([a-z0-9]+)-(\d+)-(\d+)-(\d+)\.json")
-euc_pattern = re.compile(r"output-([a-z0-9]+)-(\d+)-(\d+)-(\d+)-e\.json")
+pattern = re.compile(r"output-([a-z0-9]+)-(\d+)-(\d+)-(\d+)-e\.json")
 
 
 def to_map(*args: str) -> Dict[str, str]:
@@ -47,7 +46,7 @@ def write_summary_rows(
     file: TextIOWrapper,
     problem: str,
 ) -> None:
-    tsp.TSPPathSolution.import_problem(problem, euclide=True)
+    tsp.TSPPathSolution.import_problem(problem)
     file.write("Minimum\nAverage\nOptimal")
     try:
         solution = tsp.TSPPathSolution.read_optimal_solution()
@@ -58,20 +57,12 @@ def write_summary_rows(
     file.write("\n")
 
 
-with open(summary_dir / "non-euclidean.csv", "w") as csv:
-    csv.write(",".join(field_names) + "\n")
-    for file in sorted(os.listdir(summary_dir)):
-        if match := non_euc_pattern.fullmatch(file):
-            problem, iterations, tabu_size, shuffle_after = match.groups()
-            write_row(file=csv, path=summary_dir / file, problem=problem, iterations=iterations, tabu_size=tabu_size, shuffle_after=shuffle_after)
-
-
-with open(summary_dir / "euclidean.csv", "w") as csv:
+with open(summary_dir / "summary.csv", "w") as csv:
     csv.write(",".join(field_names) + "\n")
 
     last_problem = None
     for file in sorted(os.listdir(summary_dir)):
-        if match := euc_pattern.fullmatch(file):
+        if match := pattern.fullmatch(file):
             problem, iterations, tabu_size, shuffle_after = match.groups()
             if last_problem is not None and problem != last_problem:
                 write_summary_rows(file=csv, problem=last_problem)

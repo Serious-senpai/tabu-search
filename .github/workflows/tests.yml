@@ -34,11 +34,8 @@ jobs:
     - name: Install dependencies
       run: pip install -r requirements.txt
 
-    - name: Test sample using dx + dy distances
+    - name: Test samples
       run: python tsp.py ${{ matrix.problem }} --iter ${{ matrix.iterations }} --tabu-size ${{ matrix.tabu_size }} --shuffle-after ${{ matrix.shuffle_after }} --dump output-${{ matrix.problem }}-${{ matrix.iterations }}-${{ matrix.tabu_size }}-${{ matrix.shuffle_after }}.json
-
-    - name: Test sample using Euclidean distances
-      run: python tsp.py ${{ matrix.problem }} --iter ${{ matrix.iterations }} --tabu-size ${{ matrix.tabu_size }} --shuffle-after ${{ matrix.shuffle_after }} --euclide --dump output-${{ matrix.problem }}-${{ matrix.iterations }}-${{ matrix.tabu_size }}-${{ matrix.shuffle_after }}-e.json
 
     - name: Upload solution
       uses: actions/upload-artifact@v3
