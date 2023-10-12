@@ -172,7 +172,7 @@ class TSPPathSolution(BaseSolution):
 
     @classmethod
     def read_optimal_solution(cls) -> TSPPathSolution:
-        archive_file = path.join("problems", f"{cls.problem_name}.opt.tour", f"{cls.problem_name}.opt.tour")
+        archive_file = path.join("problems", "tsp", f"{cls.problem_name}.opt.tour", f"{cls.problem_name}.opt.tour")
         if not path.isfile(archive_file):
             raise OptimalSolutionNotFound(cls.problem_name)
 
@@ -205,7 +205,7 @@ class TSPPathSolution(BaseSolution):
 
     @classmethod
     def import_problem(cls, problem: str, *, euclide: bool = False, precalculated_distances: Optional[Tuple[Tuple[float, ...], ...]] = None) -> None:
-        archive_file = path.join("problems", f"{problem}.tsp", f"{problem}.tsp")
+        archive_file = path.join("problems", "tsp", f"{problem}.tsp", f"{problem}.tsp")
         if not path.isfile(archive_file):
             raise ProblemNotFound(problem)
 
