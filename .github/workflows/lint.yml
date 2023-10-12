@@ -7,7 +7,7 @@ permissions:
 
 jobs:
   python:
-    name: Check code format and typings
+    name: Python lint
     runs-on: ubuntu-latest
 
     steps:
