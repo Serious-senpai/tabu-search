@@ -69,7 +69,7 @@ class SegmentReverse(BaseTSPNeighborhood[Tuple[int, int]]):
 
         result: Optional[TSPPathSolution] = None
         min_pair: Optional[Tuple[int, int]] = None
-        for result_temp, min_pair_temp in pool.map(self.static_find_best_candidate, args):
+        for result_temp, min_pair_temp in pool.imap(self.static_find_best_candidate, args):
             if result_temp is None or min_pair_temp is None:
                 continue
 

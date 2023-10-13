@@ -104,7 +104,7 @@ class Swap(BaseTSPNeighborhood[Tuple[int, int, int, int]]):
 
         result: Optional[TSPPathSolution] = None
         min_swap: Optional[Tuple[int, int, int, int]] = None
-        for result_temp, min_swap_temp in pool.map(self.static_find_best_candidate, args):
+        for result_temp, min_swap_temp in pool.imap(self.static_find_best_candidate, args):
             if result_temp is None or min_swap_temp is None:
                 continue
 
