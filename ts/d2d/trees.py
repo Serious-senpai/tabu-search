@@ -255,7 +255,7 @@ class EditableSegmentTree(Generic[_T]):
 
     def remove(self, index: int, /) -> None:
         """Remove an element at a specified index from the array"""
-        def _remove(tree_index: int, _: Optional[Tuple[_T, int]]) -> None:
+        def _remove(tree_index: int, _: Optional[_T]) -> None:
             self._tree[tree_index] = None
 
         self._update(index, at_position=_remove)
