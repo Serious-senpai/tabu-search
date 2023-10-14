@@ -61,7 +61,7 @@ jobs:
         path: tsp-summary/
 
     - name: View downloaded artifacts
-      run: ls summary/
+      run: ls tsp-summary/
 
     - name: Setup Python
       uses: actions/setup-python@v4

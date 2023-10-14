@@ -8,7 +8,7 @@ from typing import Dict
 from ts import tsp
 
 
-summary_dir = Path("summary/")
+summary_dir = Path("tsp-summary/")
 field_names = ("Problem", "Iterations", "Tabu size", "Shuffle after", "Cost", "Path")
 pattern = re.compile(r"output-([a-z0-9]+)-(\d+)-(\d+)-(\d+)\.json")
 
