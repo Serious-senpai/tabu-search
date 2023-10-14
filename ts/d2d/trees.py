@@ -7,7 +7,7 @@ from typing_extensions import SupportsIndex
 
 
 __all__ = (
-    "EditableSegmentTree",
+    "DynamicLengthSegmentTree",
 )
 _T = TypeVar("_T")
 
@@ -52,7 +52,7 @@ class _AutoExtendList(List[Optional[_T]]):
         return f"_AutoExtendList({super().__repr__()})"
 
 
-class EditableSegmentTree(Generic[_T]):
+class DynamicLengthSegmentTree(Generic[_T]):
     """Segment tree supporting insertion and deletion (although further improvements are required)"""
 
     __slots__ = (
@@ -191,7 +191,10 @@ class EditableSegmentTree(Generic[_T]):
         _update(0, 0, self._size - 1)
 
     def insert(self, index: int, value: _T) -> None:
-        """Insert a new value to the array"""
+        """Insert a new value to the array
+
+        Asymptotic in time complexity: O(logH), with H is the height of the tree
+        """
         if not self._in_range(index, (0, self._size)):
             message = f"Invalid insertion index {index}"
             raise ValueError(message)
@@ -254,14 +257,21 @@ class EditableSegmentTree(Generic[_T]):
         self._size += 1
 
     def remove(self, index: int, /) -> None:
-        """Remove an element at a specified index from the array"""
+        """Remove an element at a specified index from the array
+
+        Asymptotic in time complexity: O(logH), with H is the height of the tree
+        """
         def _remove(tree_index: int, _: Optional[_T]) -> None:
             self._tree[tree_index] = None
 
         self._update(index, at_position=_remove)
+        self._size -= 1
 
     def sum(self, query_low: int, query_high: int, /) -> _T:
-        """Calculate the sum of an interval from the array"""
+        """Calculate the sum of an interval from the array
+
+        Asymptotic in time complexity: O(logH), with H is the height of the tree
+        """
         if query_low > query_high:
             query_low, query_high = query_high, query_low
 
@@ -312,3 +322,35 @@ class EditableSegmentTree(Generic[_T]):
         result = _sum(0, 0, self._size - 1)
         assert result is not None
         return result
+
+    def flatten(self) -> List[_T]:
+        """Returns the underlying array that this tree represents
+
+        Asymptotic in time complexity: O(logH), with H is the height of the tree
+        """
+        array: List[Any] = [None] * self._size
+        tree = self._tree
+
+        def _flatten(tree_index: int, low: int, high: int) -> None:
+            if low == high:
+                current = tree[tree_index]
+                assert current is not None
+                array[low] = current[0]
+            else:
+                left_index = 2 * tree_index + 1
+                right_index = 2 * tree_index + 2
+
+                left = tree[left_index]
+                right = tree[right_index]
+
+                if left is not None:
+                    left_size = left[1]
+                    _flatten(left_index, low, low + left_size - 1)
+                else:
+                    left_size = 0
+
+                if right is not None:
+                    _flatten(right_index, low + left_size, high)
+
+        _flatten(0, 0, self._size - 1)
+        return array
