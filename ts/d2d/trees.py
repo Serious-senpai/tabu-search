@@ -324,10 +324,7 @@ class DynamicLengthSegmentTree(Generic[_T]):
         return result
 
     def flatten(self) -> List[_T]:
-        """Returns the underlying array that this tree represents
-
-        Asymptotic in time complexity: O(logH), with H is the height of the tree
-        """
+        """Returns the underlying array that this tree represents"""
         array: List[Any] = [None] * self._size
         tree = self._tree
 
