@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import operator
 from collections import deque
 from typing import Any, Callable, Deque, Iterable, Generic, List, Optional, Tuple, TypeVar, Union, TYPE_CHECKING, overload
 
-from typing_extensions import SupportsIndex
+from typing_extensions import Self, SupportsIndex
 
 
 __all__ = (
@@ -17,10 +18,13 @@ class _AutoExtendList(List[Optional[_T]]):
     def __extend(self, index: Union[SupportsIndex, slice], /) -> None:
         if isinstance(index, SupportsIndex):
             length = index.__index__() + 1
-        elif index.stop is not None:
-            length = index.stop
         else:
-            return
+            length = 0
+            if index.start is not None:
+                length = max(length, index.start)
+
+            if index.stop is not None:
+                length = max(length, index.stop)
 
         size = self.__len__()
         if size < length:
@@ -65,7 +69,7 @@ class DynamicSegmentTree(Generic[_T]):
         __size: int
         __tree: _AutoExtendList[Tuple[_T, int]]
 
-    def __init__(self, array: List[_T], *, operator: Callable[[_T, _T], _T]) -> None:
+    def __init__(self, array: List[_T], *, operator: Callable[[_T, _T], _T] = operator.add) -> None:
         self.__operator = operator
         self.__size = len(array)
         self.__tree = _AutoExtendList([None] * (4 * self.__size))
@@ -165,6 +169,14 @@ class DynamicSegmentTree(Generic[_T]):
                     current = tree[tree_index]
                     at_position(tree_index, None if current is None else current[0])
 
+                queue: Deque[int] = deque([2 * tree_index + 1, 2 * tree_index + 2])
+                while len(queue) > 0:
+                    index = queue.popleft()
+                    if index < len(tree):
+                        tree[index] = None
+                        queue.append(2 * index + 1)
+                        queue.append(2 * index + 2)
+
             else:
                 left = 2 * tree_index + 1
                 right = 2 * tree_index + 2
@@ -190,7 +202,7 @@ class DynamicSegmentTree(Generic[_T]):
 
         _update(0, 0, self.__size - 1)
 
-    def update(self, index: int, value: _T) -> None:
+    def update(self, index: int, value: _T) -> Self:
         """Update value at the specified index in the array
 
         Asymptotic in time complexity: O(H), where H is the height of the tree
@@ -198,9 +210,14 @@ class DynamicSegmentTree(Generic[_T]):
         def _update(tree_index: int, _: Optional[_T]) -> None:
             self.__tree[tree_index] = (value, 1)
 
-        self.__update(index, at_position=_update)
+        if not self.__in_range(index, (0, self.__size - 1)):
+            message = f"Invalid update index {index}"
+            raise ValueError(message)
 
-    def insert(self, index: int, value: _T) -> None:
+        self.__update(index, at_position=_update)
+        return self
+
+    def insert(self, index: int, value: _T) -> Self:
         """Insert a new value to the array
 
         Asymptotic in time complexity: O(H), where H is the height of the tree
@@ -265,8 +282,9 @@ class DynamicSegmentTree(Generic[_T]):
                 _update_right()
 
         self.__size += 1
+        return self
 
-    def remove(self, index: int, /) -> None:
+    def remove(self, index: int, /) -> Self:
         """Remove an element at a specified index from the array
 
         Asymptotic in time complexity: O(H), where H is the height of the tree
@@ -274,8 +292,13 @@ class DynamicSegmentTree(Generic[_T]):
         def _remove(tree_index: int, _: Optional[_T]) -> None:
             self.__tree[tree_index] = None
 
+        if not self.__in_range(index, (0, self.__size - 1)):
+            message = f"Invalid deletion index {index}"
+            raise ValueError(message)
+
         self.__update(index, at_position=_remove)
         self.__size -= 1
+        return self
 
     def sum(self, query_low: int, query_high: int, /) -> _T:
         """Calculate the sum of an interval from the array
