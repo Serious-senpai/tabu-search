@@ -164,11 +164,7 @@ class DynamicSegmentTree(Generic[_T]):
         tree = self.__tree
 
         def _update(tree_index: int, low: int, high: int) -> None:
-            if low == high:
-                if at_position is not None:
-                    current = tree[tree_index]
-                    at_position(tree_index, None if current is None else current[0])
-
+            if low == high == changed:
                 queue: Deque[int] = deque([2 * tree_index + 1, 2 * tree_index + 2])
                 while len(queue) > 0:
                     index = queue.popleft()
@@ -176,6 +172,10 @@ class DynamicSegmentTree(Generic[_T]):
                         tree[index] = None
                         queue.append(2 * index + 1)
                         queue.append(2 * index + 2)
+
+                if at_position is not None:
+                    current = tree[tree_index]
+                    at_position(tree_index, None if current is None else current[0])
 
             else:
                 left = 2 * tree_index + 1
