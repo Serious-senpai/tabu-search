@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import random
+from collections import deque
 from functools import total_ordering
 from multiprocessing import Pool, pool
-from typing import Any, Dict, Generic, Optional, Tuple, Type, TypeVar, Union, TYPE_CHECKING
+from typing import Any, ClassVar, Deque, Dict, Generic, Optional, Set, Tuple, Type, TypeVar, Union, TYPE_CHECKING
 
 from tqdm import tqdm
 if TYPE_CHECKING:
@@ -26,7 +27,7 @@ class BaseSolution:
         """Calculate the cost for this solution"""
         raise NotImplementedError
 
-    def get_neighborhoods(self) -> Tuple[BaseNeighborhood[Self], ...]:
+    def get_neighborhoods(self) -> Tuple[BaseNeighborhood[Self, Any], ...]:
         """Returns all neighborhoods of the current solution"""
         raise NotImplementedError
 
@@ -115,32 +116,40 @@ class BaseSolution:
         return NotImplemented
 
 
-T = TypeVar("T", bound=BaseSolution)
+_ST = TypeVar("_ST", bound=BaseSolution)
+_TT = TypeVar("_TT")
 
 
-class BaseNeighborhood(Generic[T]):
+class BaseNeighborhood(Generic[_ST, _TT]):
     """Base class for generating neighborhood of a solution"""
 
     __slots__ = (
         "_solution",
+        "cls",
         "extras",
     )
     if TYPE_CHECKING:
-        _solution: T
+        _solution: _ST
+        cls: Type[_ST]
         extras: Dict[Any, Any]
 
-    def __init__(self, solution: T, /) -> None:
+        _maxlen: ClassVar[int]
+        _tabu_list: ClassVar[Deque[_TT]]  # type: ignore
+        _tabu_set: ClassVar[Set[_TT]]  # type: ignore
+
+    def __init__(self, solution: _ST, /) -> None:
         self._solution = solution
+        self.cls = type(solution)
         self.extras = {}
 
-    @property
-    def cls(self) -> Type[T]:
-        return type(self._solution)
+    def __init_subclass__(cls, *args: Any, **kwargs: Any) -> None:
+        super().__init_subclass__(*args, **kwargs)
+        cls._maxlen = 10
+        cls._tabu_list = deque()
+        cls._tabu_set = set()
 
-    def find_best_candidate(self, *, pool: pool.Pool, pool_size: int) -> Optional[T]:
+    def find_best_candidate(self, *, pool: pool.Pool, pool_size: int) -> Optional[_ST]:
         """Find the best candidate solution within the neighborhood of the current one.
-
-        Subclasses should implement the tabu logic internally.
 
         Parameters
         -----
@@ -150,3 +159,22 @@ class BaseNeighborhood(Generic[T]):
             The process pool size
         """
         raise NotImplementedError
+
+    @classmethod
+    def add_to_tabu(cls, target: _TT) -> None:
+        cls._tabu_set.add(target)
+        cls._tabu_list.append(target)
+        cls.remove_from_tabu()
+
+    @classmethod
+    def remove_from_tabu(cls) -> None:
+        while len(cls._tabu_set) > cls._maxlen:
+            try:
+                cls._tabu_set.remove(cls._tabu_list.popleft())
+            except KeyError:
+                pass
+
+    @classmethod
+    def reset_tabu(cls, *, maxlen: int = 10) -> None:
+        cls._maxlen = maxlen
+        cls.remove_from_tabu()

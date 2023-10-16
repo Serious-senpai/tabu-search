@@ -7,7 +7,7 @@ import re
 from math import sqrt
 from multiprocessing import pool
 from os import path
-from typing import ClassVar, Iterable, List, Optional, Tuple, Union, TYPE_CHECKING
+from typing import Any, ClassVar, Iterable, List, Optional, Tuple, Union, TYPE_CHECKING
 
 from matplotlib import axes, pyplot
 from tqdm import tqdm
@@ -83,7 +83,7 @@ class TSPPathSolution(BaseSolution):
 
     def post_optimization(self, *, pool: pool.Pool, pool_size: int, use_tqdm: bool) -> TSPPathSolution:
         result = self
-        iterations: Union[Tuple[BaseNeighborhood[TSPPathSolution], ...], tqdm[BaseNeighborhood[TSPPathSolution]]] = self.get_neighborhoods()
+        iterations: Union[Tuple[BaseNeighborhood[TSPPathSolution, Any], ...], tqdm[BaseNeighborhood[TSPPathSolution, Any]]] = self.get_neighborhoods()
         if use_tqdm:
             iterations = tqdm(iterations, desc="Post-optimization", ascii=" █", colour="blue")
 
@@ -94,7 +94,7 @@ class TSPPathSolution(BaseSolution):
 
         return result
 
-    def get_neighborhoods(self) -> Tuple[BaseNeighborhood[TSPPathSolution], ...]:
+    def get_neighborhoods(self) -> Tuple[BaseNeighborhood[TSPPathSolution, Any], ...]:
         return (
             Swap(self, first_length=1, second_length=1),
             Swap(self, first_length=2, second_length=1),

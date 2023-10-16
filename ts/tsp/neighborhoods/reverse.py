@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import itertools
-from collections import deque
 from multiprocessing import pool
-from typing import ClassVar, Deque, List, Optional, Tuple, Set, TYPE_CHECKING
+from typing import List, Optional, Tuple, TYPE_CHECKING
 
-from .base import BaseTSPNeighborhood
+from .base import TSPNeighborhoodMixin
+from ...abc import BaseNeighborhood
 from ...bundle import IPCBundle
 if TYPE_CHECKING:
     from ..solutions import TSPPathSolution
@@ -14,14 +14,17 @@ if TYPE_CHECKING:
 __all__ = ("SegmentReverse",)
 
 
-class SegmentReverse(BaseTSPNeighborhood[Tuple[int, int]]):
+if TYPE_CHECKING:
+    _BaseNeighborhood = BaseNeighborhood[TSPPathSolution, Tuple[int, int]]
+else:
+    _BaseNeighborhood = BaseNeighborhood
+
+
+class SegmentReverse(TSPNeighborhoodMixin, _BaseNeighborhood):
 
     __slots__ = (
         "_segment_length",
     )
-    _maxlen: ClassVar[int] = 100
-    _tabu_list: ClassVar[Deque[Tuple[int, int]]] = deque()
-    _tabu_set: ClassVar[Set[Tuple[int, int]]] = set()
     if TYPE_CHECKING:
         _segment_length: int
 
