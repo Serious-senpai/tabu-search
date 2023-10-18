@@ -89,7 +89,8 @@ class DynamicSegmentTree(Generic[_T]):
 
                 tree[tree_index] = self.__merge(tree_index)
 
-        build(0, 0, self.__size - 1)
+        if self.__size > 0:
+            build(0, 0, self.__size - 1)
 
     def __nullable_operator(self, first: Optional[_T], second: Optional[_T], /) -> Optional[_T]:
         if first is None:
@@ -202,6 +203,12 @@ class DynamicSegmentTree(Generic[_T]):
 
         _update(0, 0, self.__size - 1)
 
+    def clear(self) -> Self:
+        self.__size = 0
+        self.__tree.clear()
+
+        return self
+
     def update(self, index: int, value: _T) -> Self:
         """Update value at the specified index in the array
 
@@ -227,7 +234,10 @@ class DynamicSegmentTree(Generic[_T]):
             raise ValueError(message)
 
         tree = self.__tree
-        if index == 0:
+        if self.__size == 0:
+            tree[0] = (value, 1)
+
+        elif index == 0:
             def _insert_front(tree_index: int, current_value: Optional[_T]) -> None:
                 left = 2 * tree_index + 1
                 right = 2 * tree_index + 2

@@ -1,0 +1,48 @@
+{
+    "1": {
+        "takeoffSpeed [m/s]": 15.6464,
+        "cruiseSpeed [m/s]": 31.2928,
+        "landingSpeed [m/s]": 7.8232,
+        "cruiseAlt [m]": 50,
+        "capacity [kg]": 2.27,
+        "batteryPower [Joule]": 457503,
+        "speed_type": "high",
+        "range": "low"
+    },
+    "2": {
+        "takeoffSpeed [m/s]": 15.6464,
+        "cruiseSpeed [m/s]": 31.2928,
+        "landingSpeed [m/s]": 7.8232,
+        "cruiseAlt [m]": 50,
+        "capacity [kg]": 2.27,
+        "batteryPower [Joule]": 904033,
+        "speed_type": "high",
+        "range": "high"
+    },
+    "3": {
+        "takeoffSpeed [m/s]": 7.8232,
+        "cruiseSpeed [m/s]": 15.6464,
+        "landingSpeed [m/s]": 3.9116,
+        "cruiseAlt [m]": 50,
+        "capacity [kg]": 2.27,
+        "batteryPower [Joule]": 291094,
+        "speed_type": "low",
+        "range": "low"
+    },
+    "4": {
+        "takeoffSpeed [m/s]": 7.8232,
+        "cruiseSpeed [m/s]": 15.6464,
+        "landingSpeed [m/s]": 3.9116,
+        "cruiseAlt [m]": 50,
+        "capacity [kg]": 2.27,
+        "batteryPower [Joule]": 562990,
+        "speed_type": "low",
+        "range": "high"
+    },
+    "k1": 0.8554,
+    "k2 (sqrt(kg/m)": 0.3051,
+    "c1 (sqrt(m/kg)": 2.8037,
+    "c2 (sqrt(m/kg)": 0.3177,
+    "c4 (kg/m)": 0.0296,
+    "c5 (Ns/m)": 0.0279
+}
