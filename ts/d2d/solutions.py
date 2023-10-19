@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import itertools
 import re
 from enum import Enum
+from functools import partial
 from math import sqrt
 from os.path import join
 from typing import ClassVar, Iterable, List, Optional, Tuple, Union, TYPE_CHECKING, final
+
+from matplotlib import axes, pyplot
 
 from .config import TruckConfig, DroneLinearConfig, DroneNonlinearConfig, DroneEnduranceConfig
 from .errors import ImportException
@@ -125,7 +129,7 @@ class D2DPathSolution(SolutionMetricsMixin, BaseSolution):
             if self.energy_mode == DroneEnergyConsumptionMode.NON_LINEAR:
                 config = self.drone_nonlinear_config[drone]
 
-            vertical_time = config.altitude * (1 / config.takeoff + 1 / config.landing_speed)
+            vertical_time = config.altitude * (1 / config.takeoff_speed + 1 / config.landing_speed)
 
             timestamp = 0.0
             last: Optional[int] = None
@@ -186,7 +190,7 @@ class D2DPathSolution(SolutionMetricsMixin, BaseSolution):
             if self.energy_mode == DroneEnergyConsumptionMode.NON_LINEAR:
                 config = self.drone_nonlinear_config[drone]
 
-            vertical_time = config.altitude * (1 / config.takeoff + 1 / config.landing_speed)
+            vertical_time = config.altitude * (1 / config.takeoff_speed + 1 / config.landing_speed)
 
             drone_consumption: List[Tuple[float, ...]] = []
             for path in paths:
@@ -197,7 +201,7 @@ class D2DPathSolution(SolutionMetricsMixin, BaseSolution):
                     weight += self.demands[last]
                     time = vertical_time + self.distance(last, index) / config.cruise_speed
                     if isinstance(config, DroneLinearConfig):
-                        energy = time * (config.beta * weight + config.gamma)
+                        energy = time * config.power(weight)
 
                     else:
                         energy = time * (config.takeoff_power(weight) + config.landing_power(weight) + config.cruise_power(weight))
@@ -210,8 +214,158 @@ class D2DPathSolution(SolutionMetricsMixin, BaseSolution):
 
         return tuple(result)
 
-    def distance(self, first: int, second: int, /) -> float:
-        return sqrt((self.x[first] - self.x[second]) ** 2 + (self.y[first] - self.y[second]) ** 2)
+    def plot(self) -> None:
+        _, ax = pyplot.subplots()
+        assert isinstance(ax, axes.Axes)
+
+        colors = (
+            "red",
+            "green",
+            "cyan",
+            "darkblue",
+            "darkviolet",
+            "violet",
+            "gray",
+            "dodgerblue",
+        )
+        colors_iter = itertools.cycle(colors)
+        for paths in self.drone_paths:
+            drone_x: List[float] = []
+            drone_y: List[float] = []
+            drone_u: List[float] = []
+            drone_v: List[float] = []
+            for path in paths:
+                for index in range(len(path) - 1):
+                    current = path[index]
+                    after = path[index + 1]
+
+                    drone_x.append(self.x[current])
+                    drone_y.append(self.y[current])
+                    drone_u.append(self.x[after] - self.x[current])
+                    drone_v.append(self.y[after] - self.y[current])
+
+            ax.quiver(
+                drone_x,
+                drone_y,
+                drone_u,
+                drone_v,
+                color=next(colors_iter),
+                angles="xy",
+                scale_units="xy",
+                scale=1,
+            )
+
+        for path in self.technician_paths:
+            technician_x: List[float] = []
+            technician_y: List[float] = []
+            technician_u: List[float] = []
+            technician_v: List[float] = []
+            for index in range(len(path) - 1):
+                current = path[index]
+                after = path[index + 1]
+
+                technician_x.append(self.x[current])
+                technician_y.append(self.y[current])
+                technician_u.append(self.x[after] - self.x[current])
+                technician_v.append(self.y[after] - self.y[current])
+
+            ax.quiver(
+                technician_x,
+                technician_y,
+                technician_u,
+                technician_v,
+                color=next(colors_iter),
+                angles="xy",
+                scale_units="xy",
+                scale=1,
+            )
+
+        ax.scatter((0,), (0,), c="black", label="Deport")
+        ax.scatter(
+            [self.x[index] for index in range(1, 1 + self.customers_count) if self.dronable[index]],
+            [self.y[index] for index in range(1, 1 + self.customers_count) if self.dronable[index]],
+            c=next(colors_iter),
+            label="Dronable",
+        )
+        ax.scatter(
+            [self.x[index] for index in range(1, 1 + self.customers_count) if not self.dronable[index]],
+            [self.y[index] for index in range(1, 1 + self.customers_count) if not self.dronable[index]],
+            c=next(colors_iter),
+            label="Technician-only",
+        )
+
+        ax.annotate("0", (0, 0))
+        for index in range(1, 1 + self.customers_count):
+            ax.annotate(str(index), (self.x[index], self.y[index]))
+
+        ax.grid(True)
+
+        pyplot.legend()
+        pyplot.show()
+
+    @classmethod
+    def distance(cls, first: int, second: int, /) -> float:
+        return sqrt((cls.x[first] - cls.x[second]) ** 2 + (cls.y[first] - cls.y[second]) ** 2)
+
+    @classmethod
+    def initial(cls) -> D2DPathSolution:
+        technician_paths = [[0] for _ in range(cls.technicians_count)]
+        technician_only = set(e for e in range(1, 1 + cls.customers_count) if not cls.dronable[e])
+
+        technician_iter = itertools.cycle(technician_paths)
+        while len(technician_only) > 0:
+            path = next(technician_iter)
+            index = min(technician_only, key=partial(cls.distance, path[-1]))
+            path.append(index)
+            technician_only.remove(index)
+
+        for path in technician_paths:
+            path.append(0)
+
+        drone_paths = [[[0]] for _ in range(cls.drones_count)]
+        weight = [0.0] * cls.drones_count
+        time = [0.0] * cls.drones_count
+        energy = [0.0] * cls.drones_count
+        dronable = set(e for e in range(1, 1 + cls.customers_count) if cls.dronable[e])
+
+        drone_iter = itertools.cycle(range(cls.drones_count))
+        while len(dronable) > 0:
+            drone = next(drone_iter)
+            paths = drone_paths[drone]
+
+            config: Union[DroneLinearConfig, DroneNonlinearConfig] = cls.drone_linear_config[drone]
+            if cls.energy_mode == DroneEnergyConsumptionMode.NON_LINEAR:
+                config = cls.drone_nonlinear_config[drone]
+
+            last = paths[-1][-1]
+            index = min(dronable, key=partial(cls.distance, last))
+
+            dw = cls.demands[index]
+            dt = config.altitude * (1 / config.takeoff_speed + 1 / config.landing_speed) + cls.distance(last, index) / config.cruise_speed
+            if isinstance(config, DroneLinearConfig):
+                de = dt * config.power(weight[drone])
+            else:
+                de = dt * (config.takeoff_power(weight[drone]) + config.landing_power(weight[drone]) + config.cruise_power(weight[drone]))
+
+            if weight[drone] + dw <= config.capacity and time[drone] + dt <= cls.drones_flight_duration and energy[drone] + de <= config.battery:
+                paths[-1].append(index)
+                weight[drone] = weight[drone] + dw
+                time[drone] = time[drone] + dt
+                energy[drone] = energy[drone] + de
+
+            else:
+                paths[-1].append(0)
+                paths.append([0])
+
+                technician_path = min(technician_paths, key=lambda path: cls.distance(index, path[-2]))
+                technician_path.insert(-1, index)
+
+            dronable.remove(index)
+
+        return cls(
+            drone_paths=tuple(tuple(tuple(path) for path in paths if len(path) > 2) for paths in drone_paths),
+            technician_paths=tuple(tuple(path) for path in technician_paths if len(path) > 2),
+        )
 
     @classmethod
     def import_config(cls) -> None:
@@ -221,7 +375,7 @@ class D2DPathSolution(SolutionMetricsMixin, BaseSolution):
         cls.drone_endurance_config = DroneEnduranceConfig.import_data()
 
     @classmethod
-    def import_data(cls, problem: str, *, energy_mode: DroneEnergyConsumptionMode = DroneEnergyConsumptionMode.LINEAR) -> None:
+    def import_problem(cls, problem: str, *, energy_mode: DroneEnergyConsumptionMode = DroneEnergyConsumptionMode.LINEAR) -> None:
         if not cls.__config_imported:
             cls.import_config()
             cls.__config_imported = True

@@ -39,7 +39,7 @@ class TruckConfig:
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class _BaseDroneConfig:
-    takeoff: float
+    takeoff_speed: float
     cruise_speed: float
     landing_speed: float
     altitude: float
@@ -51,7 +51,7 @@ class _BaseDroneConfig:
     @staticmethod
     def from_data(data: Dict[str, Any]) -> _BaseDroneConfig:
         return _BaseDroneConfig(
-            takeoff=data["takeoffSpeed [m/s]"],
+            takeoff_speed=data["takeoffSpeed [m/s]"],
             cruise_speed=data["cruiseSpeed [m/s]"],
             landing_speed=data["landingSpeed [m/s]"],
             altitude=data["cruiseAlt [m]"],
@@ -68,6 +68,9 @@ class DroneLinearConfig(_BaseDroneConfig):
     gamma: float
     fixed_time: float
     fixed_distance: float
+
+    def power(self, weight: float, /) -> float:
+        return self.beta * weight + self.gamma
 
     @staticmethod
     def import_data() -> Tuple[DroneLinearConfig, ...]:
@@ -111,7 +114,7 @@ class DroneNonlinearConfig(_BaseDroneConfig):
         )
 
     def takeoff_power(self, weight: float, /) -> float:
-        return self._vertical_power(self.takeoff, weight)
+        return self._vertical_power(self.takeoff_speed, weight)
 
     def landing_power(self, weight: float, /) -> float:
         return self._vertical_power(self.landing_speed, weight)
