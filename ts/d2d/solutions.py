@@ -362,6 +362,9 @@ class D2DPathSolution(SolutionMetricsMixin, BaseSolution):
 
             dronable.remove(index)
 
+        for paths in drone_paths:
+            paths[-1].append(0)
+
         return cls(
             drone_paths=tuple(tuple(tuple(path) for path in paths if len(path) > 2) for paths in drone_paths),
             technician_paths=tuple(tuple(path) for path in technician_paths if len(path) > 2),
@@ -395,23 +398,23 @@ class D2DPathSolution(SolutionMetricsMixin, BaseSolution):
             cls_y = [0.0]
             cls_demands = [0.0]
             cls_dronable = [True]
-            cls_drone_service_time = [0.0]
             cls_technician_service_time = [0.0]
+            cls_drone_service_time = [0.0]
             for match in re.finditer(r"([-\d\.]+)\s+([-\d\.]+)\s+([\d\.]+)\s+(0|1)\t([\d\.]+)\s+([\d\.]+)", data):
-                x, y, demand, technician_only, drone_service_time, technician_service_time = match.groups()
+                x, y, demand, technician_only, technician_service_time, drone_service_time = match.groups()
                 cls_x.append(float(x))
                 cls_y.append(float(y))
                 cls_demands.append(float(demand))
                 cls_dronable.append(technician_only == "0")
-                cls_drone_service_time.append(float(drone_service_time))
                 cls_technician_service_time.append(float(technician_service_time))
+                cls_drone_service_time.append(float(drone_service_time))
 
             cls.x = tuple(cls_x)
             cls.y = tuple(cls_y)
             cls.demands = tuple(cls_demands)
             cls.dronable = tuple(cls_dronable)
-            cls.drone_service_time = tuple(cls_drone_service_time)
             cls.technician_service_time = tuple(cls_technician_service_time)
+            cls.drone_service_time = tuple(cls_drone_service_time)
 
             cls.energy_mode = energy_mode
 
