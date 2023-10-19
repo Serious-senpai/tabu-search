@@ -4,27 +4,27 @@ from typing import Any, Tuple, TYPE_CHECKING
 
 
 __all__ = (
-    "SupportConstraintsMixin",
+    "SolutionMetricsMixin",
 )
 
 
-class SupportConstraintsMixin:
+class SolutionMetricsMixin:
 
     __slots__ = (
-        "timespans",
-        "waiting_durations",
+        "timespan",
+        "total_waiting_time",
     )
     if TYPE_CHECKING:
-        timespans: Tuple[Tuple[float, ...], Tuple[float, ...]]
-        waiting_durations: Tuple[Tuple[float, ...], Tuple[float, ...]]
+        timespan: float
+        total_waiting_time: float
 
     def __init__(
         self,
         *args: Any,
-        timespans: Tuple[Tuple[float, ...], Tuple[float, ...]],
-        waiting_durations: Tuple[Tuple[float, ...], Tuple[float, ...]],
+        timespan: float,
+        total_waiting_time: float,
         **kwargs: Any,
     ) -> None:
         super().__init__(*args, **kwargs)
-        self.timespans = timespans
-        self.waiting_durations = waiting_durations
+        self.timespan = timespan
+        self.total_waiting_time = total_waiting_time

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass
+from math import cos, pi, sqrt
 from os.path import join
 from typing import Any, Dict, List, Literal, Tuple
 
@@ -99,6 +100,30 @@ class DroneNonlinearConfig(_BaseDroneConfig):
     c2: float
     c4: float
     c5: float
+
+    def _vertical_power(self, speed: float, weight: float) -> float:
+        w = 1.5 + weight
+        g = 9.8
+        return (
+            self.k1 * w * g
+            * (speed / 2 + sqrt((speed / 2) ** 2 + w * g / (self.k2 ** 2)))
+            + self.c2 * ((w * g) ** 1.5)
+        )
+
+    def takeoff_power(self, weight: float, /) -> float:
+        return self._vertical_power(self.takeoff, weight)
+
+    def landing_power(self, weight: float, /) -> float:
+        return self._vertical_power(self.landing_speed, weight)
+
+    def cruise_power(self, weight: float, /) -> float:
+        w = 1.5 + weight
+        g = 9.8
+        return (
+            (self.c1 + self.c2)
+            * ((w * g - self.c5 * (self.cruise_speed * cos(pi / 18)) ** 2) ** 2 + (self.c4 * self.cruise_speed ** 2) ** 2) ** 0.75
+            + self.c4 * self.cruise_speed ** 3
+        )
 
     @staticmethod
     def import_data() -> Tuple[DroneNonlinearConfig, ...]:

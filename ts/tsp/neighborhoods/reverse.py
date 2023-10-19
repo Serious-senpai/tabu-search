@@ -4,7 +4,7 @@ import itertools
 from multiprocessing import pool
 from typing import List, Optional, Tuple, TYPE_CHECKING
 
-from .base import TSPNeighborhoodMixin
+from .mixins import TSPNeighborhoodMixin
 from ...abc import BaseNeighborhood
 from ...bundle import IPCBundle
 if TYPE_CHECKING:

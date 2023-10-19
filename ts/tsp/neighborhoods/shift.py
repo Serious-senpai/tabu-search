@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import itertools
-from collections import deque
 from multiprocessing import pool
-from typing import ClassVar, Deque, List, Optional, Tuple, Set, TYPE_CHECKING
+from typing import List, Optional, Tuple, TYPE_CHECKING
 
-from .base import TSPNeighborhoodMixin
+from .mixins import TSPNeighborhoodMixin
 from ...abc import BaseNeighborhood
 from ...bundle import IPCBundle
 if TYPE_CHECKING:
@@ -26,9 +25,6 @@ class SegmentShift(TSPNeighborhoodMixin, _BaseNeighborhood):
     __slots__ = (
         "_segment_length",
     )
-    _maxlen: ClassVar[int] = 100
-    _tabu_list: ClassVar[Deque[Tuple[int, int, int]]] = deque()
-    _tabu_set: ClassVar[Set[Tuple[int, int, int]]] = set()
     if TYPE_CHECKING:
         _segment_length: int
 
