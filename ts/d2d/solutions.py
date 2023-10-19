@@ -190,7 +190,8 @@ class D2DPathSolution(SolutionMetricsMixin, BaseSolution):
             if self.energy_mode == DroneEnergyConsumptionMode.NON_LINEAR:
                 config = self.drone_nonlinear_config[drone]
 
-            vertical_time = config.altitude * (1 / config.takeoff_speed + 1 / config.landing_speed)
+            takeoff_time = config.altitude / config.takeoff_speed
+            landing_time = config.altitude / config.landing_speed
 
             drone_consumption: List[Tuple[float, ...]] = []
             for path in paths:
@@ -199,12 +200,16 @@ class D2DPathSolution(SolutionMetricsMixin, BaseSolution):
                 for path_index, index in enumerate(path[1:], start=1):
                     last = path[path_index - 1]
                     weight += self.demands[last]
-                    time = vertical_time + self.distance(last, index) / config.cruise_speed
+                    cruise_time = self.distance(last, index) / config.cruise_speed
                     if isinstance(config, DroneLinearConfig):
-                        energy = time * config.power(weight)
+                        energy = (takeoff_time + landing_time + cruise_time) * config.power(weight)
 
                     else:
-                        energy = time * (config.takeoff_power(weight) + config.landing_power(weight) + config.cruise_power(weight))
+                        energy = (
+                            takeoff_time * config.takeoff_power(weight)
+                            + landing_time * config.landing_power(weight)
+                            + cruise_time * config.cruise_power(weight)
+                        )
 
                     consumption.append(consumption[-1] + energy)
 
@@ -341,11 +346,18 @@ class D2DPathSolution(SolutionMetricsMixin, BaseSolution):
             index = min(dronable, key=partial(cls.distance, last))
 
             dw = cls.demands[index]
-            dt = config.altitude * (1 / config.takeoff_speed + 1 / config.landing_speed) + cls.distance(last, index) / config.cruise_speed
+            takeoff_dt = config.altitude / config.takeoff_speed
+            landing_dt = config.altitude / config.landing_speed
+            cruise_dt = cls.distance(last, index) / config.cruise_speed
+            dt = takeoff_dt + landing_dt + cruise_dt
             if isinstance(config, DroneLinearConfig):
                 de = dt * config.power(weight[drone])
             else:
-                de = dt * (config.takeoff_power(weight[drone]) + config.landing_power(weight[drone]) + config.cruise_power(weight[drone]))
+                de = (
+                    takeoff_dt * config.takeoff_power(weight[drone])
+                    + landing_dt * config.landing_power(weight[drone])
+                    + cruise_dt * config.cruise_power(weight[drone])
+                )
 
             if weight[drone] + dw <= config.capacity and time[drone] + dt <= cls.drones_flight_duration and energy[drone] + de <= config.battery:
                 paths[-1].append(index)
