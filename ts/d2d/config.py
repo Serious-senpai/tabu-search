@@ -2,17 +2,24 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass
+from enum import Enum
 from math import cos, pi, sqrt
 from os.path import join
 from typing import Any, Dict, List, Literal, Tuple
 
 
 __all__ = (
+    "DroneEnergyConsumptionMode",
     "TruckConfig",
     "DroneLinearConfig",
     "DroneNonlinearConfig",
     "DroneEnduranceConfig",
 )
+
+
+class DroneEnergyConsumptionMode(Enum):
+    NON_LINEAR = 0
+    LINEAR = 1
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -48,6 +55,15 @@ class _BaseDroneConfig:
     speed_type: Literal["low", "high"]
     range: Literal["low", "high"]
 
+    def takeoff_power(self, weight: float, /) -> float:
+        raise NotImplementedError
+
+    def landing_power(self, weight: float, /) -> float:
+        raise NotImplementedError
+
+    def cruise_power(self, weight: float, /) -> float:
+        raise NotImplementedError
+
     @staticmethod
     def from_data(data: Dict[str, Any]) -> _BaseDroneConfig:
         return _BaseDroneConfig(
@@ -69,8 +85,17 @@ class DroneLinearConfig(_BaseDroneConfig):
     fixed_time: float
     fixed_distance: float
 
-    def power(self, weight: float, /) -> float:
+    def _power(self, weight: float, /) -> float:
         return self.beta * weight + self.gamma
+
+    def takeoff_power(self, weight: float, /) -> float:
+        return self._power(weight)
+
+    def landing_power(self, weight: float, /) -> float:
+        return self._power(weight)
+
+    def cruise_power(self, weight: float, /) -> float:
+        return self._power(weight)
 
     @staticmethod
     def import_data() -> Tuple[DroneLinearConfig, ...]:
