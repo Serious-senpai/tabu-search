@@ -5,7 +5,7 @@ import re
 from functools import partial
 from math import sqrt
 from os.path import join
-from typing import ClassVar, Iterable, List, Optional, Tuple, TYPE_CHECKING, final
+from typing import ClassVar, Iterable, List, Optional, Sequence, Tuple, TYPE_CHECKING, final
 
 from matplotlib import axes, pyplot
 
@@ -23,20 +23,17 @@ class D2DPathSolution(SolutionMetricsMixin, BaseSolution):
     """Represents a solution to the D2D problem"""
 
     __slots__ = (
-        "_drone_arrival_timestamps",
-        "_technician_arrival_timestamps",
-        "_drone_energy_consumption",
+        "drone_arrival_timestamps",
         "drone_paths",
+        "technician_arrival_timestamps",
         "technician_paths",
     )
     __config_imported: ClassVar[bool] = False
     problem: ClassVar[Optional[str]] = None
     if TYPE_CHECKING:
-        _drone_arrival_timestamps: Optional[Tuple[Tuple[Tuple[float, ...], ...], ...]]
-        _technician_arrival_timestamps: Optional[Tuple[Tuple[float, ...], ...]]
-        _drone_energy_consumption: Optional[Tuple[Tuple[Tuple[float, ...], ...], ...]]
-
+        drone_arrival_timestamps: Tuple[Tuple[Tuple[float, ...], ...], ...]
         drone_paths: Tuple[Tuple[Tuple[int, ...], ...], ...]
+        technician_arrival_timestamps: Tuple[Tuple[float, ...], ...]
         technician_paths: Tuple[Tuple[int, ...], ...]
 
         # Problem-specific data
@@ -66,156 +63,51 @@ class D2DPathSolution(SolutionMetricsMixin, BaseSolution):
         technician_paths: Iterable[Iterable[int]],
         drone_arrival_timestamps: Optional[Tuple[Tuple[Tuple[float, ...], ...], ...]] = None,
         technician_arrival_timestamps: Optional[Tuple[Tuple[float, ...], ...]] = None,
-        drone_energy_consumption: Optional[Tuple[Tuple[Tuple[float, ...], ...], ...]] = None,
-        timespan: Optional[float] = None,
-        total_waiting_time: Optional[float] = None,
     ) -> None:
         self.drone_paths = tuple(tuple(tuple(index for index in path) for path in paths) for paths in drone_paths)
         self.technician_paths = tuple(tuple(index for index in path) for path in technician_paths)
 
-        self._drone_arrival_timestamps = drone_arrival_timestamps
-        self._technician_arrival_timestamps = technician_arrival_timestamps
-        self._drone_energy_consumption = drone_energy_consumption
+        if drone_arrival_timestamps is None:
+            def get_arrival_timestamps() -> Tuple[Tuple[Tuple[float, ...], ...], ...]:
+                result: List[List[Tuple[float, ...]]] = []
+                for drone, paths in enumerate(self.drone_paths):
+                    drone_arrivals: List[Tuple[float, ...]] = []
+                    result.append(drone_arrivals)
 
-        if timespan is None:
-            timespan = 0.0
-            for paths in self.drone_arrival_timestamps:
-                timespan = max(timespan, max(path[-1] for path in paths))
+                    offset = 0.0
+                    for path in paths:
+                        arrivals = self.calculate_drone_arrival_timestamps(path, drone=drone, offset=offset)
+                        offset = arrivals[-1]
+                        drone_arrivals.append(arrivals)
 
-            for path in self.technician_arrival_timestamps:
-                timespan = max(timespan, path[-1])
+                return tuple(tuple(paths) for paths in result)
 
-        if total_waiting_time is None:
-            total_waiting_time = 0.0
-            for drone, paths in enumerate(self.drone_arrival_timestamps):
-                for path_index, path in enumerate(paths):
-                    for index, timestamp in enumerate(path):
-                        total_waiting_time += path[-1] - timestamp - self.drone_service_time[self.drone_paths[drone][path_index][index]]
+            drone_arrival_timestamps = get_arrival_timestamps()
 
-            for technician, path in enumerate(self.technician_arrival_timestamps):
-                for index, timestamp in enumerate(path):
-                    total_waiting_time += path[-1] - timestamp - self.technician_service_time[self.technician_paths[technician][index]]
+        self.drone_arrival_timestamps = drone_arrival_timestamps
+
+        if technician_arrival_timestamps is None:
+            technician_arrival_timestamps = tuple(self.calculate_technician_arrival_timestamps(path) for path in self.technician_paths)
+
+        self.technician_arrival_timestamps = technician_arrival_timestamps
 
         super().__init__(
-            timespan=timespan,
-            total_waiting_time=total_waiting_time,
+            drone_timespans=tuple(single_drone_arrival_timestamps[-1][-1] for single_drone_arrival_timestamps in self.drone_arrival_timestamps),
+            drone_waiting_times=tuple(
+                tuple(
+                    self.calculate_drone_total_waiting_time(path, drone=drone, arrival_timestamps=arrival_timestamps)
+                    for path, arrival_timestamps in zip(paths, self.drone_arrival_timestamps[drone])
+                )
+                for drone, paths in enumerate(self.drone_paths)
+            ),
+            technician_timespans=tuple(technician_arrival_timestamp[-1] for technician_arrival_timestamp in self.technician_arrival_timestamps),
+            technician_waiting_times=tuple(self.calculate_technician_total_waiting_time(path, arrival_timestamps=arrival_timestamps) for path, arrival_timestamps in zip(self.technician_paths, self.technician_arrival_timestamps)),
         )
-
-    @property
-    def drone_arrival_timestamps(self) -> Tuple[Tuple[Tuple[float, ...], ...], ...]:
-        if self._drone_arrival_timestamps is None:
-            result: List[Tuple[Tuple[float, ...], ...]] = []
-            for drone, paths in enumerate(self.drone_paths):
-                config = self.drone_linear_config[drone] if self.energy_mode == DroneEnergyConsumptionMode.LINEAR else self.drone_nonlinear_config[drone]
-                vertical_time = config.altitude * (1 / config.takeoff_speed + 1 / config.landing_speed)
-
-                timestamp = 0.0
-                last: Optional[int] = None
-                drone_arrivals: List[Tuple[float, ...]] = []
-                for path in paths:
-                    arrival: List[float] = []
-                    for index in path:
-                        if last is not None:
-                            timestamp += vertical_time + self.distance(last, index) / config.cruise_speed
-
-                        arrival.append(timestamp)
-                        timestamp += self.drone_service_time[index]
-
-                        last = index
-
-                    drone_arrivals.append(tuple(arrival))
-
-                result.append(tuple(drone_arrivals))
-
-            self._drone_arrival_timestamps = tuple(result)
-
-        return self._drone_arrival_timestamps
-
-    @property
-    def technician_arrival_timestamps(self) -> Tuple[Tuple[float, ...], ...]:
-        if self._technician_arrival_timestamps is None:
-            result: List[Tuple[float, ...]] = []
-            config = self.truck_config
-            maximum_velocity_iter = iter(config.maximum_velocity * e for e in config.coefficients)
-
-            for path in self.technician_paths:
-                timestamp = 0.0
-                last: Optional[int] = None
-                arrival: List[float] = []
-                current_time_within_window = 0.0
-                current_velocity = next(maximum_velocity_iter)
-                for index in path:
-                    if last is not None:
-                        distance = self.distance(last, index)
-                        while distance > 0:
-                            time_shift = min(3600 - current_time_within_window, distance / current_velocity)
-                            timestamp += time_shift
-                            current_time_within_window += time_shift
-                            if current_time_within_window >= 3600:
-                                current_time_within_window = 0.0
-                                current_velocity = next(maximum_velocity_iter)
-
-                            distance -= time_shift * current_velocity
-
-                    arrival.append(timestamp)
-                    timestamp += self.technician_service_time[index]
-                    last = index
-
-                result.append(tuple(arrival))
-
-            self._technician_arrival_timestamps = tuple(result)
-
-        return self._technician_arrival_timestamps
-
-    @property
-    def drone_energy_consumption(self) -> Tuple[Tuple[Tuple[float, ...], ...], ...]:
-        if self._drone_energy_consumption is None:
-            result: List[Tuple[Tuple[float, ...], ...]] = []
-            for drone, paths in enumerate(self.drone_paths):
-                config = self.drone_linear_config[drone] if self.energy_mode == DroneEnergyConsumptionMode.LINEAR else self.drone_nonlinear_config[drone]
-
-                takeoff_time = config.altitude / config.takeoff_speed
-                landing_time = config.altitude / config.landing_speed
-
-                drone_consumption: List[Tuple[float, ...]] = []
-                for path in paths:
-                    consumption = [0.0]
-                    weight = 0.0
-                    for path_index, index in enumerate(path[1:], start=1):
-                        last = path[path_index - 1]
-                        weight += self.demands[last]
-                        cruise_time = self.distance(last, index) / config.cruise_speed
-                        energy = (
-                            takeoff_time * config.takeoff_power(weight)
-                            + landing_time * config.landing_power(weight)
-                            + cruise_time * config.cruise_power(weight)
-                        )
-
-                        consumption.append(consumption[-1] + energy)
-
-                    drone_consumption.append(tuple(consumption))
-
-                result.append(tuple(drone_consumption))
-
-            self._drone_energy_consumption = tuple(result)
-
-        return self._drone_energy_consumption
 
     def plot(self) -> None:
         _, ax = pyplot.subplots()
         assert isinstance(ax, axes.Axes)
 
-        colors = (
-            "red",
-            "green",
-            "cyan",
-            "darkblue",
-            "darkviolet",
-            "violet",
-            "gray",
-            "dodgerblue",
-        )
-        colors_iter = itertools.cycle(colors)
         for paths in self.drone_paths:
             drone_x: List[float] = []
             drone_y: List[float] = []
@@ -236,7 +128,7 @@ class D2DPathSolution(SolutionMetricsMixin, BaseSolution):
                 drone_y,
                 drone_u,
                 drone_v,
-                color=next(colors_iter),
+                color="cyan",
                 angles="xy",
                 scale_units="xy",
                 scale=1,
@@ -261,7 +153,7 @@ class D2DPathSolution(SolutionMetricsMixin, BaseSolution):
                 technician_y,
                 technician_u,
                 technician_v,
-                color=next(colors_iter),
+                color="darkviolet",
                 angles="xy",
                 scale_units="xy",
                 scale=1,
@@ -271,13 +163,13 @@ class D2DPathSolution(SolutionMetricsMixin, BaseSolution):
         ax.scatter(
             [self.x[index] for index in range(1, 1 + self.customers_count) if self.dronable[index]],
             [self.y[index] for index in range(1, 1 + self.customers_count) if self.dronable[index]],
-            c=next(colors_iter),
+            c="darkblue",
             label="Dronable",
         )
         ax.scatter(
             [self.x[index] for index in range(1, 1 + self.customers_count) if not self.dronable[index]],
             [self.y[index] for index in range(1, 1 + self.customers_count) if not self.dronable[index]],
-            c=next(colors_iter),
+            c="red",
             label="Technician-only",
         )
 
@@ -295,19 +187,151 @@ class D2DPathSolution(SolutionMetricsMixin, BaseSolution):
         return sqrt((cls.x[first] - cls.x[second]) ** 2 + (cls.y[first] - cls.y[second]) ** 2)
 
     @classmethod
+    def calculate_drone_arrival_timestamps(cls, path: Sequence[int], *, drone: int, offset: float) -> Tuple[float, ...]:
+        result = [offset]
+        last = path[0]  # must be 0
+        config = cls.drone_linear_config[drone] if cls.energy_mode == DroneEnergyConsumptionMode.LINEAR else cls.drone_nonlinear_config[drone]
+        vertical_time = config.altitude * (1 / config.takeoff_speed + 1 / config.landing_speed)
+
+        for index in path[1:]:
+            result.append(result[-1] + cls.drone_service_time[last] + vertical_time + cls.distance(last, index) / config.cruise_speed)
+            last = index
+
+        return tuple(result)
+
+    @classmethod
+    def _ensure_drone_arrival_timestamps(
+        cls,
+        path: Sequence[int],
+        *,
+        drone: Optional[int] = None,
+        arrival_timestamps: Optional[Tuple[float, ...]] = None,
+    ) -> Tuple[float, ...]:
+        if arrival_timestamps is None:
+            if drone is None:
+                message = "Unknown drone for waiting time calculation"
+                raise ValueError(message)
+
+            arrival_timestamps = cls.calculate_drone_arrival_timestamps(path, drone=drone, offset=0.0)
+
+        return arrival_timestamps
+
+    @classmethod
+    def calculate_drone_total_waiting_time(
+        cls,
+        path: Sequence[int],
+        *,
+        drone: Optional[int] = None,
+        arrival_timestamps: Optional[Tuple[float, ...]] = None,
+    ) -> float:
+        arrival_timestamps = cls._ensure_drone_arrival_timestamps(path, drone=drone)
+
+        result = 0.0
+        for path_index, index in enumerate(path):
+            result += arrival_timestamps[-1] - arrival_timestamps[path_index] - cls.drone_service_time[index]
+
+        return result
+
+    @classmethod
+    def calculate_technician_arrival_timestamps(cls, path: Sequence[int]) -> Tuple[float, ...]:
+        result = [0.0]
+        last = path[0]  # must be 0
+        config = cls.truck_config
+
+        coefficients_iter = iter(config.coefficients)
+        current_within_timespan = 0.0
+        velocity = config.maximum_velocity * next(coefficients_iter)
+
+        for index in path[1:]:
+            timestamp = result[-1]
+            distance = cls.distance(last, index)
+
+            while distance > 0:
+                time_shift = min(distance / velocity, 3600.0 - current_within_timespan)
+                timestamp += time_shift
+                distance -= time_shift * velocity
+                current_within_timespan += time_shift
+
+                if current_within_timespan >= 3600.0:
+                    current_within_timespan = 0.0
+                    velocity = config.maximum_velocity * next(coefficients_iter)
+
+            result.append(timestamp)
+            last = index
+
+        return tuple(result)
+
+    @classmethod
+    def calculate_technician_total_waiting_time(cls, path: Sequence[int], *, arrival_timestamps: Optional[Tuple[float, ...]] = None) -> float:
+        if arrival_timestamps is None:
+            arrival_timestamps = cls.calculate_technician_arrival_timestamps(path)
+
+        result = 0.0
+        for path_index, index in enumerate(path):
+            result += arrival_timestamps[-1] - arrival_timestamps[path_index] - cls.technician_service_time[index]
+
+        return result
+
+    @classmethod
+    def calculate_total_weight(cls, path: Sequence[int]) -> float:
+        return sum(cls.demands[index] for index in path)
+
+    @classmethod
+    def calculate_drone_flight_duration(
+        cls,
+        path: Sequence[int],
+        *,
+        drone: Optional[int] = None,
+        arrival_timestamps: Optional[Tuple[float, ...]] = None,
+    ) -> float:
+        arrival_timestamps = cls._ensure_drone_arrival_timestamps(path, drone=drone, arrival_timestamps=arrival_timestamps)
+        return arrival_timestamps[-1] - arrival_timestamps[0]
+
+    @classmethod
+    def calculate_drone_energy_consumption(
+        cls,
+        path: Sequence[int],
+        *,
+        drone: int,
+        arrival_timestamps: Optional[Tuple[float, ...]] = None,
+    ) -> float:
+        arrival_timestamps = cls._ensure_drone_arrival_timestamps(path, drone=drone, arrival_timestamps=arrival_timestamps)
+        config = cls.drone_linear_config[drone] if cls.energy_mode == DroneEnergyConsumptionMode.LINEAR else cls.drone_nonlinear_config[drone]
+
+        takeoff_time = config.altitude / config.takeoff_speed
+        landing_time = config.altitude / config.landing_speed
+
+        result = weight = 0.0
+        for path_index, index in enumerate(path[1:], start=1):
+            last = path[path_index - 1]
+            cruise_time = cls.distance(last, index) / config.cruise_speed
+            result += (
+                takeoff_time * config.takeoff_power(weight)
+                + cruise_time * config.cruise_power(weight)
+                + landing_time * config.landing_power(weight)
+            )
+
+            weight += cls.demands[index]
+
+        return result
+
+    @classmethod
     def initial(cls) -> D2DPathSolution:
+        # Serve all technician-only waypoints
         technician_paths = [[0] for _ in range(cls.technicians_count)]
         technician_only = set(e for e in range(1, 1 + cls.customers_count) if not cls.dronable[e])
 
-        technician_iter = itertools.cycle(technician_paths)
+        technician_paths_iter = itertools.cycle(technician_paths)
         while len(technician_only) > 0:
-            path = next(technician_iter)
+            path = next(technician_paths_iter)
             index = min(technician_only, key=partial(cls.distance, path[-1]))
             path.append(index)
             technician_only.remove(index)
 
         for path in technician_paths:
             path.append(0)
+
+        # After this step, some technician paths may still be empty (i.e. [0, 0]), just leave them unchanged
 
         drone_paths = [[[0]] for _ in range(cls.drones_count)]
         weight = [0.0] * cls.drones_count
@@ -355,8 +379,8 @@ class D2DPathSolution(SolutionMetricsMixin, BaseSolution):
             paths[-1].append(0)
 
         return cls(
-            drone_paths=tuple(tuple(tuple(path) for path in paths) for paths in drone_paths),
-            technician_paths=tuple(tuple(path) for path in technician_paths if len(path) > 2),
+            drone_paths=tuple(tuple(tuple(path) for path in paths if len(path) > 2) for paths in drone_paths),
+            technician_paths=tuple(tuple(path) for path in technician_paths),
         )
 
     @classmethod

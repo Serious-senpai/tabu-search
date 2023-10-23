@@ -4,7 +4,7 @@ import random
 from collections import deque
 from functools import total_ordering
 from multiprocessing import Pool, pool
-from typing import Any, ClassVar, Deque, Dict, Generic, Optional, Set, Tuple, Type, TypeVar, Union, TYPE_CHECKING
+from typing import Any, ClassVar, Deque, Dict, Generic, Optional, Protocol, Set, Tuple, Type, TypeVar, Union, TYPE_CHECKING
 
 from tqdm import tqdm
 if TYPE_CHECKING:
@@ -12,20 +12,47 @@ if TYPE_CHECKING:
 
 
 __all__ = (
+    "BaseCostComparison",
     "BaseSolution",
     "BaseNeighborhood",
 )
 
 
+class SupportsRichComparison(Protocol):
+    def __eq__(self, other: Any) -> bool: ...
+    def __ne__(self, other: Any) -> bool: ...
+    def __lt__(self, other: Any) -> bool: ...
+    def __le__(self, other: Any) -> bool: ...
+    def __gt__(self, other: Any) -> bool: ...
+    def __ge__(self, other: Any) -> bool: ...
+
+
 @total_ordering
-class BaseSolution:
-    """Base class for objects holding a solution to the problem"""
+class BaseCostComparison:
 
     __slots__ = ()
 
-    def cost(self) -> float:
-        """Calculate the cost for this solution"""
+    def cost(self) -> SupportsRichComparison:
+        """The cost of this object."""
         raise NotImplementedError
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, self.__class__):
+            return self.cost() == other.cost()
+
+        return NotImplemented
+
+    def __lt__(self, other: Any) -> bool:
+        if isinstance(other, self.__class__):
+            return self.cost() < other.cost()
+
+        return NotImplemented
+
+
+class BaseSolution(BaseCostComparison):
+    """Base class for objects holding a solution to the problem"""
+
+    __slots__ = ()
 
     def get_neighborhoods(self) -> Tuple[BaseNeighborhood[Self, Any], ...]:
         """Returns all neighborhoods of the current solution"""
@@ -102,18 +129,6 @@ class BaseSolution:
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} hash={self.__hash__()}>"
-
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, self.__class__):
-            return self.cost() == other.cost()
-
-        return NotImplemented
-
-    def __lt__(self, other: Any) -> bool:
-        if isinstance(other, self.__class__):
-            return self.cost() < other.cost()
-
-        return NotImplemented
 
 
 _ST = TypeVar("_ST", bound=BaseSolution)
