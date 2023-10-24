@@ -69,7 +69,7 @@ if __name__ == "__main__":
     for index, solution in enumerate(solutions):
         print(f"SOLUTION #{index + 1}: cost = {solution.cost()}")
         print("Drone paths:\n" + "\n".join(f"Drone #{drone_index + 1}: {paths}" for drone_index, paths in enumerate(solution.drone_paths)))
-        print("Technician paths:\n" + "\n".join(f"Drone #{technician_index + 1}: {path}" for technician_index, path in enumerate(solution.technician_paths)))
+        print("Technician paths:\n" + "\n".join(f"Technician #{technician_index + 1}: {path}" for technician_index, path in enumerate(solution.technician_paths)))
 
         if namespace.verbose:
             solution.plot()

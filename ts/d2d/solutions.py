@@ -94,8 +94,14 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
 
         self.technician_arrival_timestamps = technician_arrival_timestamps
 
+        def __last_element(__tuple: Tuple[Tuple[float, ...], ...]) -> float:
+            try:
+                return __tuple[-1][-1]
+            except IndexError:
+                return 0.0
+
         super().__init__(
-            drone_timespans=tuple(single_drone_arrival_timestamps[-1][-1] for single_drone_arrival_timestamps in self.drone_arrival_timestamps),
+            drone_timespans=tuple(__last_element(single_drone_arrival_timestamps) for single_drone_arrival_timestamps in self.drone_arrival_timestamps),
             drone_waiting_times=tuple(
                 tuple(
                     self.calculate_drone_total_waiting_time(path, drone=drone, arrival_timestamps=arrival_timestamps)
@@ -342,6 +348,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
 
         # After this step, some technician paths may still be empty (i.e. [0, 0]), just leave them unchanged
 
+        # Serve all dronable waypoints
         drone_paths = [[[0]] for _ in range(cls.drones_count)]
         dronable = set(e for e in range(1, 1 + cls.customers_count) if cls.dronable[e])
 
