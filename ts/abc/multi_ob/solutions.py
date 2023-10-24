@@ -76,8 +76,10 @@ class MultiObjectiveSolution(_BaseSolution, BaseMulticostComparison):
         current = results.copy()
         with Pool(pool_size) as pool:
             last_improved = 0
-
             for iteration in iterations:
+                if isinstance(iterations, tqdm):
+                    iterations.set_description_str(f"Tabu search ({len(current)} solution(s))")
+
                 for solution in current:
                     neighborhoods = solution.get_neighborhoods()
                     for candidate in random.choice(neighborhoods).find_best_candidates(pool=pool, pool_size=pool_size):
@@ -89,4 +91,4 @@ class MultiObjectiveSolution(_BaseSolution, BaseMulticostComparison):
                 if iteration - last_improved >= shuffle_after:
                     current = set(s.shuffle(use_tqdm=use_tqdm) for s in current)
 
-        return results
+        return set(r.post_optimization(pool=pool, pool_size=pool_size, use_tqdm=use_tqdm) for r in results)

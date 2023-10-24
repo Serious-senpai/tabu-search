@@ -394,6 +394,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
             cls.__config_imported = True
 
         try:
+            problem = problem.removesuffix(".txt")
             path = join("problems", "d2d", "random_data", f"{problem}.txt")
             with open(path, "r") as file:
                 data = file.read()

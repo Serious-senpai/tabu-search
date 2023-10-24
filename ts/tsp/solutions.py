@@ -205,6 +205,7 @@ class TSPPathSolution(SingleObjectiveSolution):
 
     @classmethod
     def import_problem(cls, problem: str, *, precalculated_distances: Optional[Tuple[Tuple[float, ...], ...]] = None) -> None:
+        problem = problem.removesuffix(".tsp")
         archive_file = path.join("problems", "tsp", f"{problem}.tsp", f"{problem}.tsp")
         if not path.isfile(archive_file):
             raise ProblemNotFound(problem)
