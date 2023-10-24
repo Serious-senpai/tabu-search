@@ -1,5 +1,6 @@
 **/__pycache__
 .venv/
-summary/
+d2d-summary/
+tsp-summary/
 
 run.bat

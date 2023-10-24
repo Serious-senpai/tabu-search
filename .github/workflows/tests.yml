@@ -7,7 +7,7 @@ permissions:
 
 jobs:
   tsp-test:
-    name: Run TSP tests
+    name: Solve TSP
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -43,10 +43,23 @@ jobs:
         name: tsp-summary
         path: output-**.json
 
-  summary:
-    name: Summarize solutions
+  d2d-test:
+    name: Solve D2D
     runs-on: ubuntu-latest
-    needs: tsp-test
+    strategy:
+      fail-fast: false
+      matrix:
+        problem: [
+          "6.10.1", "6.10.2", "6.10.3", "6.10.4", "6.20.1", "6.20.2", "6.20.3", "6.20.4", "6.5.1", "6.5.2", "6.5.3", "6.5.4",
+          "10.10.1", "10.10.2", "10.10.3", "10.10.4", "10.20.1", "10.20.2", "10.20.3", "10.20.4", "10.5.1", "10.5.2", "10.5.3", "10.5.4",
+          "20.10.1", "20.10.2", "20.10.3", "20.10.4", "20.20.1", "20.20.2", "20.20.3", "20.20.4", "20.5.1", "20.5.2", "20.5.3", "20.5.4",
+          "50.10.1", "50.10.2", "50.10.3", "50.10.4", "50.20.1", "50.20.2", "50.20.3", "50.20.4", "50.30.1", "50.30.2", "50.30.3", "50.30.4", "50.40.1", "50.40.2", "50.40.3", "50.40.4",
+          "100.10.1", "100.10.2", "100.10.3", "100.10.4", "100.20.1", "100.20.2", "100.20.3", "100.20.4", "100.30.1", "100.30.2", "100.30.3", "100.30.4", "100.40.1", "100.40.2", "100.40.3", "100.40.4",
+          "200.10.1", "200.10.2", "200.10.3", "200.10.4", "200.20.1", "200.20.2", "200.20.3", "200.20.4", "200.30.1", "200.30.2", "200.30.3", "200.30.4", "200.40.1", "200.40.2", "200.40.3", "200.40.4",
+        ]
+        iterations: [1000, 4000]
+        tabu_size: [5]
+        shuffle_after: [3]
 
     steps:
     - name: Checkout repository
@@ -54,14 +67,45 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Download solutions
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    - name: Test sample
+      run: python d2d.py ${{ matrix.problem }} --iter ${{ matrix.iterations }} --tabu-size ${{ matrix.tabu_size }} --shuffle-after ${{ matrix.shuffle_after }} --dump output-${{ matrix.problem }}-${{ matrix.iterations }}-${{ matrix.tabu_size }}-${{ matrix.shuffle_after }}.json
+
+    - name: Upload solution
+      uses: actions/upload-artifact@v3
+      with:
+        name: d2d-summary
+        path: output-**.json
+      
+  summary:
+    name: Summarize solutions
+    runs-on: ubuntu-latest
+    needs: [tsp-test, d2d-test]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
+    - name: Download TSP solutions
       uses: actions/download-artifact@v3
       with:
         name: tsp-summary
         path: tsp-summary/
 
-    - name: View downloaded artifacts
-      run: ls tsp-summary/
+    - name: Download D2D solutions
+      uses: actions/download-artifact@v3
+      with:
+        name: d2d-summary
+        path: d2d-summary/
 
     - name: Setup Python
       uses: actions/setup-python@v4
@@ -72,10 +116,18 @@ jobs:
       run: pip install -r requirements.txt
 
     - name: Summarize solutions
-      run: python tsp-summary.py
+      run: |
+        python tsp-summary.py
+        python d2d-summary.py
 
-    - name: Upload CSV file
+    - name: Upload TSP summary
       uses: actions/upload-artifact@v3
       with:
         name: tsp-summary
         path: tsp-summary/*.csv
+
+    - name: Upload D2D summary
+      uses: actions/upload-artifact@v3
+      with:
+        name: d2d-summary
+        path: d2d-summary/*.csv
