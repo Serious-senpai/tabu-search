@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 from .errors import OptimalSolutionNotFound, ProblemNotFound, ProblemParsingException, UnsupportedEdgeWeightType
 from .neighborhoods import SegmentReverse, SegmentShift, Swap
-from ..abc import BaseNeighborhood, BaseSolution
+from ..abc import SingleObjectiveNeighborhood, SingleObjectiveSolution
 
 
 __all__ = (
@@ -22,7 +22,7 @@ __all__ = (
 )
 
 
-class TSPPathSolution(BaseSolution):
+class TSPPathSolution(SingleObjectiveSolution):
     """Represents a solution to the TSP problem"""
 
     __slots__ = (
@@ -83,7 +83,7 @@ class TSPPathSolution(BaseSolution):
 
     def post_optimization(self, *, pool: pool.Pool, pool_size: int, use_tqdm: bool) -> TSPPathSolution:
         result = self
-        iterations: Union[Tuple[BaseNeighborhood[TSPPathSolution, Any], ...], tqdm[BaseNeighborhood[TSPPathSolution, Any]]] = self.get_neighborhoods()
+        iterations: Union[Tuple[SingleObjectiveNeighborhood[TSPPathSolution, Any], ...], tqdm[SingleObjectiveNeighborhood[TSPPathSolution, Any]]] = self.get_neighborhoods()
         if use_tqdm:
             iterations = tqdm(iterations, desc="Post-optimization", ascii=" █", colour="blue")
 
@@ -94,7 +94,7 @@ class TSPPathSolution(BaseSolution):
 
         return result
 
-    def get_neighborhoods(self) -> Tuple[BaseNeighborhood[TSPPathSolution, Any], ...]:
+    def get_neighborhoods(self) -> Tuple[SingleObjectiveNeighborhood[TSPPathSolution, Any], ...]:
         return (
             Swap(self, first_length=1, second_length=1),
             Swap(self, first_length=2, second_length=1),

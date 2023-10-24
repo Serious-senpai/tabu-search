@@ -3,13 +3,13 @@ from __future__ import annotations
 import functools
 import itertools
 from multiprocessing import pool
-from typing import Iterable, List, Optional, Tuple, TYPE_CHECKING
+from typing import Dict, Iterable, List, Set, Tuple, TYPE_CHECKING
 
 from .mixins import D2DNeighborhoodMixin
 from .results import OperationResult
 from ..config import DroneEnergyConsumptionMode
 from ..errors import NeighborhoodException
-from ...abc import BaseNeighborhood
+from ...abc import MultiObjectiveNeighborhood
 from ...bundle import IPCBundle
 if TYPE_CHECKING:
     from ..solutions import D2DPathSolution
@@ -19,9 +19,9 @@ __all__ = ("Swap",)
 
 
 if TYPE_CHECKING:
-    _BaseNeighborhood = BaseNeighborhood[D2DPathSolution, Tuple[int, int]]
+    _BaseNeighborhood = MultiObjectiveNeighborhood[D2DPathSolution, Tuple[int, int]]
 else:
-    _BaseNeighborhood = BaseNeighborhood
+    _BaseNeighborhood = MultiObjectiveNeighborhood
 
 
 class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
@@ -46,13 +46,13 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
         self._first_length = first_length
         self._second_length = second_length
 
-    def find_best_candidate(self, *, pool: pool.Pool, pool_size: int) -> Optional[D2DPathSolution]:
+    def find_best_candidates(self, *, pool: pool.Pool, pool_size: int) -> Set[D2DPathSolution]:
         solution = self._solution
 
         bundles: List[IPCBundle[Swap, List[Tuple[Tuple[int, int], Tuple[int, int]]]]] = [IPCBundle(self, []) for _ in range(pool_size)]
         bundle_iter = itertools.cycle(bundles)
 
-        # Swap between drone paths
+        # Swap between 2 drone paths
         paths: List[Tuple[int, int]] = []
         for index, path in enumerate(solution.drone_paths):
             paths.extend([(index, e) for e in range(len(path))])
@@ -64,26 +64,22 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
         for pair in pairs:
             next(bundle_iter).data.append(pair)
 
-        result: Optional[OperationResult] = None
-        min_swap: Optional[Tuple[int, int]] = None
-        for result_temp, min_swap_temp in pool.imap(self.swap_drones_paths, bundles):
-            if result_temp is None or min_swap_temp is None:
-                continue
+        # TODO: Swap between (technician-technician) and (technician-drone) paths
 
-            if result is None or result_temp < result:
-                result = result_temp
-                min_swap = min_swap_temp
+        results: Set[D2DPathSolution] = set()
+        swaps_mapping: Dict[D2DPathSolution, Tuple[int, int]] = {}
+        for collected in pool.imap_unordered(self.swap_drones_paths, bundles):
+            for result, swap in collected:
+                swaps_mapping[result] = swap
+                result.add_to_pareto_set(results)
 
-        if min_swap is not None:
-            self.add_to_tabu(min_swap)
+        for result in results:
+            self.add_to_tabu(swaps_mapping[result])
 
-        if result is not None:
-            return result.to_solution()
-
-        return None
+        return results
 
     @staticmethod
-    def swap_drones_paths(bundle: IPCBundle[Swap, List[Tuple[Tuple[int, int], Tuple[int, int]]]]) -> Tuple[Optional[OperationResult], Optional[Tuple[int, int]]]:
+    def swap_drones_paths(bundle: IPCBundle[Swap, List[Tuple[Tuple[int, int], Tuple[int, int]]]]) -> Set[Tuple[D2DPathSolution, Tuple[int, int]]]:
         neighborhood = bundle.neighborhood
         neighborhood._ensure_imported_data()
 
@@ -106,8 +102,8 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
             drone_paths[second[0]][second[1]] = second_path
             return neighborhood.cls(drone_paths=drone_paths, technician_paths=solution.technician_paths)
 
-        result: Optional[OperationResult] = None
-        min_swap: Optional[Tuple[int, int]] = None
+        results: Set[OperationResult] = set()
+        swaps_mapping: Dict[OperationResult, Tuple[int, int]] = {}
         for first, second in bundle.data:
             # Indices of the 2 drones whose paths are altered (can be of the same drone)
             first_drone, first_path_index = first
@@ -162,8 +158,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                     technician_waiting_times=solution.technician_waiting_times,
                 )
 
-                if result is None or operation_result < result:
-                    result = operation_result
-                    min_swap = (first_path[first_start], second_path[second_start])
+                swaps_mapping[operation_result] = (first_path[first_start], second_path[second_start])
+                operation_result.add_to_pareto_set(results)
 
-        return result, min_swap
+        return set((r.to_solution(), swaps_mapping[r]) for r in results)

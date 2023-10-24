@@ -37,3 +37,6 @@ class OperationResult(SolutionMetricsMixin):
 
     def to_solution(self) -> D2DPathSolution:
         return self.__factory()
+
+    def __hash__(self) -> int:
+        return hash(self.__factory)

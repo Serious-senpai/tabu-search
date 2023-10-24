@@ -5,7 +5,7 @@ from multiprocessing import pool
 from typing import List, Optional, Tuple, TYPE_CHECKING
 
 from .mixins import TSPNeighborhoodMixin
-from ...abc import BaseNeighborhood
+from ...abc import SingleObjectiveNeighborhood
 from ...bundle import IPCBundle
 if TYPE_CHECKING:
     from ..solutions import TSPPathSolution
@@ -15,9 +15,9 @@ __all__ = ("SegmentShift",)
 
 
 if TYPE_CHECKING:
-    _BaseNeighborhood = BaseNeighborhood[TSPPathSolution, Tuple[int, int, int]]
+    _BaseNeighborhood = SingleObjectiveNeighborhood[TSPPathSolution, Tuple[int, int, int]]
 else:
-    _BaseNeighborhood = BaseNeighborhood
+    _BaseNeighborhood = SingleObjectiveNeighborhood
 
 
 class SegmentShift(TSPNeighborhoodMixin, _BaseNeighborhood):
@@ -61,18 +61,18 @@ class SegmentShift(TSPNeighborhoodMixin, _BaseNeighborhood):
     def find_best_candidate(self, *, pool: pool.Pool, pool_size: int) -> Optional[TSPPathSolution]:
         solution = self._solution
 
-        args: List[IPCBundle[SegmentShift, List[Tuple[int, int, int]]]] = [IPCBundle(self, []) for _ in range(pool_size)]
-        args_index_iteration = itertools.cycle(range(pool_size))
+        bundles: List[IPCBundle[SegmentShift, List[Tuple[int, int, int]]]] = [IPCBundle(self, []) for _ in range(pool_size)]
+        bundle_iter = itertools.cycle(bundles)
 
         for segment_first_index in range(solution.dimension):
             segment_end_index = (segment_first_index + self._segment_length - 1) % solution.dimension
             for d in range(solution.dimension - self._segment_length - 1):
                 index = (segment_end_index + d + 1) % solution.dimension
-                args[next(args_index_iteration)].data.append((solution.path[segment_first_index], solution.path[segment_end_index], solution.path[index]))
+                next(bundle_iter).data.append((solution.path[segment_first_index], solution.path[segment_end_index], solution.path[index]))
 
         result: Optional[TSPPathSolution] = None
         min_pair: Optional[Tuple[int, int, int]] = None
-        for result_temp, min_pair_temp in pool.imap(self.static_find_best_candidate, args):
+        for result_temp, min_pair_temp in pool.imap_unordered(self.static_find_best_candidate, bundles):
             if result_temp is None or min_pair_temp is None:
                 continue
 
@@ -93,9 +93,10 @@ class SegmentShift(TSPNeighborhoodMixin, _BaseNeighborhood):
         result: Optional[TSPPathSolution] = None
         min_args: Optional[Tuple[int, int, int]] = None
         for args in bundle.data:
-            shifted = neighborhood.insert_after(*args)
-            if result is None or shifted < result:
-                result = shifted
-                min_args = args
+            if not neighborhood.is_tabu(args):
+                shifted = neighborhood.insert_after(*args)
+                if result is None or shifted < result:
+                    result = shifted
+                    min_args = args
 
         return result, min_args

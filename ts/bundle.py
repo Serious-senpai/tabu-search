@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import Generic, TypeVar, TYPE_CHECKING
 
-from .abc import BaseNeighborhood
+from .abc.types import _BaseNeighborhood
 
 
 _T = TypeVar("_T")
-_NT = TypeVar("_NT", bound=BaseNeighborhood)
+_NT = TypeVar("_NT", bound=_BaseNeighborhood)
 
 
 class IPCBundle(Generic[_NT, _T]):

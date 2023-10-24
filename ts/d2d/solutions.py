@@ -5,21 +5,24 @@ import re
 from functools import partial
 from math import sqrt
 from os.path import join
-from typing import ClassVar, Iterable, List, Optional, Sequence, Tuple, TYPE_CHECKING, final
+from typing import Any, ClassVar, Iterable, List, Optional, Sequence, Tuple, TYPE_CHECKING, final
 
 from matplotlib import axes, pyplot
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
 from .config import DroneEnduranceConfig, DroneEnergyConsumptionMode, DroneLinearConfig, DroneNonlinearConfig, TruckConfig
 from .errors import ImportException
 from .mixins import SolutionMetricsMixin
-from ..abc import BaseSolution
+from .neighborhoods import Swap
+from ..abc import MultiObjectiveNeighborhood, MultiObjectiveSolution
 
 
 __all__ = ("D2DPathSolution",)
 
 
 @final
-class D2DPathSolution(SolutionMetricsMixin, BaseSolution):
+class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
     """Represents a solution to the D2D problem"""
 
     __slots__ = (
@@ -102,6 +105,12 @@ class D2DPathSolution(SolutionMetricsMixin, BaseSolution):
             ),
             technician_timespans=tuple(technician_arrival_timestamp[-1] for technician_arrival_timestamp in self.technician_arrival_timestamps),
             technician_waiting_times=tuple(self.calculate_technician_total_waiting_time(path, arrival_timestamps=arrival_timestamps) for path, arrival_timestamps in zip(self.technician_paths, self.technician_arrival_timestamps)),
+        )
+
+    def get_neighborhoods(self) -> Tuple[MultiObjectiveNeighborhood[Self, Any], ...]:
+        return (
+            Swap(self, first_length=1, second_length=1),
+            Swap(self, first_length=2, second_length=1),
         )
 
     def plot(self) -> None:
@@ -334,44 +343,32 @@ class D2DPathSolution(SolutionMetricsMixin, BaseSolution):
         # After this step, some technician paths may still be empty (i.e. [0, 0]), just leave them unchanged
 
         drone_paths = [[[0]] for _ in range(cls.drones_count)]
-        weight = [0.0] * cls.drones_count
-        time = [0.0] * cls.drones_count
-        energy = [0.0] * cls.drones_count
         dronable = set(e for e in range(1, 1 + cls.customers_count) if cls.dronable[e])
 
         drone_iter = itertools.cycle(range(cls.drones_count))
         while len(dronable) > 0:
             drone = next(drone_iter)
             paths = drone_paths[drone]
-
             config = cls.drone_linear_config[drone] if cls.energy_mode == DroneEnergyConsumptionMode.LINEAR else cls.drone_nonlinear_config[drone]
 
-            last = paths[-1][-1]
-            index = min(dronable, key=partial(cls.distance, last))
+            path = paths[-1]
+            index = min(dronable, key=partial(cls.distance, path[-1]))
 
-            dw = cls.demands[index]
-            takeoff_dt = config.altitude / config.takeoff_speed
-            landing_dt = config.altitude / config.landing_speed
-            cruise_dt = cls.distance(last, index) / config.cruise_speed
-            dt = takeoff_dt + landing_dt + cruise_dt
-            de = (
-                takeoff_dt * config.takeoff_power(weight[drone])
-                + landing_dt * config.landing_power(weight[drone])
-                + cruise_dt * config.cruise_power(weight[drone])
-            )
-
-            if weight[drone] + dw <= config.capacity and time[drone] + dt <= cls.drones_flight_duration and energy[drone] + de <= config.battery:
-                paths[-1].append(index)
-                weight[drone] = weight[drone] + dw
-                time[drone] = time[drone] + dt
-                energy[drone] = energy[drone] + de
-
-            else:
-                paths[-1].append(0)
+            hypothetical_path = path + [index, 0]
+            hypothetical_arrival_timestamps = cls.calculate_drone_arrival_timestamps(hypothetical_path, drone=drone, offset=0.0)
+            if (
+                cls.calculate_total_weight(hypothetical_path) > config.capacity
+                or cls.calculate_drone_flight_duration(hypothetical_path, drone=drone, arrival_timestamps=hypothetical_arrival_timestamps) > cls.drones_flight_duration
+                or cls.calculate_drone_energy_consumption(hypothetical_path, drone=drone, arrival_timestamps=hypothetical_arrival_timestamps) > config.battery
+            ):
+                path.append(0)
                 paths.append([0])
 
                 technician_path = min(technician_paths, key=lambda path: cls.distance(index, path[-2]))
                 technician_path.insert(-1, index)
+
+            else:
+                path.append(index)
 
             dronable.remove(index)
 
@@ -433,3 +430,6 @@ class D2DPathSolution(SolutionMetricsMixin, BaseSolution):
 
         except Exception as e:
             raise ImportException(problem) from e
+
+    def __hash__(self) -> int:
+        return hash((self.drone_paths, self.technician_paths))

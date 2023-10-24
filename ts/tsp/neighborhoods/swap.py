@@ -5,7 +5,7 @@ from multiprocessing import pool
 from typing import List, Optional, Tuple, TYPE_CHECKING
 
 from .mixins import TSPNeighborhoodMixin
-from ...abc import BaseNeighborhood
+from ...abc import SingleObjectiveNeighborhood
 from ...bundle import IPCBundle
 if TYPE_CHECKING:
     from ..solutions import TSPPathSolution
@@ -15,9 +15,9 @@ __all__ = ("Swap",)
 
 
 if TYPE_CHECKING:
-    _BaseNeighborhood = BaseNeighborhood[TSPPathSolution, Tuple[int, int, int, int]]
+    _BaseNeighborhood = SingleObjectiveNeighborhood[TSPPathSolution, Tuple[int, int, int, int]]
 else:
-    _BaseNeighborhood = BaseNeighborhood
+    _BaseNeighborhood = SingleObjectiveNeighborhood
 
 
 class Swap(TSPNeighborhoodMixin, _BaseNeighborhood):
@@ -86,8 +86,8 @@ class Swap(TSPNeighborhoodMixin, _BaseNeighborhood):
     def find_best_candidate(self, *, pool: pool.Pool, pool_size: int) -> Optional[TSPPathSolution]:
         solution = self._solution
 
-        args: List[IPCBundle[Swap, List[Tuple[int, int, int, int]]]] = [IPCBundle(self, []) for _ in range(pool_size)]
-        args_index_iteration = itertools.cycle(range(pool_size))
+        bundles: List[IPCBundle[Swap, List[Tuple[int, int, int, int]]]] = [IPCBundle(self, []) for _ in range(pool_size)]
+        bundle_iter = itertools.cycle(bundles)
 
         for first_head_index in range(solution.dimension):
             first_tail_index = (first_head_index + self._first_length - 1) % solution.dimension
@@ -103,11 +103,11 @@ class Swap(TSPNeighborhoodMixin, _BaseNeighborhood):
                     solution.path[second_head_index],
                     solution.path[second_tail_index],
                 )
-                args[next(args_index_iteration)].data.append(arg)
+                next(bundle_iter).data.append(arg)
 
         result: Optional[TSPPathSolution] = None
         min_swap: Optional[Tuple[int, int, int, int]] = None
-        for result_temp, min_swap_temp in pool.imap(self.static_find_best_candidate, args):
+        for result_temp, min_swap_temp in pool.imap_unordered(self.static_find_best_candidate, bundles):
             if result_temp is None or min_swap_temp is None:
                 continue
 
@@ -128,9 +128,10 @@ class Swap(TSPNeighborhoodMixin, _BaseNeighborhood):
         result: Optional[TSPPathSolution] = None
         min_swap: Optional[Tuple[int, int, int, int]] = None
         for swap in bundle.data:
-            swapped = neighborhood.swap(*swap)
-            if result is None or swapped < result:
-                result = swapped
-                min_swap = swap
+            if not neighborhood.is_tabu(swap):
+                swapped = neighborhood.swap(*swap)
+                if result is None or swapped < result:
+                    result = swapped
+                    min_swap = swap
 
         return result, min_swap
