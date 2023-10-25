@@ -253,7 +253,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         last = path[0]  # must be 0
         config = cls.truck_config
 
-        coefficients_iter = iter(config.coefficients)
+        coefficients_iter = itertools.cycle(config.coefficients)
         current_within_timespan = 0.0
         velocity = config.maximum_velocity * next(coefficients_iter)
 
