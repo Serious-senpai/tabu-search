@@ -74,9 +74,6 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
             next(bundle_iter).data.append(pair)
 
         # Add swaps between drone and technician
-        for drone, technician in itertools.product(paths, tech_paths):
-            next(bundle_iter).data.append((drone, technician))
-
         results: Set[D2DPathSolution] = set()
         swaps_mapping: Dict[D2DPathSolution, Tuple[int, int]] = {}
         for collected in pool.imap_unordered(self.swap_and_evaluate, bundles):
@@ -90,7 +87,6 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
         return results
 
     def swap_and_evaluate(self, bundle: IPCBundle[Swap, List[Tuple[Tuple[int, int], Tuple[int, int]]]]) -> Set[Tuple[D2DPathSolution, Tuple[int, int]]]:
-        # ... [rest of your existing swap_drones_paths code]
 
         neighborhood = bundle.neighborhood
         solution = neighborhood._solution
@@ -98,7 +94,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
 
         for first, second in bundle.data:
             # If both paths belong to technicians
-            if first in tech_paths and second in tech_paths:
+            if first in technician_paths and second in technician_paths:
                 first_technician, first_path_index = first
                 second_technician, second_path_index = second
 
@@ -109,12 +105,12 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                 # You might have methods like calculate_technician_arrival_timestamps, calculate_technician_total_weight, etc.
 
             # If one path belongs to a drone and the other to a technician
-            elif (first in tech_paths and second in paths) or (first in paths and second in tech_paths):
+            elif (first in technician_paths and second in self._solution.drone_paths) or (first in self._solution.drone_paths and second in technician_paths):
                 # Separate out drone and technician based on the path type
-                drone, drone_path_index = first if first in paths else second
-                technician, tech_path_index = first if first in tech_paths else second
+                drone, drone_path_index = first if first in self._solution.drone_paths else second
+                technician, tech_path_index = first if first in technician_paths else second
 
-                drone_path = drone_paths[drone][drone_path_index]
+                drone_path = self._solution.drone_paths[drone][drone_path_index]
                 technician_path = technician_paths[technician][tech_path_index]
 
         results: Set[D2DPathSolution] = set()
