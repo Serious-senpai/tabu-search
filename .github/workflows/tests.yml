@@ -35,6 +35,7 @@ jobs:
       run: pip install -r requirements.txt
 
     - name: Test sample
+      timeout-minutes: 10
       run: python tsp.py ${{ matrix.problem }} --iter ${{ matrix.iterations }} --tabu-size ${{ matrix.tabu_size }} --shuffle-after ${{ matrix.shuffle_after }} --dump output-${{ matrix.problem }}-${{ matrix.iterations }}-${{ matrix.tabu_size }}-${{ matrix.shuffle_after }}.json
 
     - name: Upload solution
@@ -77,6 +78,7 @@ jobs:
       run: pip install -r requirements.txt
 
     - name: Test sample
+      timeout-minutes: 10
       run: python d2d.py ${{ matrix.problem }} --iter ${{ matrix.iterations }} --tabu-size ${{ matrix.tabu_size }} --shuffle-after ${{ matrix.shuffle_after }} --propagation-rate ${{ matrix.propagation_rate }} --dump output-${{ matrix.problem }}-${{ matrix.iterations }}-${{ matrix.tabu_size }}-${{ matrix.shuffle_after }}.json
 
     - name: Upload solution
@@ -84,7 +86,7 @@ jobs:
       with:
         name: d2d-summary
         path: output-**.json
-      
+
   summary:
     name: Summarize solutions
     runs-on: ubuntu-latest
