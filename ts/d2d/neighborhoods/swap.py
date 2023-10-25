@@ -66,44 +66,54 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
 
         # TODO: Swap between (technician-technician) and (technician-drone) paths
         tech_paths: List[Tuple[int, int]] = []
-for index, path in enumerate(solution.technician_paths):
-    tech_paths.extend([(index, e) for e in range(len(path))])
+        for index, path in enumerate(solution.technician_paths):
+            tech_paths.extend([(index, e) for e in range(len(path))])
 
-# Technician-Technician Swap
-tech_pairs: Iterable[Tuple[Tuple[int, int], Tuple[int, int]]] = itertools.combinations(tech_paths, 2)
-if self._first_length != self._second_length:
-    tech_pairs = itertools.permutations(tech_paths, 2)  # type: ignore
+        tech_pairs: Iterable[Tuple[Tuple[int, int], Tuple[int, int]]] = itertools.combinations(tech_paths, 2)
+        for pair in tech_pairs:
+            next(bundle_iter).data.append(pair)
 
-for pair in tech_pairs:
-    next(bundle_iter).data.append(pair)
+        # Add swaps between drone and technician
+        for drone, technician in itertools.product(paths, tech_paths):
+            next(bundle_iter).data.append((drone, technician))
 
-# Technician-Drone Swap
-tech_drone_pairs: Iterable[Tuple[Tuple[int, int], Tuple[int, int]]] = itertools.product(tech_paths, paths)
-for pair in tech_drone_pairs:
-    next(bundle_iter).data.append(pair)
-    def swap_and_evaluate(bundle: IPCBundle[Swap, List[Tuple[Tuple[int, int], Tuple[int, int]]]]) -> Set[Tuple[D2DPathSolution, Tuple[int, int]]]:
-    # ... [rest of your swap_drones_paths code]
+        results: Set[D2DPathSolution] = set()
+        swaps_mapping: Dict[D2DPathSolution, Tuple[int, int]] = {}
+        for collected in pool.imap_unordered(self.swap_and_evaluate, bundles):
+            for result, swap in collected:
+                swaps_mapping[result] = swap
+                result.add_to_pareto_set(results)
 
-    # Assuming you have corresponding methods for technicians like the ones you have for drones
-    for first, second in bundle.data:
-        # If both paths belong to technicians
-        if first in tech_paths and second in tech_paths:
-            first_technician, first_path_index = first
-            second_technician, second_path_index = second
-            
-            first_path = technician_paths[first_technician][first_path_index]
-            second_path = technician_paths[second_technician][second_path_index]
+        for result in results:
+            self.add_to_tabu(swaps_mapping[result])
 
-            # Implement your swap logic for technicians here and evaluate objectives
-            # You might have methods like calculate_technician_arrival_timestamps, calculate_technician_total_weight, etc.
+        return results
 
-        # If one path belongs to a drone and the other to a technician
-        elif (first in tech_paths and second in paths) or (first in paths and second in tech_paths):
-            drone, drone_path_index = first if first in paths else second
-            technician, tech_path_index = first if first in tech_paths else second
-            
-            drone_path = drone_paths[drone][drone_path_index]
-            technician_path = technician_paths[technician][tech_path_index]
+    def swap_and_evaluate(self, bundle: IPCBundle[Swap, List[Tuple[Tuple[int, int], Tuple[int, int]]]]) -> Set[Tuple[D2DPathSolution, Tuple[int, int]]]:
+        # ... [rest of your existing swap_drones_paths code]
+
+        technician_paths = list(list(path) for path in solution.technician_paths)
+
+        for first, second in bundle.data:
+            # If both paths belong to technicians
+            if first in tech_paths and second in tech_paths:
+                first_technician, first_path_index = first
+                second_technician, second_path_index = second
+
+                first_path = technician_paths[first_technician][first_path_index]
+                second_path = technician_paths[second_technician][second_path_index]
+
+                # Implement your swap logic for technicians here and evaluate objectives
+                # You might have methods like calculate_technician_arrival_timestamps, calculate_technician_total_weight, etc.
+
+            # If one path belongs to a drone and the other to a technician
+            elif (first in tech_paths and second in paths) or (first in paths and second in tech_paths):
+                # Separate out drone and technician based on the path type
+                drone, drone_path_index = first if first in paths else second
+                technician, tech_path_index = first if first in tech_paths else second
+
+                drone_path = drone_paths[drone][drone_path_index]
+                technician_path = technician_paths[technician][tech_path_index]
 
         results: Set[D2DPathSolution] = set()
         swaps_mapping: Dict[D2DPathSolution, Tuple[int, int]] = {}
