@@ -60,6 +60,7 @@ jobs:
         iterations: [1000, 4000]
         tabu_size: [5]
         shuffle_after: [3]
+        propagation_rate: [0.3]
 
     steps:
     - name: Checkout repository
@@ -76,7 +77,7 @@ jobs:
       run: pip install -r requirements.txt
 
     - name: Test sample
-      run: python d2d.py ${{ matrix.problem }} --iter ${{ matrix.iterations }} --tabu-size ${{ matrix.tabu_size }} --shuffle-after ${{ matrix.shuffle_after }} --dump output-${{ matrix.problem }}-${{ matrix.iterations }}-${{ matrix.tabu_size }}-${{ matrix.shuffle_after }}.json
+      run: python d2d.py ${{ matrix.problem }} --iter ${{ matrix.iterations }} --tabu-size ${{ matrix.tabu_size }} --shuffle-after ${{ matrix.shuffle_after }} --propagation-rate ${{ matrix.propagation_rate }} --dump output-${{ matrix.problem }}-${{ matrix.iterations }}-${{ matrix.tabu_size }}-${{ matrix.shuffle_after }}.json
 
     - name: Upload solution
       uses: actions/upload-artifact@v3

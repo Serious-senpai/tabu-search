@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import random
 from multiprocessing import Pool
-from typing import Any, Callable, Literal, Sequence, Set, Union, TYPE_CHECKING
+from typing import Any, Callable, List, Literal, Sequence, Set, Union, TYPE_CHECKING
 
 from tqdm import tqdm
 if TYPE_CHECKING:
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 __all__ = ("MultiObjectiveSolution",)
 
 
-def _always_true(*args: Any) -> Literal[True]:
+def _accept_all(*args: Any) -> Literal[True]:
     return True
 
 
@@ -36,7 +36,7 @@ class MultiObjectiveSolution(_BaseSolution, BaseMulticostComparison):
         pool_size: int,
         iterations_count: int,
         use_tqdm: bool,
-        propagation_predicate: Callable[[Self, Set[Self]], bool] = _always_true,
+        propagation_predicate: Callable[[Self, Set[Self]], bool] = _accept_all,
         shuffle_after: int,
     ) -> Set[Self]:
         """Run the tabu search algorithm to find the Pareto front for this multi-objective optimization problem.
@@ -80,13 +80,17 @@ class MultiObjectiveSolution(_BaseSolution, BaseMulticostComparison):
                 if isinstance(iterations, tqdm):
                     iterations.set_description_str(f"Tabu search ({len(current)} solution(s))")
 
+                propagate: List[Self] = []
                 for solution in current:
                     neighborhoods = solution.get_neighborhoods()
                     for candidate in random.choice(neighborhoods).find_best_candidates(pool=pool, pool_size=pool_size):
                         candidate.add_to_pareto_set(results)
                         if propagation_predicate(candidate, results):
-                            if candidate.add_to_pareto_set(current):
-                                last_improved = iteration
+                            propagate.append(candidate)
+
+                for candidate in propagate:
+                    if candidate.add_to_pareto_set(current):
+                        last_improved = iteration
 
                 if iteration - last_improved >= shuffle_after:
                     current = set(s.shuffle(use_tqdm=use_tqdm) for s in current)

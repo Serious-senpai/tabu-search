@@ -117,6 +117,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         return (
             Swap(self, first_length=1, second_length=1),
             Swap(self, first_length=2, second_length=1),
+            Swap(self, first_length=2, second_length=2),
         )
 
     def plot(self) -> None:
