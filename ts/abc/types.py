@@ -9,8 +9,8 @@ from typing import (
     Dict,
     Generic,
     Protocol,
+    Sequence,
     Set,
-    Tuple,
     Type,
     TypeVar,
     TYPE_CHECKING,
@@ -39,7 +39,7 @@ class _BaseSolution:
 
     __slots__ = ()
 
-    def get_neighborhoods(self) -> Tuple[_BaseNeighborhood[Self, Any], ...]:
+    def get_neighborhoods(self) -> Sequence[_BaseNeighborhood[Self, Any]]:
         """Returns all neighborhoods of the current solution"""
         raise NotImplementedError
 

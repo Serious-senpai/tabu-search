@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import random
 from multiprocessing import Pool
-from typing import Any, Tuple, Union, TYPE_CHECKING
+from typing import Any, Sequence, Union, TYPE_CHECKING
 
 from tqdm import tqdm
 if TYPE_CHECKING:
@@ -22,7 +22,7 @@ class SingleObjectiveSolution(_BaseSolution, BaseCostComparison):
 
     __slots__ = ()
 
-    def get_neighborhoods(self) -> Tuple[SingleObjectiveNeighborhood[Self, Any], ...]:
+    def get_neighborhoods(self) -> Sequence[SingleObjectiveNeighborhood[Self, Any]]:
         raise NotImplementedError
 
     @classmethod

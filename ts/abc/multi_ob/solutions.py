@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import random
 from multiprocessing import Pool
-from typing import Any, Callable, Literal, Set, Tuple, Union, TYPE_CHECKING
+from typing import Any, Callable, Literal, Sequence, Set, Union, TYPE_CHECKING
 
 from tqdm import tqdm
 if TYPE_CHECKING:
@@ -26,7 +26,7 @@ class MultiObjectiveSolution(_BaseSolution, BaseMulticostComparison):
 
     __slots__ = ()
 
-    def get_neighborhoods(self) -> Tuple[MultiObjectiveNeighborhood[Self, Any], ...]:
+    def get_neighborhoods(self) -> Sequence[MultiObjectiveNeighborhood[Self, Any]]:
         raise NotImplementedError
 
     @classmethod

@@ -49,26 +49,36 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
     def find_best_candidates(self, *, pool: pool.Pool, pool_size: int) -> Set[D2DPathSolution]:
         solution = self._solution
 
-        bundles: List[IPCBundle[Swap, List[Tuple[Tuple[int, int], Tuple[int, int]]]]] = [IPCBundle(self, []) for _ in range(pool_size)]
-        bundle_iter = itertools.cycle(bundles)
+        def drone_drone_swap() -> Iterable[Set[Tuple[D2DPathSolution, Tuple[int, int]]]]:
+            bundles: List[IPCBundle[Swap, List[Tuple[Tuple[int, int], Tuple[int, int]]]]] = [IPCBundle(self, []) for _ in range(pool_size)]
+            bundle_iter = itertools.cycle(bundles)
 
-        # Swap between 2 drone paths
-        paths: List[Tuple[int, int]] = []
-        for index, path in enumerate(solution.drone_paths):
-            paths.extend([(index, e) for e in range(len(path))])
+            paths: List[Tuple[int, int]] = []
+            for drone, path in enumerate(solution.drone_paths):
+                paths.extend([(drone, e) for e in range(len(path))])
 
-        pairs: Iterable[Tuple[Tuple[int, int], Tuple[int, int]]] = itertools.combinations(paths, 2)
-        if self._first_length != self._second_length:
-            pairs = itertools.permutations(paths, 2)  # type: ignore
+            pairs: Iterable[Tuple[Tuple[int, int], Tuple[int, int]]] = itertools.combinations(paths, 2)
+            if self._first_length != self._second_length:
+                pairs = itertools.permutations(paths, 2)  # type: ignore
 
-        for pair in pairs:
-            next(bundle_iter).data.append(pair)
+            for pair in pairs:
+                next(bundle_iter).data.append(pair)
+
+            return pool.imap_unordered(self.swap_drones_paths, bundles)
 
         # TODO: Swap between (technician-technician) and (technician-drone) paths
 
+        def technician_technician_swap() -> Iterable[Set[Tuple[D2DPathSolution, Tuple[int, int]]]]:
+            raise NotImplementedError
+
+        def technician_drone_swap() -> Iterable[Set[Tuple[D2DPathSolution, Tuple[int, int]]]]:
+            raise NotImplementedError
+
         results: Set[D2DPathSolution] = set()
         swaps_mapping: Dict[D2DPathSolution, Tuple[int, int]] = {}
-        for collected in pool.imap_unordered(self.swap_drones_paths, bundles):
+        for collected in itertools.chain(
+            drone_drone_swap(),
+        ):
             for result, swap in collected:
                 swaps_mapping[result] = swap
                 result.add_to_pareto_set(results)
