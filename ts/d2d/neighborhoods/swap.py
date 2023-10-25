@@ -92,6 +92,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
     def swap_and_evaluate(self, bundle: IPCBundle[Swap, List[Tuple[Tuple[int, int], Tuple[int, int]]]]) -> Set[Tuple[D2DPathSolution, Tuple[int, int]]]:
         # ... [rest of your existing swap_drones_paths code]
 
+        solution = neighborhood._solution
         technician_paths = list(list(path) for path in solution.technician_paths)
 
         for first, second in bundle.data:
