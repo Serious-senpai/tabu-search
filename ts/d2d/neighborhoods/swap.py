@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import functools
 import itertools
+import functools
 from multiprocessing import pool
 from typing import Dict, Iterable, List, Set, Tuple, TYPE_CHECKING
 
@@ -11,6 +11,7 @@ from ..config import DroneEnergyConsumptionMode
 from ..errors import NeighborhoodException
 from ...abc import MultiObjectiveNeighborhood
 from ...bundle import IPCBundle
+
 if TYPE_CHECKING:
     from ..solutions import D2DPathSolution
 
@@ -30,6 +31,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
         "_first_length",
         "_second_length",
     )
+
     if TYPE_CHECKING:
         _first_length: int
         _second_length: int
@@ -48,32 +50,26 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
 
     def find_best_candidates(self, *, pool: pool.Pool, pool_size: int) -> Set[D2DPathSolution]:
         solution = self._solution
-
         bundles: List[IPCBundle[Swap, List[Tuple[Tuple[int, int], Tuple[int, int]]]]] = [IPCBundle(self, []) for _ in range(pool_size)]
         bundle_iter = itertools.cycle(bundles)
 
         # Swap between 2 drone paths
-        paths: List[Tuple[int, int]] = []
-        for index, path in enumerate(solution.drone_paths):
-            paths.extend([(index, e) for e in range(len(path))])
+        drone_paths: List[Tuple[int, int]] = [(index, e) for index, path in enumerate(solution.drone_paths) for e in range(len(path))]
 
-        pairs: Iterable[Tuple[Tuple[int, int], Tuple[int, int]]] = itertools.combinations(paths, 2)
+        pairs: Iterable[Tuple[Tuple[int, int], Tuple[int, int]]] = itertools.combinations(drone_paths, 2)
         if self._first_length != self._second_length:
-            pairs = itertools.permutations(paths, 2)  # type: ignore
+            pairs = itertools.permutations(drone_paths, 2)  # type: ignore
 
         for pair in pairs:
             next(bundle_iter).data.append(pair)
 
-        # TODO: Swap between (technician-technician) and (technician-drone) paths
-        tech_paths: List[Tuple[int, int]] = []
-        for index, path in enumerate(solution.technician_paths):
-            tech_paths.extend([(index, e) for e in range(len(path))])
+        # Swap between technician paths and drone paths
+        technician_paths: List[Tuple[int, int]] = [(index, e) for index, path in enumerate(solution.technician_paths) for e in range(len(path))]
+        tech_drone_pairs: Iterable[Tuple[Tuple[int, int], Tuple[int, int]]] = itertools.product(technician_paths, drone_paths)
 
-        tech_pairs: Iterable[Tuple[Tuple[int, int], Tuple[int, int]]] = itertools.combinations(tech_paths, 2)
-        for pair in tech_pairs:
+        for pair in tech_drone_pairs:
             next(bundle_iter).data.append(pair)
 
-        # Add swaps between drone and technician
         results: Set[D2DPathSolution] = set()
         swaps_mapping: Dict[D2DPathSolution, Tuple[int, int]] = {}
         for collected in pool.imap_unordered(self.swap_and_evaluate, bundles):
@@ -87,7 +83,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
         return results
 
     def swap_and_evaluate(self, bundle: IPCBundle[Swap, List[Tuple[Tuple[int, int], Tuple[int, int]]]]) -> Set[Tuple[D2DPathSolution, Tuple[int, int]]]:
-
+        
         neighborhood = bundle.neighborhood
         solution = neighborhood._solution
         technician_paths = list(list(path) for path in solution.technician_paths)
