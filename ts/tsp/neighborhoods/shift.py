@@ -93,7 +93,7 @@ class SegmentShift(TSPNeighborhoodMixin, _BaseNeighborhood):
         result: Optional[TSPPathSolution] = None
         min_args: Optional[Tuple[int, int, int]] = None
         for args in bundle.data:
-            if not neighborhood.is_tabu(args):
+            if args not in bundle.tabu_set:
                 shifted = neighborhood.insert_after(*args)
                 if result is None or shifted < result:
                     result = shifted

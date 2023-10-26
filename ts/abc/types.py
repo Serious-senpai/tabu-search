@@ -117,11 +117,6 @@ class _BaseNeighborhood(Generic[_ST, _TT]):
 
     @final
     @classmethod
-    def is_tabu(cls, __o: _TT, /) -> bool:
-        return __o in cls._tabu_set
-
-    @final
-    @classmethod
     def add_to_tabu(cls, target: _TT) -> None:
         cls._tabu_set.add(target)
         cls._tabu_list.append(target)

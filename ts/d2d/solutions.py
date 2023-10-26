@@ -66,6 +66,10 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         technician_paths: Iterable[Iterable[int]],
         drone_arrival_timestamps: Optional[Tuple[Tuple[Tuple[float, ...], ...], ...]] = None,
         technician_arrival_timestamps: Optional[Tuple[Tuple[float, ...], ...]] = None,
+        drone_timespans: Optional[Tuple[float, ...]] = None,
+        drone_waiting_times: Optional[Tuple[Tuple[float, ...], ...]] = None,
+        technician_timespans: Optional[Tuple[float, ...]] = None,
+        technician_waiting_times: Optional[Tuple[float, ...]] = None,
     ) -> None:
         self.drone_paths = tuple(tuple(tuple(index for index in path) for path in paths) for paths in drone_paths)
         self.technician_paths = tuple(tuple(index for index in path) for path in technician_paths)
@@ -101,16 +105,16 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
                 return 0.0
 
         super().__init__(
-            drone_timespans=tuple(__last_element(single_drone_arrival_timestamps) for single_drone_arrival_timestamps in self.drone_arrival_timestamps),
-            drone_waiting_times=tuple(
+            drone_timespans=drone_timespans or tuple(__last_element(single_drone_arrival_timestamps) for single_drone_arrival_timestamps in self.drone_arrival_timestamps),
+            drone_waiting_times=drone_waiting_times or tuple(
                 tuple(
                     self.calculate_drone_total_waiting_time(path, drone=drone, arrival_timestamps=arrival_timestamps)
                     for path, arrival_timestamps in zip(paths, self.drone_arrival_timestamps[drone])
                 )
                 for drone, paths in enumerate(self.drone_paths)
             ),
-            technician_timespans=tuple(technician_arrival_timestamp[-1] for technician_arrival_timestamp in self.technician_arrival_timestamps),
-            technician_waiting_times=tuple(self.calculate_technician_total_waiting_time(path, arrival_timestamps=arrival_timestamps) for path, arrival_timestamps in zip(self.technician_paths, self.technician_arrival_timestamps)),
+            technician_timespans=technician_timespans or tuple(technician_arrival_timestamp[-1] for technician_arrival_timestamp in self.technician_arrival_timestamps),
+            technician_waiting_times=technician_waiting_times or tuple(self.calculate_technician_total_waiting_time(path, arrival_timestamps=arrival_timestamps) for path, arrival_timestamps in zip(self.technician_paths, self.technician_arrival_timestamps)),
         )
 
     def get_neighborhoods(self) -> Tuple[MultiObjectiveNeighborhood[Self, Any], ...]:

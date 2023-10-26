@@ -128,7 +128,7 @@ class Swap(TSPNeighborhoodMixin, _BaseNeighborhood):
         result: Optional[TSPPathSolution] = None
         min_swap: Optional[Tuple[int, int, int, int]] = None
         for swap in bundle.data:
-            if not neighborhood.is_tabu(swap):
+            if swap not in bundle.tabu_set:
                 swapped = neighborhood.swap(*swap)
                 if result is None or swapped < result:
                     result = swapped

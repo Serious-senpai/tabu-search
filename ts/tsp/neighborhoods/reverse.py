@@ -94,7 +94,7 @@ class SegmentReverse(TSPNeighborhoodMixin, _BaseNeighborhood):
         min_pair: Optional[Tuple[int, int]] = None
         for segment in bundle.data:
             pair = (segment[0], segment[-1])
-            if not neighborhood.is_tabu(pair):
+            if pair not in bundle.tabu_set:
                 shifted = neighborhood.reverse(segment)
                 if result is None or shifted < result:
                     result = shifted

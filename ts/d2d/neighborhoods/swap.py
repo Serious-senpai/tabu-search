@@ -4,7 +4,7 @@ import functools
 import itertools
 from copy import deepcopy
 from multiprocessing import pool
-from typing import Dict, Iterable, List, Set, Tuple, TYPE_CHECKING
+from typing import Any, Dict, Iterable, List, Set, Tuple, TYPE_CHECKING
 
 from .mixins import D2DNeighborhoodMixin
 from .results import OperationResult
@@ -109,6 +109,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
         second_length = neighborhood._second_length
         config = solution.drone_linear_config if solution.energy_mode == DroneEnergyConsumptionMode.LINEAR else solution.drone_nonlinear_config
 
+        # Don't alter the variables without a prefix underscore, edit their copies instead
         drone_paths = list(list(list(path) for path in paths) for paths in solution.drone_paths)
         drone_timespans = list(solution.drone_timespans)
         drone_waiting_times = list(list(w) for w in solution.drone_waiting_times)
@@ -118,20 +119,21 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
             second: Tuple[int, int],
             first_path: List[int],
             second_path: List[int],
+            **kwargs: Any,
         ) -> D2DPathSolution:
             _drone_paths = deepcopy(drone_paths)
             _drone_paths[first[0]][first[1]] = first_path
             _drone_paths[second[0]][second[1]] = second_path
-            return neighborhood.cls(drone_paths=_drone_paths, technician_paths=solution.technician_paths)
+            return neighborhood.cls(drone_paths=_drone_paths, technician_paths=solution.technician_paths, **kwargs)
 
         results: Set[OperationResult] = set()
         swaps_mapping: Dict[OperationResult, Tuple[int, int]] = {}
         for first, second in bundle.data:
-            # Indices of the 2 drones whose paths are altered (can be of the same drone)
+            # Indices of the 2 drones whose paths are altered (cannot be of the same drone)
             first_drone, first_path_index = first
             second_drone, second_path_index = second
 
-            # The altered paths
+            # The swapped paths
             first_path = drone_paths[first_drone][first_path_index]
             second_path = drone_paths[second_drone][second_path_index]
 
@@ -139,38 +141,42 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                 range(1, len(first_path) - first_length),
                 range(1, len(second_path) - second_length),
             ):
+                pair = (first_path[first_start], second_path[second_start])
+                if pair in bundle.tabu_set:
+                    continue
+
                 _first_path = first_path.copy()
                 _second_path = second_path.copy()
 
                 _first_path[first_start:first_start + first_length] = second_path[second_start:second_start + second_length]
                 _second_path[second_start:second_start + second_length] = first_path[first_start:first_start + first_length]
 
-                _first_arrival_timestamps = solution.calculate_drone_arrival_timestamps(_first_path, drone=first_drone, offset=0.0)
-                _second_arrival_timestamps = solution.calculate_drone_arrival_timestamps(_second_path, drone=second_drone, offset=0.0)
+                first_arrival_timestamps = solution.calculate_drone_arrival_timestamps(_first_path, drone=first_drone, offset=0.0)
+                second_arrival_timestamps = solution.calculate_drone_arrival_timestamps(_second_path, drone=second_drone, offset=0.0)
                 if solution.calculate_total_weight(_first_path) > config[first_drone].capacity or solution.calculate_total_weight(_second_path) > config[second_drone].capacity:
                     continue
 
-                if solution.calculate_drone_flight_duration(_first_path, drone=first_drone, arrival_timestamps=_first_arrival_timestamps) > solution.drones_flight_duration:
+                if solution.calculate_drone_flight_duration(_first_path, drone=first_drone, arrival_timestamps=first_arrival_timestamps) > solution.drones_flight_duration:
                     continue
 
-                if solution.calculate_drone_flight_duration(_second_path, drone=second_drone, arrival_timestamps=_second_arrival_timestamps) > solution.drones_flight_duration:
+                if solution.calculate_drone_flight_duration(_second_path, drone=second_drone, arrival_timestamps=second_arrival_timestamps) > solution.drones_flight_duration:
                     continue
 
-                if solution.calculate_drone_energy_consumption(_first_path, drone=first_drone, arrival_timestamps=_first_arrival_timestamps) > config[first_drone].battery:
+                if solution.calculate_drone_energy_consumption(_first_path, drone=first_drone, arrival_timestamps=first_arrival_timestamps) > config[first_drone].battery:
                     continue
 
-                if solution.calculate_drone_energy_consumption(_second_path, drone=second_drone, arrival_timestamps=_second_arrival_timestamps) > config[second_drone].battery:
+                if solution.calculate_drone_energy_consumption(_second_path, drone=second_drone, arrival_timestamps=second_arrival_timestamps) > config[second_drone].battery:
                     continue
 
                 _drone_timespans = drone_timespans.copy()
-                _drone_timespans[first_drone] += _first_arrival_timestamps[-1] - solution.drone_arrival_timestamps[first_drone][first_path_index][-1]
-                _drone_timespans[second_drone] += _second_arrival_timestamps[-1] - solution.drone_arrival_timestamps[second_drone][second_path_index][-1]
+                _drone_timespans[first_drone] += first_arrival_timestamps[-1] - solution.drone_arrival_timestamps[first_drone][first_path_index][-1]
+                _drone_timespans[second_drone] += second_arrival_timestamps[-1] - solution.drone_arrival_timestamps[second_drone][second_path_index][-1]
 
                 _drone_waiting_times = drone_waiting_times.copy()
                 _drone_waiting_times[first_drone] = _drone_waiting_times[first_drone].copy()
-                _drone_waiting_times[first_drone][first_path_index] = solution.calculate_drone_total_waiting_time(_first_path, drone=first_drone, arrival_timestamps=_first_arrival_timestamps)
+                _drone_waiting_times[first_drone][first_path_index] = solution.calculate_drone_total_waiting_time(_first_path, drone=first_drone, arrival_timestamps=first_arrival_timestamps)
                 _drone_waiting_times[second_drone] = _drone_waiting_times[second_drone].copy()
-                _drone_waiting_times[second_drone][second_path_index] = solution.calculate_drone_total_waiting_time(_second_path, drone=second_drone, arrival_timestamps=_second_arrival_timestamps)
+                _drone_waiting_times[second_drone][second_path_index] = solution.calculate_drone_total_waiting_time(_second_path, drone=second_drone, arrival_timestamps=second_arrival_timestamps)
 
                 operation_result = OperationResult(
                     factory=functools.partial(factory, first, second, _first_path, _second_path),
@@ -180,7 +186,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                     technician_waiting_times=solution.technician_waiting_times,
                 )
 
-                swaps_mapping[operation_result] = (first_path[first_start], second_path[second_start])
+                swaps_mapping[operation_result] = pair
                 operation_result.add_to_pareto_set(results)
 
         return set((r.to_solution(), swaps_mapping[r]) for r in results)
@@ -194,15 +200,23 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
         first_length = neighborhood._first_length
         second_length = neighborhood._second_length
 
+        # Don't alter the variables without a prefix underscore, edit their copies instead
         technician_paths = list(list(path) for path in solution.technician_paths)
 
-        def factory(first: int, second: int, first_path: List[int], second_path: List[int]) -> D2DPathSolution:
+        def factory(
+            first: int,
+            second: int,
+            first_path: List[int],
+            second_path: List[int],
+            **kwargs: Any,
+        ) -> D2DPathSolution:
             _technician_paths = deepcopy(technician_paths)
             _technician_paths[first] = first_path
             _technician_paths[second] = second_path
             return neighborhood.cls(
                 drone_paths=solution.drone_paths,
                 technician_paths=_technician_paths,
+                **kwargs,
             )
 
         results: Set[OperationResult] = set()
@@ -215,22 +229,26 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                 range(1, len(first_path) - first_length),
                 range(1, len(second_path) - second_length),
             ):
+                pair = (first_path[first_start], second_path[second_start])
+                if pair in bundle.tabu_set:
+                    continue
+
                 _first_path = first_path.copy()
                 _second_path = second_path.copy()
 
                 _first_path[first_start:first_start + first_length] = second_path[second_start:second_start + second_length]
                 _second_path[second_start:second_start + second_length] = first_path[first_start:first_start + first_length]
 
-                _first_arrival_timestamps = solution.calculate_technician_arrival_timestamps(_first_path)
-                _second_arrival_timestamps = solution.calculate_technician_arrival_timestamps(_second_path)
+                first_arrival_timestamps = solution.calculate_technician_arrival_timestamps(_first_path)
+                second_arrival_timestamps = solution.calculate_technician_arrival_timestamps(_second_path)
 
                 _technician_timespans = list(solution.technician_timespans)
-                _technician_timespans[first] = _first_arrival_timestamps[-1]
-                _technician_timespans[second] = _second_arrival_timestamps[-1]
+                _technician_timespans[first] = first_arrival_timestamps[-1]
+                _technician_timespans[second] = second_arrival_timestamps[-1]
 
                 _technician_total_waiting_times = list(solution.technician_waiting_times)
-                _technician_total_waiting_times[first] = solution.calculate_technician_total_waiting_time(_first_path, arrival_timestamps=_first_arrival_timestamps)
-                _technician_total_waiting_times[second] = solution.calculate_technician_total_waiting_time(_second_path, arrival_timestamps=_second_arrival_timestamps)
+                _technician_total_waiting_times[first] = solution.calculate_technician_total_waiting_time(_first_path, arrival_timestamps=first_arrival_timestamps)
+                _technician_total_waiting_times[second] = solution.calculate_technician_total_waiting_time(_second_path, arrival_timestamps=second_arrival_timestamps)
 
                 operation_result = OperationResult(
                     factory=functools.partial(factory, first, second, _first_path, _second_path),
@@ -240,7 +258,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                     technician_waiting_times=tuple(_technician_total_waiting_times),
                 )
 
-                swaps_mapping[operation_result] = (first_path[first_start], second_path[second_start])
+                swaps_mapping[operation_result] = pair
                 operation_result.add_to_pareto_set(results)
 
         return set((r.to_solution(), swaps_mapping[r]) for r in results)
