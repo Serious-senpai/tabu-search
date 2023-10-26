@@ -64,7 +64,7 @@ jobs:
         iterations: [1000, 4000]
         tabu_size: [5]
         shuffle_after: [3]
-        propagation_rate: [1.0]
+        propagation_rate: [0.1]
 
     steps:
     - name: Checkout repository
@@ -93,6 +93,7 @@ jobs:
   summary:
     name: Summarize solutions
     runs-on: ubuntu-latest
+    if: always()
     needs: [tsp-test, d2d-test]
 
     steps:
