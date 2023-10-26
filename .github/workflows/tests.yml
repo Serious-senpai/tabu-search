@@ -38,7 +38,7 @@ jobs:
       run: pip install -r requirements.txt
 
     - name: Test sample
-      timeout-minutes: 15
+      timeout-minutes: 60
       run: python tsp.py ${{ matrix.problem }} --iter ${{ matrix.iterations }} --tabu-size ${{ matrix.tabu_size }} --shuffle-after ${{ matrix.shuffle_after }} --dump output-${{ matrix.problem }}-${{ matrix.iterations }}-${{ matrix.tabu_size }}-${{ matrix.shuffle_after }}.json
 
     - name: Upload solution
@@ -62,10 +62,11 @@ jobs:
           "200.10.1", "200.10.2", "200.10.3", "200.10.4", "200.20.1", "200.20.2", "200.20.3", "200.20.4", "200.30.1", "200.30.2", "200.30.3", "200.30.4", "200.40.1", "200.40.2", "200.40.3", "200.40.4",
         ]
         iterations: [100, 500]
-        tabu_size: [10]
         shuffle_after: [3]
+        tabu_size: [10]
         propagation_rate: [0.3]
         max_propagation: [5]
+        pool_size: [8]
 
     steps:
     - name: Checkout repository
@@ -82,8 +83,16 @@ jobs:
       run: pip install -r requirements.txt
 
     - name: Test sample
-      timeout-minutes: 15
-      run: python d2d.py ${{ matrix.problem }} --iter ${{ matrix.iterations }} --tabu-size ${{ matrix.tabu_size }} --shuffle-after ${{ matrix.shuffle_after }} --propagation-rate ${{ matrix.propagation_rate }} --max-propagation ${{ matrix.max_propagation }} --dump output-${{ matrix.problem }}-${{ matrix.iterations }}-${{ matrix.tabu_size }}-${{ matrix.shuffle_after }}.json
+      timeout-minutes: 60
+      run: |
+        python d2d.py ${{ matrix.problem }} \
+        --iter ${{ matrix.iterations }} \
+        --tabu-size ${{ matrix.tabu_size }} \
+        --shuffle-after ${{ matrix.shuffle_after }} \
+        --propagation-rate ${{ matrix.propagation_rate }} \
+        --max-propagation ${{ matrix.max_propagation }} \
+        --pool-size ${{ matrix.pool_size }} \
+        --dump output-${{ matrix.problem }}-${{ matrix.iterations }}-${{ matrix.tabu_size }}-${{ matrix.shuffle_after }}.json
 
     - name: Upload solution
       uses: actions/upload-artifact@v3
