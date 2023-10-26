@@ -51,8 +51,17 @@ if __name__ == "__main__":
 
     d2d.Swap.reset_tabu(maxlen=namespace.tabu_size)
 
-    def predicate(*args: Any) -> bool:
-        return random.random() < namespace.propagation_rate
+    if namespace.propagation_rate >= 1.0:
+        def predicate(*args: Any) -> bool:
+            return True
+
+    elif namespace.propagation_rate <= 0.0:
+        def predicate(*args: Any) -> bool:
+            return False
+
+    else:
+        def predicate(*args: Any) -> bool:
+            return random.random() < namespace.propagation_rate
 
     if namespace.profile:
         eval_func = f"""d2d.D2DPathSolution.tabu_search(
