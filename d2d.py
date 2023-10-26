@@ -51,19 +51,20 @@ if __name__ == "__main__":
 
     d2d.Swap.reset_tabu(maxlen=namespace.tabu_size)
 
+    def predicate(*args: Any) -> bool:
+        return random.random() < namespace.propagation_rate
+
     if namespace.profile:
         eval_func = f"""d2d.D2DPathSolution.tabu_search(
             pool_size={namespace.pool_size},
             iterations_count={namespace.iterations},
             use_tqdm={namespace.verbose},
+            propagation_predicate=predicate,
             shuffle_after={namespace.shuffle_after},
         )"""
         cProfile.run(eval_func)
         exit(0)
     else:
-        def predicate(*args: Any) -> bool:
-            return random.random() < namespace.propagation_rate
-
         solutions = d2d.D2DPathSolution.tabu_search(
             pool_size=namespace.pool_size,
             iterations_count=namespace.iterations,
@@ -73,10 +74,10 @@ if __name__ == "__main__":
         )
 
     print(f"Found {len(solutions)} solution(s):")
-    for index, solution in enumerate(solutions):
+    for index, solution in enumerate(sorted(solutions, key=lambda s: s.cost())):
         print(f"SOLUTION #{index + 1}: cost = {solution.cost()}")
-        print("Drone paths:\n" + "\n".join(f"Drone #{drone_index + 1}: {paths}" for drone_index, paths in enumerate(solution.drone_paths)))
-        print("Technician paths:\n" + "\n".join(f"Technician #{technician_index + 1}: {path}" for technician_index, path in enumerate(solution.technician_paths)))
+        print("\n".join(f"Drone #{drone_index + 1}: {paths}" for drone_index, paths in enumerate(solution.drone_paths)))
+        print("\n".join(f"Technician #{technician_index + 1}: {path}" for technician_index, path in enumerate(solution.technician_paths)))
 
         if namespace.verbose:
             solution.plot()

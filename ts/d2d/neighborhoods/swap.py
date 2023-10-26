@@ -3,7 +3,7 @@ from __future__ import annotations
 import functools
 import itertools
 from copy import deepcopy
-from multiprocessing import pool
+from multiprocessing import pool as p
 from typing import Any, Dict, Iterable, List, Set, Tuple, TYPE_CHECKING
 
 from .mixins import D2DNeighborhoodMixin
@@ -47,10 +47,18 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
         self._first_length = first_length
         self._second_length = second_length
 
-    def find_best_candidates(self, *, pool: pool.Pool, pool_size: int) -> Set[D2DPathSolution]:
+    def find_best_candidates(self, *, pool: p.Pool, pool_size: int) -> Set[D2DPathSolution]:
         solution = self._solution
+        results: Set[D2DPathSolution] = set()
+        swaps_mapping: Dict[D2DPathSolution, Tuple[int, int]] = {}
 
-        def drone_drone_swap() -> Iterable[Set[Tuple[D2DPathSolution, Tuple[int, int]]]]:
+        def callback(collected: Iterable[Set[Tuple[D2DPathSolution, Tuple[int, int]]]]) -> None:
+            for s in collected:
+                for result, swap in s:
+                    swaps_mapping[result] = swap
+                    result.add_to_pareto_set(results)
+
+        def drone_drone_swap() -> p.MapResult[Set[Tuple[D2DPathSolution, Tuple[int, int]]]]:
             bundles: List[IPCBundle[Swap, List[Tuple[Tuple[int, int], Tuple[int, int]]]]] = [IPCBundle(self, []) for _ in range(pool_size)]
             bundle_iter = itertools.cycle(bundles)
 
@@ -65,9 +73,10 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
             for pair in pairs:
                 next(bundle_iter).data.append(pair)
 
-            return pool.imap_unordered(self.swap_drone_drone, bundles)
+            # typing bug in multiprocessing.pool module
+            return pool.map_async(self.swap_drone_drone, bundles, callback=callback)  # type: ignore
 
-        def technician_technician_swap() -> Iterable[Set[Tuple[D2DPathSolution, Tuple[int, int]]]]:
+        def technician_technician_swap() -> p.MapResult[Set[Tuple[D2DPathSolution, Tuple[int, int]]]]:
             bundles: List[IPCBundle[Swap, List[Tuple[int, int]]]] = [IPCBundle(self, []) for _ in range(pool_size)]
             bundle_iter = itertools.cycle(bundles)
 
@@ -78,21 +87,18 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
             for pair in pairs:
                 next(bundle_iter).data.append(pair)
 
-            return pool.imap_unordered(self.swap_technician_technician, bundles)
+            # typing bug in multiprocessing.pool module
+            return pool.map_async(self.swap_technician_technician, bundles, callback=callback)  # type: ignore
 
         # TODO: Swap between technician and drone paths
         def technician_drone_swap() -> Iterable[Set[Tuple[D2DPathSolution, Tuple[int, int]]]]:
             raise NotImplementedError
 
-        results: Set[D2DPathSolution] = set()
-        swaps_mapping: Dict[D2DPathSolution, Tuple[int, int]] = {}
-        for collected in itertools.chain(
+        for r in (
             drone_drone_swap(),
             technician_technician_swap(),
         ):
-            for result, swap in collected:
-                swaps_mapping[result] = swap
-                result.add_to_pareto_set(results)
+            r.wait()
 
         for result in results:
             self.add_to_tabu(swaps_mapping[result])
