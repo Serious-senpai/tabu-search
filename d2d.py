@@ -16,11 +16,12 @@ class Namespace(argparse.Namespace):
         iterations: int
         shuffle_after: int
         tabu_size: int
+        propagation_rate: float
+        max_propagation: Optional[int]
         profile: bool
         verbose: bool
         dump: Optional[str]
         pool_size: int
-        propagation_rate: float
 
 
 def to_json(solution: d2d.D2DPathSolution) -> Dict[str, Any]:
@@ -38,6 +39,7 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--shuffle-after", default=10, type=int, help="after the specified number of non-improved iterations, shuffle the solution (default: 10)")
     parser.add_argument("-t", "--tabu-size", default=10, type=int, help="the tabu size for every neighborhood (default: 10)")
     parser.add_argument("-r", "--propagation-rate", default=1.0, type=float, help="The rate of solution propagation (default: 1.0)")
+    parser.add_argument("-m", "--max-propagation", type=int, help="Maximum number of propagating solutions at a time")
     parser.add_argument("-p", "--profile", action="store_true", help="run in profile mode and exit immediately")
     parser.add_argument("-v", "--verbose", action="store_true", help="whether to display the progress bar and plot the solution")
     parser.add_argument("-d", "--dump", type=str, help="dump the solution to a file")
@@ -70,6 +72,7 @@ if __name__ == "__main__":
             use_tqdm={namespace.verbose},
             propagation_predicate=predicate,
             shuffle_after={namespace.shuffle_after},
+            max_propagation={namespace.max_propagation},
         )"""
         cProfile.run(eval_func)
         exit(0)
@@ -80,6 +83,7 @@ if __name__ == "__main__":
             use_tqdm=namespace.verbose,
             propagation_predicate=predicate,
             shuffle_after=namespace.shuffle_after,
+            max_propagation=namespace.max_propagation,
         )
 
     print(f"Found {len(solutions)} solution(s):")

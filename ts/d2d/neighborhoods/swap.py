@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import functools
 import itertools
+import random
 from copy import deepcopy
 from multiprocessing import pool as p
 from typing import Dict, Iterable, List, Set, Tuple, TYPE_CHECKING
@@ -104,15 +105,16 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
             # typing bug in multiprocessing.pool module
             return pool.map_async(self.swap_technician_drone, bundles, callback=callback)  # type: ignore
 
-        for r in (
-            drone_drone_swap(),
-            technician_technician_swap(),
-            technician_drone_swap(),
-        ):
-            r.wait()
+        r = random.choice([
+            drone_drone_swap,
+            technician_technician_swap,
+            technician_drone_swap,
+        ])
+        r().wait()
 
         for result in results:
-            self.add_to_tabu(swaps_mapping[result])
+            pair = swaps_mapping[result]
+            self.add_to_tabu((min(pair), max(pair)))
 
         return set(r.to_solution() for r in results)
 
@@ -147,6 +149,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                 range(1, len(second_path) - second_length),
             ):
                 pair = (first_path[first_start], second_path[second_start])
+                pair = (min(pair), max(pair))
                 if pair in bundle.tabu_set:
                     continue
 
@@ -231,6 +234,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                 range(1, len(second_path) - second_length),
             ):
                 pair = (first_path[first_start], second_path[second_start])
+                pair = (min(pair), max(pair))
                 if pair in bundle.tabu_set:
                     continue
 
@@ -288,6 +292,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                     # Dronable segment in technician path found
                     for drone_start in range(1, len(drone_path) - drone_length):
                         pair = (technician_path[technician_start], drone_path[drone_start])
+                        pair = (min(pair), max(pair))
                         if pair in bundle.tabu_set:
                             continue
 

@@ -38,6 +38,7 @@ class MultiObjectiveSolution(_BaseSolution, BaseMulticostComparison):
         use_tqdm: bool,
         propagation_predicate: Callable[[Self, Set[Self]], bool] = _accept_all,
         shuffle_after: int,
+        max_propagation: Union[int, Callable[[Set[Self]], int], None] = None,
     ) -> Set[Self]:
         """Run the tabu search algorithm to find the Pareto front for this multi-objective optimization problem.
 
@@ -51,11 +52,13 @@ class MultiObjectiveSolution(_BaseSolution, BaseMulticostComparison):
             Whether to display the progress bar
         propagation_predicate: Callable[[`MultiObjectiveSolution`, Set[`MultiObjectiveSolution`]], bool]
             A function taking 2 arguments: The first one is the solution S, the second one is the currently considered Pareto front.
-            It must return a boolean value indicating whether the solution S should be added to the search tree.
-
-            The provided function mustn't change the Pareto front by any means.
+            It must return a boolean value indicating whether the solution S should be added to the search tree. The provided function
+            mustn't change the Pareto front by any means.
         shuffle_after: `int`
             After the specified number of non-improving iterations, shuffle the current solution
+        max_propagation: Union[`int`, Callable[[Set[`MultiObjectiveSolution`]], `int`], None]
+            An integer or a function that takes the current Pareto front as a single parameter and return the maximum number of
+            propagating solutions at a time
 
         Returns
         -----
@@ -78,7 +81,7 @@ class MultiObjectiveSolution(_BaseSolution, BaseMulticostComparison):
             last_improved = 0
             for iteration in iterations:
                 if isinstance(iterations, tqdm):
-                    iterations.set_description_str(f"Tabu search ({len(current)} solution(s))")
+                    iterations.set_description_str(f"Tabu search ({len(current)}/{len(results)} solution(s))")
 
                 propagate: List[Self] = []
                 for solution in current:
@@ -88,8 +91,15 @@ class MultiObjectiveSolution(_BaseSolution, BaseMulticostComparison):
                             propagate.append(candidate)
 
                 for candidate in propagate:
-                    if candidate.add_to_pareto_set(current):
-                        last_improved = iteration
+                    current.add(candidate)
+                    last_improved = iteration
+
+                if max_propagation is not None:
+                    max_propagation_value = max_propagation if isinstance(max_propagation, int) else max_propagation(results)
+                    remove_count = len(current) - max_propagation_value
+                    if remove_count > 0:
+                        for candidate in random.sample(list(current), remove_count):
+                            current.remove(candidate)
 
                 if iteration - last_improved >= shuffle_after:
                     current = set(s.shuffle(use_tqdm=use_tqdm) for s in current)

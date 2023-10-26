@@ -61,10 +61,11 @@ jobs:
           "100.10.1", "100.10.2", "100.10.3", "100.10.4", "100.20.1", "100.20.2", "100.20.3", "100.20.4", "100.30.1", "100.30.2", "100.30.3", "100.30.4", "100.40.1", "100.40.2", "100.40.3", "100.40.4",
           "200.10.1", "200.10.2", "200.10.3", "200.10.4", "200.20.1", "200.20.2", "200.20.3", "200.20.4", "200.30.1", "200.30.2", "200.30.3", "200.30.4", "200.40.1", "200.40.2", "200.40.3", "200.40.4",
         ]
-        iterations: [1000]
+        iterations: [100, 500]
         tabu_size: [10]
         shuffle_after: [3]
-        propagation_rate: [0.1, 1.0]
+        propagation_rate: [0.3]
+        max_propagation: [5]
 
     steps:
     - name: Checkout repository
@@ -82,7 +83,7 @@ jobs:
 
     - name: Test sample
       timeout-minutes: 15
-      run: python d2d.py ${{ matrix.problem }} --iter ${{ matrix.iterations }} --tabu-size ${{ matrix.tabu_size }} --shuffle-after ${{ matrix.shuffle_after }} --propagation-rate ${{ matrix.propagation_rate }} --dump output-${{ matrix.problem }}-${{ matrix.iterations }}-${{ matrix.tabu_size }}-${{ matrix.shuffle_after }}.json
+      run: python d2d.py ${{ matrix.problem }} --iter ${{ matrix.iterations }} --tabu-size ${{ matrix.tabu_size }} --shuffle-after ${{ matrix.shuffle_after }} --propagation-rate ${{ matrix.propagation_rate }} --max-propagation ${{ matrix.max_propagation }} --dump output-${{ matrix.problem }}-${{ matrix.iterations }}-${{ matrix.tabu_size }}-${{ matrix.shuffle_after }}.json
 
     - name: Upload solution
       uses: actions/upload-artifact@v3
