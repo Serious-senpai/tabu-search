@@ -84,8 +84,7 @@ class MultiObjectiveSolution(_BaseSolution, BaseMulticostComparison):
                 for solution in current:
                     neighborhoods = solution.get_neighborhoods()
                     for candidate in random.choice(neighborhoods).find_best_candidates(pool=pool, pool_size=pool_size):
-                        candidate.add_to_pareto_set(results)
-                        if propagation_predicate(candidate, results):
+                        if candidate.add_to_pareto_set(results) or propagation_predicate(candidate, results):
                             propagate.append(candidate)
 
                 for candidate in propagate:
