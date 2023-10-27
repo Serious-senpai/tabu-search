@@ -73,6 +73,7 @@ if __name__ == "__main__":
             propagation_predicate=predicate,
             shuffle_after={namespace.shuffle_after},
             max_propagation={namespace.max_propagation},
+            plot_pareto_front={namespace.verbose},
         )"""
         cProfile.run(eval_func)
         exit(0)
@@ -84,6 +85,7 @@ if __name__ == "__main__":
             propagation_predicate=predicate,
             shuffle_after=namespace.shuffle_after,
             max_propagation=namespace.max_propagation,
+            plot_pareto_front=namespace.verbose,
         )
 
     print(f"Found {len(solutions)} solution(s):")
@@ -91,9 +93,6 @@ if __name__ == "__main__":
         print(f"SOLUTION #{index + 1}: cost = {solution.cost()}")
         print("\n".join(f"Drone #{drone_index + 1}: {paths}" for drone_index, paths in enumerate(solution.drone_paths)))
         print("\n".join(f"Technician #{technician_index + 1}: {path}" for technician_index, path in enumerate(solution.technician_paths)))
-
-        if namespace.verbose:
-            solution.plot()
 
     if namespace.dump is not None:
         with open(namespace.dump, "w") as f:

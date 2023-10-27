@@ -4,6 +4,7 @@ import random
 from multiprocessing import Pool
 from typing import Any, Callable, List, Literal, Sequence, Set, Union, TYPE_CHECKING
 
+from matplotlib import axes, pyplot
 from tqdm import tqdm
 if TYPE_CHECKING:
     from typing_extensions import Self
@@ -39,6 +40,7 @@ class MultiObjectiveSolution(_BaseSolution, BaseMulticostComparison):
         propagation_predicate: Callable[[Self, Set[Self]], bool] = _accept_all,
         shuffle_after: int,
         max_propagation: Union[int, Callable[[Set[Self]], int], None] = None,
+        plot_pareto_front: bool = False,
     ) -> Set[Self]:
         """Run the tabu search algorithm to find the Pareto front for this multi-objective optimization problem.
 
@@ -55,10 +57,12 @@ class MultiObjectiveSolution(_BaseSolution, BaseMulticostComparison):
             It must return a boolean value indicating whether the solution S should be added to the search tree. The provided function
             mustn't change the Pareto front by any means.
         shuffle_after: `int`
-            After the specified number of non-improving iterations, shuffle the current solution
+            After the specified number of non-improving iterations, shuffle the current solutions set
         max_propagation: Union[`int`, Callable[[Set[`MultiObjectiveSolution`]], `int`], None]
             An integer or a function that takes the current Pareto front as a single parameter and return the maximum number of
             propagating solutions at a time
+        plot_pareto_front: `bool`
+            Plot the Pareto front for 2-objective optimization problems only, default to False
 
         Returns
         -----
@@ -70,13 +74,19 @@ class MultiObjectiveSolution(_BaseSolution, BaseMulticostComparison):
         - https://en.wikipedia.org/wiki/Pareto_efficiency
         - https://en.wikipedia.org/wiki/Pareto_front
         """
+        initial = cls.initial()
         results: Set[Self] = set()
-        results.add(cls.initial())
+        results.add(initial)
         iterations: Union[range, tqdm[int]] = range(iterations_count)
         if use_tqdm:
             iterations = tqdm(iterations, ascii=" █")
 
         current = results.copy()
+        candidate_costs = [initial.cost()] if plot_pareto_front else None
+        if len(initial.cost()) != 2:
+            message = f"Cannot plot the Pareto front when the number of objectives is not 2"
+            raise ValueError(message)
+
         with Pool(pool_size) as pool:
             last_improved = 0
             for iteration in iterations:
@@ -87,6 +97,9 @@ class MultiObjectiveSolution(_BaseSolution, BaseMulticostComparison):
                 for solution in current:
                     neighborhoods = solution.get_neighborhoods()
                     for candidate in random.choice(neighborhoods).find_best_candidates(pool=pool, pool_size=pool_size):
+                        if candidate_costs is not None:
+                            candidate_costs.append(candidate.cost())
+
                         if candidate.add_to_pareto_set(results) or propagation_predicate(candidate, results):
                             propagate.append(candidate)
 
@@ -103,5 +116,27 @@ class MultiObjectiveSolution(_BaseSolution, BaseMulticostComparison):
 
                 if iteration - last_improved >= shuffle_after:
                     current = set(s.shuffle(use_tqdm=use_tqdm) for s in current)
+
+        if candidate_costs is not None:
+            _, ax = pyplot.subplots()
+            assert isinstance(ax, axes.Axes)
+
+            ax.scatter(
+                [cost[0] for cost in candidate_costs],
+                [cost[1] for cost in candidate_costs],
+                c="gray",
+                label=f"Found solutions ({len(candidate_costs)})",
+            )
+            ax.scatter(
+                [result.cost()[0] for result in results],
+                [result.cost()[1] for result in results],
+                c="red",
+                label=f"Pareto front ({len(results)})",
+            )
+
+            ax.grid(True)
+
+            pyplot.legend()
+            pyplot.show()
 
         return set(r.post_optimization(pool=pool, pool_size=pool_size, use_tqdm=use_tqdm) for r in results)

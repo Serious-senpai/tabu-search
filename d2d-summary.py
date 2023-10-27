@@ -6,7 +6,7 @@ from typing import Dict
 
 
 summary_dir = Path("d2d-summary/")
-field_names = ("Problem", "Iterations", "Tabu size", "Shuffle after", "Cost_0", "Cost_1", "Drone paths", "Technician paths")
+field_names = ("Problem", "Iterations", "Tabu size", "Shuffle after", "Service duration", "Total waiting time", "Drone paths", "Technician paths")
 pattern = re.compile(r"output-([0-9\.]+)-(\d+)-(\d+)-(\d+)\.json")
 
 
