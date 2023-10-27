@@ -194,8 +194,8 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                 _drone_waiting_times[second_drone][second_path_index] = solution.calculate_drone_total_waiting_time(_second_path, drone=second_drone, arrival_timestamps=second_arrival_timestamps)
 
                 _drone_paths = deepcopy(drone_paths)
-                _drone_paths[first[0]][first[1]] = first_path
-                _drone_paths[second[0]][second[1]] = second_path
+                _drone_paths[first[0]][first[1]] = _first_path
+                _drone_paths[second[0]][second[1]] = _second_path
 
                 operation_result = OperationResult(
                     factory=functools.partial(neighborhood.cls, drone_paths=_drone_paths, technician_paths=solution.technician_paths),
