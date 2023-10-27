@@ -6,8 +6,8 @@ from typing import Dict
 
 
 summary_dir = Path("d2d-summary/")
-field_names = ("Problem", "Iterations", "Tabu size", "Shuffle after", "Service duration", "Total waiting time", "Drone paths", "Technician paths")
-pattern = re.compile(r"output-([0-9\.]+)-(\d+)-(\d+)-(\d+)\.json")
+field_names = ("Problem", "Iterations", "Tabu size", "Propagation priority", "Service duration", "Total waiting time", "Drone paths", "Technician paths")
+pattern = re.compile(r"output-([0-9\.]+)-(\d+)-(\d+)-([-a-z]+)?\.json")
 
 
 def to_map(*args: str) -> Dict[str, str]:
@@ -23,14 +23,19 @@ with open(summary_dir / "summary.csv", "w") as csv:
 
     for file in sorted(os.listdir(summary_dir)):
         if match := pattern.fullmatch(file):
-            problem, iterations, tabu_size, shuffle_after = match.groups()
+            groups = match.groups()
+            if len(groups) == 3:
+                problem, iterations, tabu_size = groups
+                propagation_priority = ""
+            elif len(groups) == 4:
+                problem, iterations, tabu_size, propagation_priority = groups
+
             with open(summary_dir / file, "r") as f:
                 data = json.load(f)
 
             assert problem == data["problem"]
             assert iterations == str(data["iterations"])
             assert tabu_size == str(data["tabu-size"])
-            assert shuffle_after == str(data["shuffle-after"])
 
             for d in data["solutions"]:
                 csv.write(
@@ -39,7 +44,7 @@ with open(summary_dir / "summary.csv", "w") as csv:
                             problem,
                             iterations,
                             tabu_size,
-                            shuffle_after,
+                            propagation_priority.strip("-"),
                             str(d["cost"][0]),
                             str(d["cost"][1]),
                             "\"" + str(d["drone_paths"]) + "\"",

@@ -1,10 +1,7 @@
 from __future__ import annotations
 
 from functools import total_ordering
-from typing import Any, TYPE_CHECKING, final
-
-if TYPE_CHECKING:
-    from ..types import SupportsCost
+from typing import Any, final
 
 
 __all__ = ("BaseCostComparison",)
@@ -15,7 +12,7 @@ class BaseCostComparison:
 
     __slots__ = ()
 
-    def cost(self) -> SupportsCost:
+    def cost(self) -> float:
         """The cost of this object"""
         raise NotImplementedError
 

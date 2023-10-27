@@ -8,33 +8,19 @@ from typing import (
     Deque,
     Dict,
     Generic,
-    Protocol,
     Sequence,
     Set,
     Type,
     TypeVar,
     TYPE_CHECKING,
     final,
-    runtime_checkable,
 )
 
 if TYPE_CHECKING:
     from typing_extensions import Self
 
 
-__all__ = ("SupportsCost",)
-
-
-@runtime_checkable
-class SupportsCost(Protocol):
-    def __float__(self) -> float: ...
-
-    def __eq__(self, other: Any) -> bool: ...
-    def __ne__(self, other: Any) -> bool: ...
-    def __lt__(self, other: Any) -> bool: ...
-    def __le__(self, other: Any) -> bool: ...
-    def __gt__(self, other: Any) -> bool: ...
-    def __ge__(self, other: Any) -> bool: ...
+__all__ = ()
 
 
 class _BaseSolution:

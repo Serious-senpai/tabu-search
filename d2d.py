@@ -5,18 +5,19 @@ import cProfile
 import json
 import os
 import random
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from typing import Any, Callable, Dict, Optional, Set, TYPE_CHECKING
 
-from ts import d2d
+from ts import d2d, utils
 
 
 class Namespace(argparse.Namespace):
     if TYPE_CHECKING:
         problem: str
         iterations: int
-        shuffle_after: int
         tabu_size: int
         propagation_rate: float
+        max_distance: bool
+        min_distance: bool
         max_propagation: Optional[int]
         profile: bool
         verbose: bool
@@ -36,9 +37,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Tabu search algorithm for TSP problems")
     parser.add_argument("problem", type=str, help="the problem name (e.g. \"6.5.1\", \"200.10.1\", ...)")
     parser.add_argument("-i", "--iterations", default=500, type=int, help="the number of iterations to run the tabu search for (default: 500)")
-    parser.add_argument("-s", "--shuffle-after", default=10, type=int, help="after the specified number of non-improved iterations, shuffle the solution (default: 10)")
     parser.add_argument("-t", "--tabu-size", default=10, type=int, help="the tabu size for every neighborhood (default: 10)")
     parser.add_argument("-r", "--propagation-rate", default=1.0, type=float, help="The rate of solution propagation (default: 1.0)")
+    parser.add_argument("--max-distance", action="store_true", help="Set the propagation predicate using the maximum total distance to the Pareto front instead of the propagation rate")
+    parser.add_argument("--min-distance", action="store_true", help="Set the propagation predicate using the minimum total distance to the Pareto front instead of the propagation rate")
     parser.add_argument("-m", "--max-propagation", type=int, help="Maximum number of propagating solutions at a time")
     parser.add_argument("-p", "--profile", action="store_true", help="run in profile mode and exit immediately")
     parser.add_argument("-v", "--verbose", action="store_true", help="whether to display the progress bar and plot the solution")
@@ -50,43 +52,63 @@ if __name__ == "__main__":
     namespace: Namespace = parser.parse_args()  # type: ignore
     print(namespace)
     d2d.D2DPathSolution.import_problem(namespace.problem)
-
     d2d.Swap.reset_tabu(maxlen=namespace.tabu_size)
 
-    if namespace.propagation_rate >= 1.0:
-        def predicate(*args: Any) -> bool:
-            return True
+    propagation_predicate: Callable[[Set[d2d.D2DPathSolution], d2d.D2DPathSolution], bool] = utils.true
+    if namespace.propagation_rate <= 0.0:
+        propagation_predicate = utils.false
 
-    elif namespace.propagation_rate <= 0.0:
-        def predicate(*args: Any) -> bool:
-            return False
-
-    else:
-        def predicate(*args: Any) -> bool:
+    elif namespace.propagation_rate < 1.0:
+        def propagation_predicate(pareto_set: Set[d2d.D2DPathSolution], candidate: d2d.D2DPathSolution) -> bool:
             return random.random() < namespace.propagation_rate
+
+    if namespace.max_distance and namespace.min_distance:
+        message = "--max-distance and --min-distance are mutually exclusive"
+        raise ValueError(message)
+
+    propagation_priority_key: Callable[[Set[d2d.D2DPathSolution], d2d.D2DPathSolution], float] = utils.zero
+    if namespace.max_distance:
+        def propagation_priority_key(pareto_set: Set[d2d.D2DPathSolution], candidate: d2d.D2DPathSolution) -> float:
+            cost = candidate.cost()
+            result = 0.0
+            for s in pareto_set:
+                s_cost = s.cost()
+                result += abs(s_cost[0] - cost[0]) + abs(s_cost[1] - cost[1])
+
+            return -result
+
+    if namespace.min_distance:
+        def propagation_priority_key(pareto_set: Set[d2d.D2DPathSolution], candidate: d2d.D2DPathSolution) -> float:
+            cost = candidate.cost()
+            result = 0.0
+            for s in pareto_set:
+                s_cost = s.cost()
+                result += abs(s_cost[0] - cost[0]) + abs(s_cost[1] - cost[1])
+
+            return result
 
     if namespace.profile:
         eval_func = f"""d2d.D2DPathSolution.tabu_search(
             pool_size={namespace.pool_size},
             iterations_count={namespace.iterations},
             use_tqdm={namespace.verbose},
-            propagation_predicate=predicate,
-            shuffle_after={namespace.shuffle_after},
+            propagation_predicate=propagation_predicate,
+            propagation_priority_key=propagation_priority_key,
             max_propagation={namespace.max_propagation},
             plot_pareto_front={namespace.verbose},
         )"""
         cProfile.run(eval_func)
         exit(0)
-    else:
-        solutions = d2d.D2DPathSolution.tabu_search(
-            pool_size=namespace.pool_size,
-            iterations_count=namespace.iterations,
-            use_tqdm=namespace.verbose,
-            propagation_predicate=predicate,
-            shuffle_after=namespace.shuffle_after,
-            max_propagation=namespace.max_propagation,
-            plot_pareto_front=namespace.verbose,
-        )
+
+    solutions = d2d.D2DPathSolution.tabu_search(
+        pool_size=namespace.pool_size,
+        iterations_count=namespace.iterations,
+        use_tqdm=namespace.verbose,
+        propagation_predicate=propagation_predicate,
+        propagation_priority_key=propagation_priority_key,
+        max_propagation=namespace.max_propagation,
+        plot_pareto_front=namespace.verbose,
+    )
 
     print(f"Found {len(solutions)} solution(s):")
     for index, solution in enumerate(sorted(solutions, key=lambda s: s.cost())):
@@ -100,7 +122,6 @@ if __name__ == "__main__":
                 "problem": namespace.problem,
                 "iterations": namespace.iterations,
                 "tabu-size": namespace.tabu_size,
-                "shuffle-after": namespace.shuffle_after,
                 "solutions": [to_json(s) for s in solutions],
             }
             json.dump(data, f)

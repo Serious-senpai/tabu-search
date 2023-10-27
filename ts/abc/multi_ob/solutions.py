@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import random
+from functools import partial
 from multiprocessing import Pool
-from typing import Any, Callable, List, Literal, Sequence, Set, Union, TYPE_CHECKING
+from typing import Any, Callable, List, Sequence, Set, Union, TYPE_CHECKING
 
 from matplotlib import axes, pyplot
 from tqdm import tqdm
@@ -11,15 +12,12 @@ if TYPE_CHECKING:
 
 from .costs import BaseMulticostComparison
 from ..types import _BaseSolution
+from ...utils import true, zero
 if TYPE_CHECKING:
     from .neighborhoods import MultiObjectiveNeighborhood
 
 
 __all__ = ("MultiObjectiveSolution",)
-
-
-def _accept_all(*args: Any) -> Literal[True]:
-    return True
 
 
 class MultiObjectiveSolution(_BaseSolution, BaseMulticostComparison):
@@ -37,8 +35,8 @@ class MultiObjectiveSolution(_BaseSolution, BaseMulticostComparison):
         pool_size: int,
         iterations_count: int,
         use_tqdm: bool,
-        propagation_predicate: Callable[[Self, Set[Self]], bool] = _accept_all,
-        shuffle_after: int,
+        propagation_predicate: Callable[[Set[Self], Self], bool] = true,
+        propagation_priority_key: Callable[[Set[Self], Self], float] = zero,
         max_propagation: Union[int, Callable[[Set[Self]], int], None] = None,
         plot_pareto_front: bool = False,
     ) -> Set[Self]:
@@ -46,28 +44,29 @@ class MultiObjectiveSolution(_BaseSolution, BaseMulticostComparison):
 
         Parameters
         -----
-        pool_size: `int`
+        pool_size:
             The size of the process pool to perform parallelism
-        iterations_count: `int`
+        iterations_count:
             The number of iterations to improve from the initial solution
-        use_tqdm: `bool`
+        use_tqdm:
             Whether to display the progress bar
-        propagation_predicate: Callable[[`MultiObjectiveSolution`, Set[`MultiObjectiveSolution`]], bool]
-            A function taking 2 arguments: The first one is the solution S, the second one is the currently considered Pareto front.
+        propagation_predicate:
+            A function taking 2 arguments: The first one is the currently considered Pareto front, the second one is the solution S.
             It must return a boolean value indicating whether the solution S should be added to the search tree. The provided function
             mustn't change the Pareto front by any means.
-        shuffle_after: `int`
-            After the specified number of non-improving iterations, shuffle the current solutions set
-        max_propagation: Union[`int`, Callable[[Set[`MultiObjectiveSolution`]], `int`], None]
+        propagation_priority_key:
+            A function taking 2 arguments: The first one is the currently considered Pareto front, the second one is the solution S.
+            The less the returned value, the more likely the solution S is added to the search tree. The provided function mustn't
+            change the Pareto front by any means
+        max_propagation:
             An integer or a function that takes the current Pareto front as a single parameter and return the maximum number of
             propagating solutions at a time
-        plot_pareto_front: `bool`
+        plot_pareto_front:
             Plot the Pareto front for 2-objective optimization problems only, default to False
 
         Returns
         -----
-        Set[`MultiObjectiveSolution`]
-            The Pareto front among the iterated solutions
+        The Pareto front among the iterated solutions
 
         See also
         -----
@@ -81,15 +80,14 @@ class MultiObjectiveSolution(_BaseSolution, BaseMulticostComparison):
         if use_tqdm:
             iterations = tqdm(iterations, ascii=" █")
 
-        current = results.copy()
+        current = [initial]
         candidate_costs = [initial.cost()] if plot_pareto_front else None
         if len(initial.cost()) != 2:
             message = f"Cannot plot the Pareto front when the number of objectives is not 2"
             raise ValueError(message)
 
         with Pool(pool_size) as pool:
-            last_improved = 0
-            for iteration in iterations:
+            for _ in iterations:
                 if isinstance(iterations, tqdm):
                     iterations.set_description_str(f"Tabu search ({len(current)}/{len(results)} solution(s))")
 
@@ -100,22 +98,13 @@ class MultiObjectiveSolution(_BaseSolution, BaseMulticostComparison):
                         if candidate_costs is not None:
                             candidate_costs.append(candidate.cost())
 
-                        if candidate.add_to_pareto_set(results) or propagation_predicate(candidate, results):
+                        if candidate.add_to_pareto_set(results) or propagation_predicate(results, candidate):
                             propagate.append(candidate)
 
-                for candidate in propagate:
-                    current.add(candidate)
-                    last_improved = iteration
-
+                propagate.sort(key=partial(propagation_priority_key, results))
                 if max_propagation is not None:
                     max_propagation_value = max_propagation if isinstance(max_propagation, int) else max_propagation(results)
-                    remove_count = len(current) - max_propagation_value
-                    if remove_count > 0:
-                        for candidate in random.sample(list(current), remove_count):
-                            current.remove(candidate)
-
-                if iteration - last_improved >= shuffle_after:
-                    current = set(s.shuffle(use_tqdm=use_tqdm) for s in current)
+                    current = propagate[:max_propagation_value]
 
         if candidate_costs is not None:
             _, ax = pyplot.subplots()
