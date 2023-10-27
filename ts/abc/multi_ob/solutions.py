@@ -80,7 +80,7 @@ class MultiObjectiveSolution(_BaseSolution, BaseMulticostComparison):
         if use_tqdm:
             iterations = tqdm(iterations, ascii=" █")
 
-        current = [initial]
+        current = results.copy()
         candidate_costs = [initial.cost()] if plot_pareto_front else None
         if len(initial.cost()) != 2:
             message = f"Cannot plot the Pareto front when the number of objectives is not 2"
@@ -104,7 +104,19 @@ class MultiObjectiveSolution(_BaseSolution, BaseMulticostComparison):
                 propagate.sort(key=partial(propagation_priority_key, results))
                 if max_propagation is not None:
                     max_propagation_value = max_propagation if isinstance(max_propagation, int) else max_propagation(results)
-                    current = propagate[:max_propagation_value]
+                else:
+                    max_propagation_value = None
+
+                if max_propagation_value is not None:
+                    for s in propagate[max(1, len(propagate) // 3):]:
+                        current.add(s)
+
+                    while len(current) > max_propagation_value:
+                        current.remove(next(iter(current)))
+
+                else:
+                    for s in propagate:
+                        current.add(s)
 
         if candidate_costs is not None:
             _, ax = pyplot.subplots()
