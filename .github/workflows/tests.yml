@@ -59,7 +59,7 @@ jobs:
           "20.10.1", "20.10.2", "20.10.3", "20.10.4", "20.20.1", "20.20.2", "20.20.3", "20.20.4", "20.5.1", "20.5.2", "20.5.3", "20.5.4",
         ]
         iterations: [500]
-        tabu_size: [5, 10]
+        tabu_size: [10]
         propagation_rate: [0.1, 1.0]
         propagation_priority: ["", "--min-distance", "--max-distance"]
         max_propagation: [5]
