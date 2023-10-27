@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import functools
 import itertools
-import random
 from copy import deepcopy
 from multiprocessing import pool as p
 from typing import Dict, Iterable, List, Set, Tuple, TYPE_CHECKING
@@ -105,12 +104,12 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
             # typing bug in multiprocessing.pool module
             return pool.map_async(self.swap_technician_drone, bundles, callback=callback)  # type: ignore
 
-        r = random.choice([
-            drone_drone_swap,
-            technician_technician_swap,
-            technician_drone_swap,
-        ])
-        r().wait()
+        for r in (
+            drone_drone_swap(),
+            technician_technician_swap(),
+            technician_drone_swap(),
+        ):
+            r.wait()
 
         for result in results:
             pair = swaps_mapping[result]
@@ -256,8 +255,8 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                 _technician_total_waiting_times[second] = solution.calculate_technician_total_waiting_time(_second_path, arrival_timestamps=second_arrival_timestamps)
 
                 _technician_paths = deepcopy(technician_paths)
-                _technician_paths[first] = first_path
-                _technician_paths[second] = second_path
+                _technician_paths[first] = _first_path
+                _technician_paths[second] = _second_path
 
                 operation_result = OperationResult(
                     factory=functools.partial(neighborhood.cls, drone_paths=solution.drone_paths, technician_paths=_technician_paths),

@@ -24,11 +24,9 @@ with open(summary_dir / "summary.csv", "w") as csv:
     for file in sorted(os.listdir(summary_dir)):
         if match := pattern.fullmatch(file):
             groups = match.groups()
-            if len(groups) == 3:
-                problem, iterations, tabu_size = groups
+            problem, iterations, tabu_size, propagation_priority = groups
+            if propagation_priority is None:
                 propagation_priority = ""
-            elif len(groups) == 4:
-                problem, iterations, tabu_size, propagation_priority = groups
 
             with open(summary_dir / file, "r") as f:
                 data = json.load(f)
