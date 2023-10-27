@@ -22,11 +22,13 @@ if TYPE_CHECKING:
     from typing_extensions import Self
 
 
-__all__ = ("SupportsRichComparison",)
+__all__ = ("SupportsCost",)
 
 
 @runtime_checkable
-class SupportsRichComparison(Protocol):
+class SupportsCost(Protocol):
+    def __float__(self) -> float: ...
+
     def __eq__(self, other: Any) -> bool: ...
     def __ne__(self, other: Any) -> bool: ...
     def __lt__(self, other: Any) -> bool: ...

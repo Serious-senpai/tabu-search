@@ -4,7 +4,7 @@ from functools import total_ordering
 from typing import Any, TYPE_CHECKING, final
 
 if TYPE_CHECKING:
-    from ..types import SupportsRichComparison
+    from ..types import SupportsCost
 
 
 __all__ = ("BaseCostComparison",)
@@ -15,7 +15,7 @@ class BaseCostComparison:
 
     __slots__ = ()
 
-    def cost(self) -> SupportsRichComparison:
+    def cost(self) -> SupportsCost:
         """The cost of this object"""
         raise NotImplementedError
 

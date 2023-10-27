@@ -122,14 +122,14 @@ class MultiObjectiveSolution(_BaseSolution, BaseMulticostComparison):
             assert isinstance(ax, axes.Axes)
 
             ax.scatter(
-                [cost[0] for cost in candidate_costs],
-                [cost[1] for cost in candidate_costs],
+                [float(cost[0]) for cost in candidate_costs],
+                [float(cost[1]) for cost in candidate_costs],
                 c="gray",
                 label=f"Found solutions ({len(candidate_costs)})",
             )
             ax.scatter(
-                [result.cost()[0] for result in results],
-                [result.cost()[1] for result in results],
+                [float(result.cost()[0]) for result in results],
+                [float(result.cost()[1]) for result in results],
                 c="red",
                 label=f"Pareto front ({len(results)})",
             )

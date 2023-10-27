@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from typing_extensions import Self
 
 if TYPE_CHECKING:
-    from ..types import SupportsRichComparison
+    from ..types import SupportsCost
 
 
 __all__ = ("BaseMulticostComparison",)
@@ -16,7 +16,7 @@ class BaseMulticostComparison:
 
     __slots__ = ()
 
-    def cost(self) -> Tuple[SupportsRichComparison, ...]:
+    def cost(self) -> Tuple[SupportsCost, ...]:
         """The cost of this object"""
         raise NotImplementedError
 
