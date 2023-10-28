@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from multiprocessing import pool
-from typing import Set, TypeVar
+from typing import Iterable, TypeVar
 
 from .solutions import MultiObjectiveSolution
 from ..types import _BaseNeighborhood
@@ -15,7 +15,7 @@ _TT = TypeVar("_TT")
 class MultiObjectiveNeighborhood(_BaseNeighborhood[_MultiST, _TT]):
     """Base class for neighborhoods of a solution to a multi-objective optimization problem"""
 
-    def find_best_candidates(self, *, pool: pool.Pool, pool_size: int) -> Set[_MultiST]:
+    def find_best_candidates(self, *, pool: pool.Pool, pool_size: int) -> Iterable[_MultiST]:
         """Find all non-dominant solutions in this neighborhood of the current solution.
 
         Parameters
@@ -27,7 +27,7 @@ class MultiObjectiveNeighborhood(_BaseNeighborhood[_MultiST, _TT]):
 
         Returns
         -----
-        Set[`MultiObjectiveSolution`]
+        Iterable[`MultiObjectiveSolution`]
             The set of non-dominant solutions
         """
         raise NotImplementedError

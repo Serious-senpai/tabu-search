@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import random
 from functools import partial
-from multiprocessing import Pool
+from multiprocessing import Pool, pool as p
 from typing import Any, Callable, List, Sequence, Set, Union, TYPE_CHECKING
 
 from matplotlib import axes, pyplot
@@ -92,7 +92,8 @@ class MultiObjectiveSolution(_BaseSolution, BaseMulticostComparison):
                     iterations.set_description_str(f"Tabu search ({len(current)}/{len(results)} solution(s))")
 
                 propagate: List[Self] = []
-                for solution in current:
+
+                def process_solution(solution: Self) -> None:
                     neighborhoods = solution.get_neighborhoods()
                     for candidate in random.choice(neighborhoods).find_best_candidates(pool=pool, pool_size=pool_size):
                         if candidate_costs is not None:
@@ -100,6 +101,9 @@ class MultiObjectiveSolution(_BaseSolution, BaseMulticostComparison):
 
                         if candidate.add_to_pareto_set(results) or propagation_predicate(results, candidate):
                             propagate.append(candidate)
+
+                with p.ThreadPool(min(pool_size, len(current))) as thread_pool:
+                    thread_pool.map(process_solution, current)
 
                 propagate.sort(key=partial(propagation_priority_key, results))
                 if max_propagation is not None:
