@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from typing_extensions import Self
 
 from .costs import BaseCostComparison
-from ..types import _BaseSolution
+from ..types import BaseSolution
 if TYPE_CHECKING:
     from .neighborhoods import SingleObjectiveNeighborhood
 
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 __all__ = ("SingleObjectiveSolution",)
 
 
-class SingleObjectiveSolution(_BaseSolution, BaseCostComparison):
+class SingleObjectiveSolution(BaseSolution, BaseCostComparison):
     """Base class for solutions to a single-objective optimization problem"""
 
     __slots__ = ()

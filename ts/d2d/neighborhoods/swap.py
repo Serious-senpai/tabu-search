@@ -47,15 +47,15 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
         self._first_length = first_length
         self._second_length = second_length
 
-    def find_best_candidates(self, *, pool: p.Pool, pool_size: int) -> Set[D2DPathSolution]:
+    def find_best_candidates(self, *, pool: p.Pool, pool_size: int) -> Iterable[D2DPathSolution]:
         solution = self._solution
         results: Set[OperationResult] = set()
         swaps_mapping: Dict[OperationResult, Tuple[int, int]] = {}
 
         def callback(collected: Iterable[Set[Tuple[OperationResult, Tuple[int, int]]]]) -> None:
             for s in collected:
-                for result, swap in s:
-                    swaps_mapping[result] = swap
+                for result, pair in s:
+                    swaps_mapping[result] = pair
                     result.add_to_pareto_set(results)
 
         def drone_drone_swap() -> p.MapResult[Set[Tuple[OperationResult, Tuple[int, int]]]]:
@@ -113,9 +113,14 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
 
         for result in results:
             pair = swaps_mapping[result]
-            self.add_to_tabu((min(pair), max(pair)))
+            solution = result.to_solution()
+            if pair in self.tabu_set:
+                solution.to_propagate = False
 
-        return set(r.to_solution() for r in results)
+            else:
+                self.add_to_tabu((min(pair), max(pair)))
+
+            yield solution
 
     @staticmethod
     def swap_drone_drone(bundle: IPCBundle[Swap, List[Tuple[Tuple[int, int], Tuple[int, int]]]]) -> Set[Tuple[OperationResult, Tuple[int, int]]]:
@@ -147,11 +152,6 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                 range(1, len(first_path) - first_length),
                 range(1, len(second_path) - second_length),
             ):
-                pair = (first_path[first_start], second_path[second_start])
-                pair = (min(pair), max(pair))
-                if pair in bundle.tabu_set:
-                    continue
-
                 _first_path = first_path.copy()
                 _second_path = second_path.copy()
 
@@ -205,7 +205,8 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                     technician_waiting_times=solution.technician_waiting_times,
                 )
 
-                swaps_mapping[operation_result] = pair
+                pair = (first_path[first_start], second_path[second_start])
+                swaps_mapping[operation_result] = (min(pair), max(pair))
                 operation_result.add_to_pareto_set(results)
 
         return set((r, swaps_mapping[r]) for r in results)
@@ -232,11 +233,6 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                 range(1, len(first_path) - first_length),
                 range(1, len(second_path) - second_length),
             ):
-                pair = (first_path[first_start], second_path[second_start])
-                pair = (min(pair), max(pair))
-                if pair in bundle.tabu_set:
-                    continue
-
                 _first_path = first_path.copy()
                 _second_path = second_path.copy()
 
@@ -266,7 +262,8 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                     technician_waiting_times=tuple(_technician_total_waiting_times),
                 )
 
-                swaps_mapping[operation_result] = pair
+                pair = (first_path[first_start], second_path[second_start])
+                swaps_mapping[operation_result] = (min(pair), max(pair))
                 operation_result.add_to_pareto_set(results)
 
         return set((r, swaps_mapping[r]) for r in results)
@@ -290,11 +287,6 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                 if dronable_prefix_sum[technician_start + technician_length - 1] - dronable_prefix_sum[technician_start - 1] == technician_length:
                     # Dronable segment in technician path found
                     for drone_start in range(1, len(drone_path) - drone_length):
-                        pair = (technician_path[technician_start], drone_path[drone_start])
-                        pair = (min(pair), max(pair))
-                        if pair in bundle.tabu_set:
-                            continue
-
                         _technician_path = list(technician_path)
                         _drone_path = list(drone_path)
 
@@ -332,7 +324,8 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                             technician_waiting_times=tuple(_technician_waiting_times),
                         )
 
-                        swaps_mapping[operation_result] = pair
+                        pair = (technician_path[technician_start], drone_path[drone_start])
+                        swaps_mapping[operation_result] = (min(pair), max(pair))
                         operation_result.add_to_pareto_set(results)
 
         first_length = neighborhood._first_length

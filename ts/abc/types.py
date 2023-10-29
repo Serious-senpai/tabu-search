@@ -23,11 +23,11 @@ if TYPE_CHECKING:
 __all__ = ()
 
 
-class _BaseSolution:
+class BaseSolution:
 
     __slots__ = ()
 
-    def get_neighborhoods(self) -> Sequence[_BaseNeighborhood[Self, Any]]:
+    def get_neighborhoods(self) -> Sequence[BaseNeighborhood[Self, Any]]:
         """Returns all neighborhoods of the current solution"""
         raise NotImplementedError
 
@@ -71,11 +71,11 @@ class _BaseSolution:
         return f"<{self.__class__.__name__} hash={self.__hash__()}>"
 
 
-_ST = TypeVar("_ST", bound=_BaseSolution)
+_ST = TypeVar("_ST", bound=BaseSolution)
 _TT = TypeVar("_TT")
 
 
-class _BaseNeighborhood(Generic[_ST, _TT]):
+class BaseNeighborhood(Generic[_ST, _TT]):
 
     __slots__ = (
         "_solution",
@@ -89,7 +89,7 @@ class _BaseNeighborhood(Generic[_ST, _TT]):
 
         _maxlen: ClassVar[int]
         _tabu_list: ClassVar[Deque[_TT]]  # type: ignore
-        _tabu_set: ClassVar[Set[_TT]]  # type: ignore
+        tabu_set: ClassVar[Set[_TT]]  # type: ignore
 
     def __init__(self, solution: _ST, /) -> None:
         self._solution = solution
@@ -101,21 +101,21 @@ class _BaseNeighborhood(Generic[_ST, _TT]):
         super().__init_subclass__(*args, **kwargs)
         cls._maxlen = 10
         cls._tabu_list = deque(maxlen=cls._maxlen)
-        cls._tabu_set = set()
+        cls.tabu_set = set()
 
     @final
     @classmethod
     def add_to_tabu(cls, target: _TT) -> None:
-        cls._tabu_set.add(target)
+        cls.tabu_set.add(target)
         cls._tabu_list.append(target)
         cls.remove_from_tabu()
 
     @final
     @classmethod
     def remove_from_tabu(cls) -> None:
-        while len(cls._tabu_set) > cls._maxlen:
+        while len(cls.tabu_set) > cls._maxlen:
             try:
-                cls._tabu_set.remove(cls._tabu_list.popleft())
+                cls.tabu_set.remove(cls._tabu_list.popleft())
             except KeyError:
                 pass
 

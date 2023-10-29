@@ -76,6 +76,9 @@ class SegmentReverse(TSPNeighborhoodMixin, _BaseNeighborhood):
             if result_temp is None or min_pair_temp is None:
                 continue
 
+            if min_pair_temp in self.tabu_set:
+                continue
+
             if result is None or result_temp < result:
                 result = result_temp
                 min_pair = min_pair_temp
@@ -94,10 +97,9 @@ class SegmentReverse(TSPNeighborhoodMixin, _BaseNeighborhood):
         min_pair: Optional[Tuple[int, int]] = None
         for segment in bundle.data:
             pair = (segment[0], segment[-1])
-            if pair not in bundle.tabu_set:
-                shifted = neighborhood.reverse(segment)
-                if result is None or shifted < result:
-                    result = shifted
-                    min_pair = pair
+            shifted = neighborhood.reverse(segment)
+            if result is None or shifted < result:
+                result = shifted
+                min_pair = pair
 
         return result, min_pair

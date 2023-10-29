@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from typing_extensions import Self
 
 from .costs import BaseMulticostComparison
-from ..types import _BaseSolution
+from ..types import BaseSolution
 from ...utils import true, zero
 if TYPE_CHECKING:
     from .neighborhoods import MultiObjectiveNeighborhood
@@ -20,10 +20,18 @@ if TYPE_CHECKING:
 __all__ = ("MultiObjectiveSolution",)
 
 
-class MultiObjectiveSolution(_BaseSolution, BaseMulticostComparison):
+class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
     """Base class for solutions to a multi-objective optimization problem"""
 
-    __slots__ = ()
+    __slots__ = (
+        "to_propagate",
+    )
+    if TYPE_CHECKING:
+        to_propagate: bool
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.to_propagate = True
 
     def get_neighborhoods(self) -> Sequence[MultiObjectiveNeighborhood[Self, Any]]:
         raise NotImplementedError
@@ -99,19 +107,23 @@ class MultiObjectiveSolution(_BaseSolution, BaseMulticostComparison):
                         if candidate_costs is not None:
                             candidate_costs.append(candidate.cost())
 
-                        if candidate.add_to_pareto_set(results) or propagation_predicate(results, candidate):
+                        optimal = candidate.add_to_pareto_set(results)
+                        if not candidate.to_propagate:
+                            continue
+
+                        if optimal or propagation_predicate(results, candidate):
                             propagate.append(candidate)
 
                 with p.ThreadPool(min(pool_size, len(current))) as thread_pool:
                     thread_pool.map(process_solution, current)
 
-                propagate.sort(key=partial(propagation_priority_key, results))
                 if max_propagation is not None:
                     max_propagation_value = max_propagation if isinstance(max_propagation, int) else max_propagation(results)
                 else:
                     max_propagation_value = None
 
                 if max_propagation_value is not None:
+                    propagate.sort(key=partial(propagation_priority_key, results))
                     for s in propagate[max(1, len(propagate) // 3):]:
                         current.add(s)
 
@@ -127,14 +139,14 @@ class MultiObjectiveSolution(_BaseSolution, BaseMulticostComparison):
             assert isinstance(ax, axes.Axes)
 
             ax.scatter(
-                [float(cost[0]) for cost in candidate_costs],
-                [float(cost[1]) for cost in candidate_costs],
+                [cost[0] for cost in candidate_costs],
+                [cost[1] for cost in candidate_costs],
                 c="gray",
                 label=f"Found solutions ({len(candidate_costs)})",
             )
             ax.scatter(
-                [float(result.cost()[0]) for result in results],
-                [float(result.cost()[1]) for result in results],
+                [result.cost() for result in results],
+                [result.cost() for result in results],
                 c="red",
                 label=f"Pareto front ({len(results)})",
             )

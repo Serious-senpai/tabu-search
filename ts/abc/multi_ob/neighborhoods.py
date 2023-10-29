@@ -4,7 +4,7 @@ from multiprocessing import pool
 from typing import Iterable, TypeVar
 
 from .solutions import MultiObjectiveSolution
-from ..types import _BaseNeighborhood
+from ..types import BaseNeighborhood
 
 
 __all__ = ("MultiObjectiveNeighborhood",)
@@ -12,7 +12,7 @@ _MultiST = TypeVar("_MultiST", bound=MultiObjectiveSolution)
 _TT = TypeVar("_TT")
 
 
-class MultiObjectiveNeighborhood(_BaseNeighborhood[_MultiST, _TT]):
+class MultiObjectiveNeighborhood(BaseNeighborhood[_MultiST, _TT]):
     """Base class for neighborhoods of a solution to a multi-objective optimization problem"""
 
     def find_best_candidates(self, *, pool: pool.Pool, pool_size: int) -> Iterable[_MultiST]:

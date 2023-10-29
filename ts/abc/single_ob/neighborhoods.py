@@ -4,7 +4,7 @@ from multiprocessing import pool
 from typing import Optional, TypeVar
 
 from .solutions import SingleObjectiveSolution
-from ..types import _BaseNeighborhood
+from ..types import BaseNeighborhood
 
 
 __all__ = ("SingleObjectiveNeighborhood",)
@@ -12,7 +12,7 @@ _SingleST = TypeVar("_SingleST", bound=SingleObjectiveSolution)
 _TT = TypeVar("_TT")
 
 
-class SingleObjectiveNeighborhood(_BaseNeighborhood[_SingleST, _TT]):
+class SingleObjectiveNeighborhood(BaseNeighborhood[_SingleST, _TT]):
     """Base class for neighborhoods of a solution to a single-objective optimization problem"""
 
     def find_best_candidate(self, *, pool: pool.Pool, pool_size: int) -> Optional[_SingleST]:

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import Any, Generic, Set, TypeVar, TYPE_CHECKING
+from typing import Generic, TypeVar, TYPE_CHECKING
 
-from .abc.types import _BaseNeighborhood
+from .abc.types import BaseNeighborhood
 
 
 _T = TypeVar("_T")
-_NT = TypeVar("_NT", bound=_BaseNeighborhood)
+_NT = TypeVar("_NT", bound=BaseNeighborhood)
 
 
 class IPCBundle(Generic[_NT, _T]):
@@ -19,17 +19,14 @@ class IPCBundle(Generic[_NT, _T]):
     __slots__ = (
         "neighborhood",
         "data",
-        "tabu_set",
     )
     if TYPE_CHECKING:
         neighborhood: _NT
         data: _T
-        tabu_set: Set[Any]
 
     def __init__(self, neighborhood: _NT, data: _T) -> None:
         self.neighborhood = neighborhood
         self.data = data
-        self.tabu_set = neighborhood._tabu_set
 
     def __repr__(self) -> str:
         return f"<IPCBundle({self.neighborhood.__class__.__name__}) data={self.data!r}>"

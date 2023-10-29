@@ -76,6 +76,9 @@ class SegmentShift(TSPNeighborhoodMixin, _BaseNeighborhood):
             if result_temp is None or min_pair_temp is None:
                 continue
 
+            if min_pair_temp in self.tabu_set:
+                continue
+
             if result is None or result_temp < result:
                 result = result_temp
                 min_pair = min_pair_temp
@@ -93,10 +96,9 @@ class SegmentShift(TSPNeighborhoodMixin, _BaseNeighborhood):
         result: Optional[TSPPathSolution] = None
         min_args: Optional[Tuple[int, int, int]] = None
         for args in bundle.data:
-            if args not in bundle.tabu_set:
-                shifted = neighborhood.insert_after(*args)
-                if result is None or shifted < result:
-                    result = shifted
-                    min_args = args
+            shifted = neighborhood.insert_after(*args)
+            if result is None or shifted < result:
+                result = shifted
+                min_args = args
 
         return result, min_args
