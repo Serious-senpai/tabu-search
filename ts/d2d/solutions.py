@@ -26,6 +26,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
     """Represents a solution to the D2D problem"""
 
     __slots__ = (
+        "_to_propagate",
         "drone_arrival_timestamps",
         "drone_paths",
         "technician_arrival_timestamps",
@@ -34,6 +35,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
     __config_imported: ClassVar[bool] = False
     problem: ClassVar[Optional[str]] = None
     if TYPE_CHECKING:
+        _to_propagate: bool
         drone_arrival_timestamps: Tuple[Tuple[Tuple[float, ...], ...], ...]
         drone_paths: Tuple[Tuple[Tuple[int, ...], ...], ...]
         technician_arrival_timestamps: Tuple[Tuple[float, ...], ...]
@@ -71,6 +73,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         technician_timespans: Optional[Tuple[float, ...]] = None,
         technician_waiting_times: Optional[Tuple[float, ...]] = None,
     ) -> None:
+        self._to_propagate = True
         self.drone_paths = tuple(tuple(tuple(index for index in path) for path in paths) for paths in drone_paths)
         self.technician_paths = tuple(tuple(index for index in path) for path in technician_paths)
 
@@ -116,6 +119,14 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
             technician_timespans=technician_timespans or tuple(technician_arrival_timestamp[-1] for technician_arrival_timestamp in self.technician_arrival_timestamps),
             technician_waiting_times=technician_waiting_times or tuple(self.calculate_technician_total_waiting_time(path, arrival_timestamps=arrival_timestamps) for path, arrival_timestamps in zip(self.technician_paths, self.technician_arrival_timestamps)),
         )
+
+    @property
+    def to_propagate(self) -> bool:
+        return self._to_propagate
+
+    @to_propagate.setter
+    def to_propagate(self, propagate: bool) -> None:
+        self._to_propagate = propagate
 
     def get_neighborhoods(self) -> Tuple[MultiObjectiveNeighborhood[Self, Any], ...]:
         return (

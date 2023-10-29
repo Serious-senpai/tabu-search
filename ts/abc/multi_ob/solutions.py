@@ -23,15 +23,15 @@ __all__ = ("MultiObjectiveSolution",)
 class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
     """Base class for solutions to a multi-objective optimization problem"""
 
-    __slots__ = (
-        "to_propagate",
-    )
-    if TYPE_CHECKING:
-        to_propagate: bool
+    __slots__ = ()
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.to_propagate = True
+    @property
+    def to_propagate(self) -> bool:
+        raise NotImplementedError
+
+    @to_propagate.setter
+    def to_propagate(self, propagate: bool) -> None:
+        raise NotImplementedError
 
     def get_neighborhoods(self) -> Sequence[MultiObjectiveNeighborhood[Self, Any]]:
         raise NotImplementedError
@@ -145,8 +145,8 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
                 label=f"Found solutions ({len(candidate_costs)})",
             )
             ax.scatter(
-                [result.cost() for result in results],
-                [result.cost() for result in results],
+                [result.cost()[0] for result in results],
+                [result.cost()[1] for result in results],
                 c="red",
                 label=f"Pareto front ({len(results)})",
             )
