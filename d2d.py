@@ -103,7 +103,11 @@ if __name__ == "__main__":
         print("\n".join(f"Drone #{drone_index + 1}: {paths}" for drone_index, paths in enumerate(solution.drone_paths)))
         print("\n".join(f"Technician #{technician_index + 1}: {path}" for technician_index, path in enumerate(solution.technician_paths)))
 
-        check = d2d.D2DPathSolution(drone_paths=solution.drone_paths, technician_paths=solution.technician_paths)
+        check = d2d.D2DPathSolution(
+            drone_paths=solution.drone_paths,
+            technician_paths=solution.technician_paths,
+            drone_config_mapping=solution.drone_config_mapping,
+        )
         assert check.cost() == solution.cost()
 
     if namespace.dump is not None:
