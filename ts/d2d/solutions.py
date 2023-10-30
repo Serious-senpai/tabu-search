@@ -5,7 +5,7 @@ import re
 from functools import partial
 from math import sqrt
 from os.path import join
-from typing import Any, ClassVar, Iterable, List, Optional, Sequence, Tuple, TYPE_CHECKING, final
+from typing import Any, ClassVar, Final, Iterable, List, Optional, Sequence, Tuple, TYPE_CHECKING, final
 
 from matplotlib import axes, pyplot
 if TYPE_CHECKING:
@@ -36,10 +36,10 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
     problem: ClassVar[Optional[str]] = None
     if TYPE_CHECKING:
         _to_propagate: bool
-        drone_arrival_timestamps: Tuple[Tuple[Tuple[float, ...], ...], ...]
-        drone_paths: Tuple[Tuple[Tuple[int, ...], ...], ...]
-        technician_arrival_timestamps: Tuple[Tuple[float, ...], ...]
-        technician_paths: Tuple[Tuple[int, ...], ...]
+        drone_arrival_timestamps: Final[Tuple[Tuple[Tuple[float, ...], ...], ...]]
+        drone_paths: Final[Tuple[Tuple[Tuple[int, ...], ...], ...]]
+        technician_arrival_timestamps: Final[Tuple[Tuple[float, ...], ...]]
+        technician_paths: Final[Tuple[Tuple[int, ...], ...]]
 
         # Problem-specific data
         customers_count: ClassVar[int]

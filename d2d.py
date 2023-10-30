@@ -4,7 +4,6 @@ import argparse
 import cProfile
 import json
 import os
-import random
 from typing import Any, Callable, Dict, Optional, Set, TYPE_CHECKING
 
 from ts import d2d, utils
@@ -15,7 +14,6 @@ class Namespace(argparse.Namespace):
         problem: str
         iterations: int
         tabu_size: int
-        propagation_rate: float
         max_distance: bool
         min_distance: bool
         max_propagation: Optional[int]
@@ -38,7 +36,6 @@ if __name__ == "__main__":
     parser.add_argument("problem", type=str, help="the problem name (e.g. \"6.5.1\", \"200.10.1\", ...)")
     parser.add_argument("-i", "--iterations", default=500, type=int, help="the number of iterations to run the tabu search for (default: 500)")
     parser.add_argument("-t", "--tabu-size", default=10, type=int, help="the tabu size for every neighborhood (default: 10)")
-    parser.add_argument("-r", "--propagation-rate", default=1.0, type=float, help="The rate of solution propagation (default: 1.0)")
     parser.add_argument("--max-distance", action="store_true", help="Set the propagation predicate using the maximum total distance to the Pareto front instead of the propagation rate")
     parser.add_argument("--min-distance", action="store_true", help="Set the propagation predicate using the minimum total distance to the Pareto front instead of the propagation rate")
     parser.add_argument("-m", "--max-propagation", type=int, help="Maximum number of propagating solutions at a time")
@@ -53,14 +50,6 @@ if __name__ == "__main__":
     print(namespace)
     d2d.D2DPathSolution.import_problem(namespace.problem)
     d2d.Swap.reset_tabu(maxlen=namespace.tabu_size)
-
-    propagation_predicate: Callable[[Set[d2d.D2DPathSolution], d2d.D2DPathSolution], bool] = utils.true
-    if namespace.propagation_rate <= 0.0:
-        propagation_predicate = utils.false
-
-    elif namespace.propagation_rate < 1.0:
-        def propagation_predicate(pareto_set: Set[d2d.D2DPathSolution], candidate: d2d.D2DPathSolution) -> bool:
-            return random.random() < namespace.propagation_rate
 
     if namespace.max_distance and namespace.min_distance:
         message = "--max-distance and --min-distance are mutually exclusive"
@@ -92,7 +81,6 @@ if __name__ == "__main__":
             pool_size={namespace.pool_size},
             iterations_count={namespace.iterations},
             use_tqdm={namespace.verbose},
-            propagation_predicate=propagation_predicate,
             propagation_priority_key=propagation_priority_key,
             max_propagation={namespace.max_propagation},
             plot_pareto_front={namespace.verbose},
@@ -104,7 +92,6 @@ if __name__ == "__main__":
         pool_size=namespace.pool_size,
         iterations_count=namespace.iterations,
         use_tqdm=namespace.verbose,
-        propagation_predicate=propagation_predicate,
         propagation_priority_key=propagation_priority_key,
         max_propagation=namespace.max_propagation,
         plot_pareto_front=namespace.verbose,

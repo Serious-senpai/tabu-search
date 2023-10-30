@@ -57,7 +57,6 @@ jobs:
         ]
         iterations: [500]
         tabu_size: [10]
-        propagation_rate: [0.1, 1.0]
         propagation_priority: ["", "--min-distance", "--max-distance"]
         max_propagation: [5]
         pool_size: [8]
@@ -82,7 +81,6 @@ jobs:
         python d2d.py ${{ matrix.problem }} \
         --iterations ${{ matrix.iterations }} \
         --tabu-size ${{ matrix.tabu_size }} \
-        --propagation-rate ${{ matrix.propagation_rate }} \
         ${{ matrix.propagation_priority }} \
         --max-propagation ${{ matrix.max_propagation }} \
         --pool-size ${{ matrix.pool_size }} \
