@@ -215,10 +215,38 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
 
     @classmethod
     def distance(cls, first: int, second: int, /) -> float:
+        """Calculate the distance between 2 waypoints of the current problem
+
+        Parameters
+        -----
+        first:
+            Index of the first waypoint
+        second:
+            Index of the second waypoint
+
+        Returns
+        -----
+        The distance between 2 waypoints
+        """
         return sqrt((cls.x[first] - cls.x[second]) ** 2 + (cls.y[first] - cls.y[second]) ** 2)
 
     @classmethod
     def calculate_drone_arrival_timestamps(cls, path: Sequence[int], *, drone: int, offset: float) -> Tuple[float, ...]:
+        """Calculate the arrival timestamps for the given drone path
+
+        Parameters
+        -----
+        path:
+            The path to calculate
+        drone:
+            The index of the drone
+        offset:
+            The timestamp when the drone starts traveling
+
+        Returns
+        -----
+        The arrival timestamps for the given path
+        """
         result = [offset]
         last = path[0]  # must be 0
         config = cls.drone_linear_config[drone] if cls.energy_mode == DroneEnergyConsumptionMode.LINEAR else cls.drone_nonlinear_config[drone]
@@ -255,6 +283,22 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         drone: Optional[int] = None,
         arrival_timestamps: Optional[Tuple[float, ...]] = None,
     ) -> float:
+        """Calculate the total waiting time of the given drone path
+
+        Parameters
+        -----
+        path:
+            The path to calculate
+        drone:
+            The index of the drone
+        arrival_timestamps:
+            The arrival timestamps of the given path. If this is `None`, returned value from `calculate_drone_arrival_timestamps`
+            will be used. Provide this argument can make the calculation faster.
+
+        Returns
+        -----
+        The total waiting time of the given path
+        """
         arrival_timestamps = cls._ensure_drone_arrival_timestamps(path, drone=drone)
 
         result = 0.0
@@ -265,6 +309,17 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
 
     @classmethod
     def calculate_technician_arrival_timestamps(cls, path: Sequence[int]) -> Tuple[float, ...]:
+        """Calculate the arrival timestamps for the given technician path
+
+        Parameters
+        -----
+        path:
+            The path to calculate
+
+        Returns
+        -----
+        The arrival timestamps for the given path
+        """
         result = [0.0]
         last = path[0]  # must be 0
         config = cls.truck_config
@@ -294,6 +349,20 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
 
     @classmethod
     def calculate_technician_total_waiting_time(cls, path: Sequence[int], *, arrival_timestamps: Optional[Tuple[float, ...]] = None) -> float:
+        """Calculate the total waiting time of the given technician path
+
+        Parameters
+        -----
+        path:
+            The path to calculate
+        arrival_timestamps:
+            The arrival timestamps of the given path. If this is `None`, returned value from `calculate_technician_arrival_timestamps`
+            will be used. Provide this argument can make the calculation faster.
+
+        Returns
+        -----
+        The total waiting time of the given path
+        """
         if arrival_timestamps is None:
             arrival_timestamps = cls.calculate_technician_arrival_timestamps(path)
 
@@ -305,6 +374,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
 
     @classmethod
     def calculate_total_weight(cls, path: Sequence[int]) -> float:
+        """Calculate the total weight of all waypoints along the given path"""
         return sum(cls.demands[index] for index in path)
 
     @classmethod
@@ -315,6 +385,22 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         drone: Optional[int] = None,
         arrival_timestamps: Optional[Tuple[float, ...]] = None,
     ) -> float:
+        """Calculate the total flight duration of the given drone path
+
+        Parameters
+        -----
+        path:
+            The path to calculate
+        drone:
+            The index of the drone
+        arrival_timestamps:
+            The arrival timestamps of the given path. If this is `None`, returned value from `calculate_drone_arrival_timestamps`
+            will be used. Provide this argument can make the calculation faster.
+
+        Returns
+        -----
+        The total flight duration of the given path
+        """
         arrival_timestamps = cls._ensure_drone_arrival_timestamps(path, drone=drone, arrival_timestamps=arrival_timestamps)
         return arrival_timestamps[-1] - arrival_timestamps[0]
 
@@ -326,6 +412,22 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         drone: int,
         arrival_timestamps: Optional[Tuple[float, ...]] = None,
     ) -> float:
+        """Calculate the total energy consumption of the given drone path
+
+        Parameters
+        -----
+        path:
+            The path to calculate
+        drone:
+            The index of the drone
+        arrival_timestamps:
+            The arrival timestamps of the given path. If this is `None`, returned value from `calculate_drone_arrival_timestamps`
+            will be used. Provide this argument can make the calculation faster.
+
+        Returns
+        -----
+        The total energy consumption of the given path
+        """
         arrival_timestamps = cls._ensure_drone_arrival_timestamps(path, drone=drone, arrival_timestamps=arrival_timestamps)
         config = cls.drone_linear_config[drone] if cls.energy_mode == DroneEnergyConsumptionMode.LINEAR else cls.drone_nonlinear_config[drone]
 

@@ -125,7 +125,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
     @staticmethod
     def swap_drone_drone(bundle: IPCBundle[Swap, List[Tuple[Tuple[int, int], Tuple[int, int]]]]) -> Set[Tuple[OperationResult, Tuple[int, int]]]:
         neighborhood = bundle.neighborhood
-        neighborhood._ensure_imported_data()
+        neighborhood.ensure_imported_data()
 
         solution = neighborhood._solution
         first_length = neighborhood._first_length
@@ -214,7 +214,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
     @staticmethod
     def swap_technician_technician(bundle: IPCBundle[Swap, List[Tuple[int, int]]]) -> Set[Tuple[OperationResult, Tuple[int, int]]]:
         neighborhood = bundle.neighborhood
-        neighborhood._ensure_imported_data()
+        neighborhood.ensure_imported_data()
 
         solution = neighborhood._solution
         first_length = neighborhood._first_length
@@ -271,7 +271,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
     @staticmethod
     def swap_technician_drone(bundle: IPCBundle[Swap, List[Tuple[int, Tuple[int, int]]]]) -> Set[Tuple[OperationResult, Tuple[int, int]]]:
         neighborhood = bundle.neighborhood
-        neighborhood._ensure_imported_data()
+        neighborhood.ensure_imported_data()
 
         solution = neighborhood._solution
         results: Set[OperationResult] = set()

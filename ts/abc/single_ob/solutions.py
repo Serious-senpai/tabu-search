@@ -31,19 +31,18 @@ class SingleObjectiveSolution(BaseSolution, BaseCostComparison):
 
         Parameters
         -----
-        pool_size: `int`
+        pool_size:
             The size of the process pool to perform parallelism
-        iterations_count: `int`
+        iterations_count:
             The number of iterations to improve from the initial solution
-        use_tqdm: `bool`
+        use_tqdm:
             Whether to display the progress bar
-        shuffle_after: `int`
+        shuffle_after:
             After the specified number of non-improving iterations, shuffle the current solution
 
         Returns
         -----
-        `SingleObjectiveSolution`
-            The solution with the lowest cost among the iterated ones.
+        The solution with the lowest cost among the iterated ones.
         """
         result = current = cls.initial()
         iterations: Union[range, tqdm[int]] = range(iterations_count)

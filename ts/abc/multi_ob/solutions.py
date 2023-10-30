@@ -27,6 +27,10 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
 
     @property
     def to_propagate(self) -> bool:
+        """Whether the tabu search should use this solution for propagation in the next iteration.
+
+        Subclasses must implement this.
+        """
         raise NotImplementedError
 
     @to_propagate.setter

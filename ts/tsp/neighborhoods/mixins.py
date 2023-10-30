@@ -24,6 +24,6 @@ class TSPNeighborhoodMixin:
         self.extras["problem"] = solution.problem_name
         self.extras["distances"] = solution.distances
 
-    def _ensure_imported_data(self: TSPNeighborhoodProtocol) -> None:
+    def ensure_imported_data(self: TSPNeighborhoodProtocol) -> None:
         if self.cls.problem_name is None:
             self.cls.import_problem(self.extras["problem"], precalculated_distances=self.extras["distances"])
