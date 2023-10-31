@@ -40,10 +40,6 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
         if first_length < second_length:
             first_length, second_length = second_length, first_length
 
-        if second_length == 0:
-            message = f"Invalid Swap operation: {(first_length, second_length)}"
-            raise NeighborhoodException(message)
-
         self._first_length = first_length
         self._second_length = second_length
 
