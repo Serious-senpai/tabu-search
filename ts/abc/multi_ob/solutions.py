@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+import threading
 from functools import partial
 from multiprocessing import Pool, pool as p
 from typing import Any, Callable, List, Sequence, Set, Union, TYPE_CHECKING
@@ -93,6 +94,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
             raise ValueError(message)
 
         with Pool(pool_size) as pool:
+            lock = threading.Lock()
             for _ in iterations:
                 if isinstance(iterations, tqdm):
                     iterations.set_description_str(f"Tabu search ({len(current)}/{len(results)} solution(s))")
@@ -109,7 +111,9 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
                             if candidate_costs is not None:
                                 candidate_costs.add(candidate.cost())
 
-                            candidate.add_to_pareto_set(results)
+                            with lock:
+                                candidate.add_to_pareto_set(results)
+
                             if not candidate.to_propagate:
                                 continue
 
