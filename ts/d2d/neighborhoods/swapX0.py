@@ -20,4 +20,8 @@ class Swappoint(D2DNeighborhoodMixin, _BaseNeighborhood):
         "length",
     )
 
-    
+    if TYPE_CHECKING:
+        length: int
+
+    def __init__(self, solution: D2DPathSolution, *, length: int) -> None:
+        super().__init__(solution)
