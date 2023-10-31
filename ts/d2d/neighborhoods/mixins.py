@@ -27,6 +27,6 @@ class D2DNeighborhoodMixin:
         self.extras["problem"] = solution.problem
         self.extras["energy_mode"] = solution.energy_mode
 
-    def _ensure_imported_data(self: D2DNeighborhoodProtocol) -> None:
+    def ensure_imported_data(self: D2DNeighborhoodProtocol) -> None:
         if self.cls.problem != self.extras["problem"]:
             self.cls.import_problem(self.extras["problem"], energy_mode=self.extras["energy_mode"])

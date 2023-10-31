@@ -20,14 +20,13 @@ class SingleObjectiveNeighborhood(BaseNeighborhood[_SingleST, _TT]):
 
         Parameters
         -----
-        pool: `pool.Pool`
+        pool:
             The process pool to perform the operation
-        pool_size: `int`
+        pool_size:
             The process pool size
 
         Returns
         -----
-        Optional[`SingleObjectiveSolution`]
-            The best candidate solution, or `None` if there are no candidates
+        The best candidate solution, or `None` if there are no candidates
         """
         raise NotImplementedError

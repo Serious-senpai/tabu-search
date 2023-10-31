@@ -44,6 +44,7 @@ class SolutionMetricsMixin(BaseMulticostComparison):
         self._cost = None
 
     def cost(self) -> Tuple[float, float]:
+        """The cost of the solution that this object represents."""
         if self._cost is None:
             self._cost = (
                 max(*self.drone_timespans, *self.technician_timespans),
