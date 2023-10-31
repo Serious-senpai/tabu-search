@@ -25,3 +25,4 @@ class Swappoint(D2DNeighborhoodMixin, _BaseNeighborhood):
 
     def __init__(self, solution: D2DPathSolution, *, length: int) -> None:
         super().__init__(solution)
+        
