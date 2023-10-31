@@ -483,7 +483,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         while len(dronable) > 0:
             drone = next(drone_iter)
             paths = drone_paths[drone]
-            config = cls.drone_linear_config[drone] if cls.energy_mode == DroneEnergyConsumptionMode.LINEAR else cls.drone_nonlinear_config[drone]
+            config = cls.drone_linear_config[drone_config_mapping[drone]] if cls.energy_mode == DroneEnergyConsumptionMode.LINEAR else cls.drone_nonlinear_config[drone_config_mapping[drone]]
 
             path = paths[-1]
             index = min(dronable, key=partial(cls.distance, path[-1]))
