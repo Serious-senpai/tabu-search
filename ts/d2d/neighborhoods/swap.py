@@ -174,12 +174,6 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                 if solution.calculate_total_weight(_first_path) > first_config.capacity or solution.calculate_total_weight(_second_path) > second_config.capacity:
                     continue
 
-                if solution.calculate_drone_flight_duration(_first_path, config_index=solution.drone_config_mapping[first_drone], arrival_timestamps=first_arrival_timestamps) > solution.drones_flight_duration:
-                    continue
-
-                if solution.calculate_drone_flight_duration(_second_path, config_index=solution.drone_config_mapping[second_drone], arrival_timestamps=second_arrival_timestamps) > solution.drones_flight_duration:
-                    continue
-
                 if solution.calculate_drone_energy_consumption(_first_path, config_index=solution.drone_config_mapping[first_drone], arrival_timestamps=first_arrival_timestamps) > first_config.battery:
                     continue
 
@@ -306,9 +300,6 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                         )
 
                         if solution.calculate_total_weight(_drone_path) > drone_config.capacity:
-                            continue
-
-                        if solution.calculate_drone_flight_duration(_drone_path, config_index=solution.drone_config_mapping[drone], arrival_timestamps=drone_arrival_timestamps) > solution.drones_flight_duration:
                             continue
 
                         if solution.calculate_drone_energy_consumption(_drone_path, config_index=solution.drone_config_mapping[drone], arrival_timestamps=drone_arrival_timestamps) > drone_config.battery:

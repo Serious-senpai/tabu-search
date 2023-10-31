@@ -47,7 +47,6 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         customers_count: ClassVar[int]
         drones_count: ClassVar[int]
         technicians_count: ClassVar[int]
-        drones_flight_duration: ClassVar[float]
 
         x: ClassVar[Tuple[float, ...]]
         y: ClassVar[Tuple[float, ...]]
@@ -471,7 +470,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         # After this step, some technician paths may still be empty (i.e. [0, 0]), just leave them unchanged
 
         # Serve all dronable waypoints
-        drone_config_mapping = (0, 1, 2, 3)
+        drone_config_mapping = (0, 0, 0, 0)
         drone_paths = [[[0]] for _ in range(cls.drones_count)]
         dronable = set(e for e in range(1, 1 + cls.customers_count) if cls.dronable[e])
 
@@ -488,7 +487,6 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
             hypothetical_arrival_timestamps = cls.calculate_drone_arrival_timestamps(hypothetical_path, config_index=drone_config_mapping[drone], offset=0.0)
             if (
                 cls.calculate_total_weight(hypothetical_path) > config.capacity
-                or cls.calculate_drone_flight_duration(hypothetical_path, config_index=drone_config_mapping[drone], arrival_timestamps=hypothetical_arrival_timestamps) > cls.drones_flight_duration
                 or cls.calculate_drone_energy_consumption(hypothetical_path, config_index=drone_config_mapping[drone], arrival_timestamps=hypothetical_arrival_timestamps) > config.battery
             ):
                 path.append(0)
@@ -534,7 +532,6 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
             cls.customers_count = int(re.search(r"Customers (\d+)", data).group(1))  # type: ignore
             cls.drones_count = int(re.search(r"number_drone (\d+)", data).group(1))  # type: ignore
             cls.technicians_count = int(re.search(r"number_drone (\d+)", data).group(1))  # type: ignore
-            cls.drones_flight_duration = float(re.search(r"droneLimitationFightTime\(s\) (\d+)", data).group(1))  # type: ignore
 
             cls_x = [0.0]
             cls_y = [0.0]
