@@ -120,7 +120,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
             for technician in range(solution.technicians_count):
                 next(bundle_iter).data.append(technician)
 
-            return pool.map_async(self.swap_technician_self, bundles, callback=callback)
+            return pool.map_async(self.swap_technician_self, bundles, callback=callback)  # type: ignore  # typing bug in multiprocessing.pool module
 
         # Wait for https://github.com/python/typeshed/pull/10949 to be merged
 
