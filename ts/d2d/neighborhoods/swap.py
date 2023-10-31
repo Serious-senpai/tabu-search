@@ -69,8 +69,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
             for pair in pairs:
                 next(bundle_iter).data.append(pair)
 
-            # typing bug in multiprocessing.pool module
-            return pool.map_async(self.swap_drone_drone, bundles, callback=callback)  # type: ignore
+            return pool.map_async(self.swap_drone_drone, bundles, callback=callback)  # type: ignore  # typing bug in multiprocessing.pool module
 
         def technician_technician_swap() -> p.MapResult[Set[Tuple[OperationResult, Tuple[int, int]]]]:
             bundles: List[IPCBundle[Swap, List[Tuple[int, int]]]] = [IPCBundle(self, []) for _ in range(pool_size)]
@@ -84,7 +83,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                 next(bundle_iter).data.append(pair)
 
             # typing bug in multiprocessing.pool module
-            return pool.map_async(self.swap_technician_technician, bundles, callback=callback)  # type: ignore
+            return pool.map_async(self.swap_technician_technician, bundles, callback=callback)  # type: ignore  # typing bug in multiprocessing.pool module
 
         def technician_drone_swap() -> p.MapResult[Set[Tuple[OperationResult, Tuple[int, int]]]]:
             bundles: List[IPCBundle[Swap, List[Tuple[int, Tuple[int, int]]]]] = [IPCBundle(self, []) for _ in range(pool_size)]
@@ -98,12 +97,35 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                 next(bundle_iter).data.append(arg)
 
             # typing bug in multiprocessing.pool module
-            return pool.map_async(self.swap_technician_drone, bundles, callback=callback)  # type: ignore
+            return pool.map_async(self.swap_technician_drone, bundles, callback=callback)  # type: ignore  # typing bug in multiprocessing.pool module
+
+        def drone_self_swap() -> p.MapResult[Set[Tuple[OperationResult, Tuple[int, int]]]]:
+            bundles: List[IPCBundle[Swap, List[Tuple[int, int]]]] = [IPCBundle(self, []) for _ in range(pool_size)]
+            bundle_iter = itertools.cycle(bundles)
+
+            for drone, path in enumerate(solution.drone_paths):
+                for path_index in range(len(path)):
+                    next(bundle_iter).data.append((drone, path_index))
+
+            return pool.map_async(self.swap_drone_self, bundles, callback=callback)  # type: ignore  # typing bug in multiprocessing.pool module
+
+        def technician_self_swap() -> p.MapResult[Set[Tuple[OperationResult, Tuple[int, int]]]]:
+            bundles: List[IPCBundle[Swap, List[int]]] = [IPCBundle(self, []) for _ in range(pool_size)]
+            bundle_iter = itertools.cycle(bundles)
+
+            for technician in range(solution.technicians_count):
+                next(bundle_iter).data.append(technician)
+
+            return pool.map_async(self.swap_technician_self, bundles, callback=callback)  # type: ignore  # typing bug in multiprocessing.pool module
+
+        # Wait for https://github.com/python/typeshed/pull/10949 to be merged
 
         for r in (
             drone_drone_swap(),
             technician_technician_swap(),
             technician_drone_swap(),
+            drone_self_swap(),
+            technician_self_swap(),
         ):
             r.wait()
 
@@ -126,7 +148,6 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
         solution = neighborhood._solution
         first_length = neighborhood._first_length
         second_length = neighborhood._second_length
-        config = solution.drone_linear_config if solution.energy_mode == DroneEnergyConsumptionMode.LINEAR else solution.drone_nonlinear_config
 
         # Don't alter the variables without a prefix underscore, edit their copies instead
         drone_paths = list(list(list(path) for path in paths) for paths in solution.drone_paths)
@@ -144,8 +165,8 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
             first_path = drone_paths[first_drone][first_path_index]
             second_path = drone_paths[second_drone][second_path_index]
 
-            first_config = config[solution.drone_config_mapping[first_drone]]
-            second_config = config[solution.drone_config_mapping[second_drone]]
+            first_config = solution.get_drone_config(solution.drone_config_mapping[first_drone])
+            second_config = solution.get_drone_config(solution.drone_config_mapping[second_drone])
 
             for first_start, second_start in itertools.product(
                 range(1, len(first_path) - first_length),
@@ -168,12 +189,6 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                     offset=solution.drone_arrival_timestamps[second_drone][second_path_index - 1][-1] if second_path_index > 0 else 0.0,
                 )
                 if solution.calculate_total_weight(_first_path) > first_config.capacity or solution.calculate_total_weight(_second_path) > second_config.capacity:
-                    continue
-
-                if solution.calculate_drone_flight_duration(_first_path, config_index=solution.drone_config_mapping[first_drone], arrival_timestamps=first_arrival_timestamps) > solution.drones_flight_duration:
-                    continue
-
-                if solution.calculate_drone_flight_duration(_second_path, config_index=solution.drone_config_mapping[second_drone], arrival_timestamps=second_arrival_timestamps) > solution.drones_flight_duration:
                     continue
 
                 if solution.calculate_drone_energy_consumption(_first_path, config_index=solution.drone_config_mapping[first_drone], arrival_timestamps=first_arrival_timestamps) > first_config.battery:
@@ -273,7 +288,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
         neighborhood.ensure_imported_data()
 
         solution = neighborhood._solution
-        config = solution.drone_linear_config if solution.energy_mode == DroneEnergyConsumptionMode.LINEAR else solution.drone_nonlinear_config
+
         results: Set[OperationResult] = set()
         swaps_mapping: Dict[OperationResult, Tuple[int, int]] = {}
 
@@ -281,7 +296,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
             # Don't alter the variables without a prefix underscore, edit their copies instead
             technician_path = solution.technician_paths[technician]
             drone_path = solution.drone_paths[drone][drone_path_index]
-            drone_config = config[solution.drone_config_mapping[drone]]
+            drone_config = solution.get_drone_config(solution.drone_config_mapping[drone])
 
             dronable_prefix_sum = tuple(itertools.accumulate(solution.dronable[index] for index in technician_path))
             for technician_start in range(1, len(technician_path) - technician_length):
@@ -302,9 +317,6 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                         )
 
                         if solution.calculate_total_weight(_drone_path) > drone_config.capacity:
-                            continue
-
-                        if solution.calculate_drone_flight_duration(_drone_path, config_index=solution.drone_config_mapping[drone], arrival_timestamps=drone_arrival_timestamps) > solution.drones_flight_duration:
                             continue
 
                         if solution.calculate_drone_energy_consumption(_drone_path, config_index=solution.drone_config_mapping[drone], arrival_timestamps=drone_arrival_timestamps) > drone_config.battery:
@@ -344,5 +356,115 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
             populate_results(technician, drone, drone_path_index, first_length, second_length)
             if first_length != second_length:
                 populate_results(technician, drone, drone_path_index, second_length, first_length)
+
+        return set((r, swaps_mapping[r]) for r in results)
+
+    @staticmethod
+    def swap_drone_self(bundle: IPCBundle[Swap, List[Tuple[int, int]]]) -> Set[Tuple[OperationResult, Tuple[int, int]]]:
+        neighborhood = bundle.neighborhood
+        neighborhood.ensure_imported_data()
+
+        solution = neighborhood._solution
+        first_length = neighborhood._first_length
+        second_length = neighborhood._second_length
+
+        results: Set[OperationResult] = set()
+        swaps_mapping: Dict[OperationResult, Tuple[int, int]] = {}
+
+        for drone, path_index in bundle.data:
+            path = solution.drone_paths[drone][path_index]
+            config = solution.get_drone_config(solution.drone_config_mapping[drone])
+            offset = solution.drone_arrival_timestamps[drone][path_index][0]
+            for first_index in range(1, len(path) - (first_length + second_length)):
+                for second_index in range(first_index + first_length, len(path) - second_length):
+                    _path = list(path)
+
+                    # MUST replace [second_index:second_index + second_length] first
+                    _path[second_index:second_index + second_length] = path[first_index:first_index + first_length]
+                    _path[first_index:first_index + first_length] = path[second_index:second_index + second_length]
+
+                    arrival_timestamps = solution.calculate_drone_arrival_timestamps(
+                        _path,
+                        config_index=solution.drone_config_mapping[drone],
+                        offset=offset,
+                    )
+
+                    if solution.calculate_total_weight(_path) > config.capacity:
+                        continue
+
+                    if solution.calculate_drone_energy_consumption(_path, config_index=solution.drone_config_mapping[drone], arrival_timestamps=arrival_timestamps) > config.battery:
+                        continue
+
+                    _drone_timespans = list(solution.drone_timespans)
+                    _drone_timespans[drone] += arrival_timestamps[-1] - solution.drone_arrival_timestamps[drone][path_index][-1]
+
+                    _drone_waiting_times = list(list(p) for p in solution.drone_waiting_times)
+                    _drone_waiting_times[drone][path_index] = solution.calculate_drone_total_waiting_time(
+                        _path,
+                        config_index=solution.drone_config_mapping[drone],
+                        arrival_timestamps=arrival_timestamps,
+                    )
+
+                    _drone_paths = list(list(p) for p in solution.drone_paths)
+                    _drone_paths[drone][path_index] = tuple(_path)
+
+                    operation_result = OperationResult(
+                        factory=functools.partial(neighborhood.cls, drone_paths=_drone_paths, technician_paths=solution.technician_paths, drone_config_mapping=solution.drone_config_mapping),
+                        drone_timespans=tuple(_drone_timespans),
+                        drone_waiting_times=tuple(tuple(p) for p in _drone_waiting_times),
+                        technician_timespans=solution.technician_timespans,
+                        technician_waiting_times=solution.technician_waiting_times,
+                    )
+
+                    pair = (path[first_index], path[second_index])
+                    swaps_mapping[operation_result] = (min(pair), max(pair))
+                    operation_result.add_to_pareto_set(results)
+
+        return set((r, swaps_mapping[r]) for r in results)
+
+    @staticmethod
+    def swap_technician_self(bundle: IPCBundle[Swap, List[int]]) -> Set[Tuple[OperationResult, Tuple[int, int]]]:
+        neighborhood = bundle.neighborhood
+        neighborhood.ensure_imported_data()
+
+        solution = neighborhood._solution
+        first_length = neighborhood._first_length
+        second_length = neighborhood._second_length
+
+        results: Set[OperationResult] = set()
+        swaps_mapping: Dict[OperationResult, Tuple[int, int]] = {}
+
+        for technician in bundle.data:
+            path = solution.technician_paths[technician]
+            for first_index in range(1, len(path) - (first_length + second_length)):
+                for second_index in range(first_index + first_length, len(path) - second_length):
+                    _path = list(path)
+
+                    # MUST replace [second_index:second_index + second_length] first
+                    _path[second_index:second_index + second_length] = path[first_index:first_index + first_length]
+                    _path[first_index:first_index + first_length] = path[second_index:second_index + second_length]
+
+                    arrival_timestamps = solution.calculate_technician_arrival_timestamps(_path)
+
+                    _technician_timespans = list(solution.technician_timespans)
+                    _technician_timespans[technician] = arrival_timestamps[-1]
+
+                    _technician_waiting_times = list(solution.technician_waiting_times)
+                    _technician_waiting_times[technician] = solution.calculate_technician_total_waiting_time(_path, arrival_timestamps=arrival_timestamps)
+
+                    _technician_paths = list(solution.technician_paths)
+                    _technician_paths[technician] = tuple(_path)
+
+                    operation_result = OperationResult(
+                        factory=functools.partial(neighborhood.cls, drone_paths=solution.drone_paths, technician_paths=_technician_paths, drone_config_mapping=solution.drone_config_mapping),
+                        drone_timespans=solution.drone_timespans,
+                        drone_waiting_times=solution.drone_waiting_times,
+                        technician_timespans=tuple(_technician_timespans),
+                        technician_waiting_times=tuple(_technician_waiting_times),
+                    )
+
+                    pair = (path[first_index], path[second_index])
+                    swaps_mapping[operation_result] = (min(pair), max(pair))
+                    operation_result.add_to_pareto_set(results)
 
         return set((r, swaps_mapping[r]) for r in results)

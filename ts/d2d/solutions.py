@@ -5,7 +5,7 @@ import re
 from functools import partial
 from math import sqrt
 from os.path import join
-from typing import Any, ClassVar, Final, Iterable, List, Optional, Sequence, Tuple, TYPE_CHECKING, final
+from typing import Any, ClassVar, Final, Iterable, List, Optional, Sequence, Tuple, Union, TYPE_CHECKING, final
 
 from matplotlib import axes, pyplot
 if TYPE_CHECKING:
@@ -47,7 +47,6 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         customers_count: ClassVar[int]
         drones_count: ClassVar[int]
         technicians_count: ClassVar[int]
-        drones_flight_duration: ClassVar[float]
 
         x: ClassVar[Tuple[float, ...]]
         y: ClassVar[Tuple[float, ...]]
@@ -253,7 +252,8 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         """
         result = [offset]
         last = path[0]  # must be 0
-        config = cls.drone_linear_config[config_index] if cls.energy_mode == DroneEnergyConsumptionMode.LINEAR else cls.drone_nonlinear_config[config_index]
+        config = cls.get_drone_config(config_index)
+
         vertical_time = config.altitude * (1 / config.takeoff_speed + 1 / config.landing_speed)
 
         for index in path[1:]:
@@ -333,7 +333,12 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         velocity = config.maximum_velocity * next(coefficients_iter)
 
         for index in path[1:]:
-            timestamp = result[-1]
+            timestamp = result[-1] + cls.technician_service_time[last]
+            current_within_timespan += cls.technician_service_time[last]
+            while current_within_timespan >= 3600.0:
+                current_within_timespan -= 3600.0
+                velocity = config.maximum_velocity * next(coefficients_iter)
+
             distance = cls.distance(last, index)
 
             while distance > 0:
@@ -433,7 +438,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         The total energy consumption of the given path
         """
         arrival_timestamps = cls._ensure_drone_arrival_timestamps(path, config_index=config_index, arrival_timestamps=arrival_timestamps)
-        config = cls.drone_linear_config[config_index] if cls.energy_mode == DroneEnergyConsumptionMode.LINEAR else cls.drone_nonlinear_config[config_index]
+        config = cls.get_drone_config(config_index)
 
         takeoff_time = config.altitude / config.takeoff_speed
         landing_time = config.altitude / config.landing_speed
@@ -471,7 +476,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         # After this step, some technician paths may still be empty (i.e. [0, 0]), just leave them unchanged
 
         # Serve all dronable waypoints
-        drone_config_mapping = (0, 1, 2, 3)
+        drone_config_mapping = (0, 0, 0, 0)
         drone_paths = [[[0]] for _ in range(cls.drones_count)]
         dronable = set(e for e in range(1, 1 + cls.customers_count) if cls.dronable[e])
 
@@ -479,7 +484,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         while len(dronable) > 0:
             drone = next(drone_iter)
             paths = drone_paths[drone]
-            config = cls.drone_linear_config[drone] if cls.energy_mode == DroneEnergyConsumptionMode.LINEAR else cls.drone_nonlinear_config[drone]
+            config = cls.get_drone_config(drone_config_mapping[drone])
 
             path = paths[-1]
             index = min(dronable, key=partial(cls.distance, path[-1]))
@@ -488,7 +493,6 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
             hypothetical_arrival_timestamps = cls.calculate_drone_arrival_timestamps(hypothetical_path, config_index=drone_config_mapping[drone], offset=0.0)
             if (
                 cls.calculate_total_weight(hypothetical_path) > config.capacity
-                or cls.calculate_drone_flight_duration(hypothetical_path, config_index=drone_config_mapping[drone], arrival_timestamps=hypothetical_arrival_timestamps) > cls.drones_flight_duration
                 or cls.calculate_drone_energy_consumption(hypothetical_path, config_index=drone_config_mapping[drone], arrival_timestamps=hypothetical_arrival_timestamps) > config.battery
             ):
                 path.append(0)
@@ -510,6 +514,16 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
             technician_paths=tuple(tuple(path) for path in technician_paths),
             drone_config_mapping=drone_config_mapping,
         )
+
+    @classmethod
+    def get_drone_config(cls, config_index: int, /) -> Union[DroneLinearConfig, DroneNonlinearConfig]:
+        if cls.energy_mode == DroneEnergyConsumptionMode.LINEAR:
+            return cls.drone_linear_config[config_index]
+
+        if cls.energy_mode == DroneEnergyConsumptionMode.NON_LINEAR:
+            return cls.drone_nonlinear_config[config_index]
+
+        raise RuntimeError("Shouldn't reach here")
 
     @classmethod
     def import_config(cls) -> None:
@@ -534,7 +548,6 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
             cls.customers_count = int(re.search(r"Customers (\d+)", data).group(1))  # type: ignore
             cls.drones_count = int(re.search(r"number_drone (\d+)", data).group(1))  # type: ignore
             cls.technicians_count = int(re.search(r"number_drone (\d+)", data).group(1))  # type: ignore
-            cls.drones_flight_duration = float(re.search(r"droneLimitationFightTime\(s\) (\d+)", data).group(1))  # type: ignore
 
             cls_x = [0.0]
             cls_y = [0.0]

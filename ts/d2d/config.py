@@ -82,8 +82,6 @@ class _BaseDroneConfig:
 class DroneLinearConfig(_BaseDroneConfig):
     beta: float
     gamma: float
-    fixed_time: float
-    fixed_distance: float
 
     def _power(self, weight: float, /) -> float:
         return self.beta * weight + self.gamma
@@ -110,8 +108,6 @@ class DroneLinearConfig(_BaseDroneConfig):
             item = DroneLinearConfig(
                 beta=d["beta(w/kg)"],
                 gamma=d["gama(w)"],
-                fixed_time=d["FixedTime (s)"],
-                fixed_distance=d["FixedDistance (m)"],
                 **asdict(base),
             )
 
