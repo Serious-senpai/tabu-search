@@ -148,6 +148,9 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
             first_path = drone_paths[first_drone][first_path_index]
             second_path = drone_paths[second_drone][second_path_index]
 
+            first_config = config[solution.drone_config_mapping[first_drone]]
+            second_config = config[solution.drone_config_mapping[second_drone]]
+
             for first_start, second_start in itertools.product(
                 range(1, len(first_path) - first_length),
                 range(1, len(second_path) - second_length),
@@ -168,7 +171,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                     config_index=solution.drone_config_mapping[second_drone],
                     offset=solution.drone_arrival_timestamps[second_drone][second_path_index - 1][-1] if second_path_index > 0 else 0.0,
                 )
-                if solution.calculate_total_weight(_first_path) > config[first_drone].capacity or solution.calculate_total_weight(_second_path) > config[second_drone].capacity:
+                if solution.calculate_total_weight(_first_path) > first_config.capacity or solution.calculate_total_weight(_second_path) > second_config.capacity:
                     continue
 
                 if solution.calculate_drone_flight_duration(_first_path, config_index=solution.drone_config_mapping[first_drone], arrival_timestamps=first_arrival_timestamps) > solution.drones_flight_duration:
@@ -177,10 +180,10 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                 if solution.calculate_drone_flight_duration(_second_path, config_index=solution.drone_config_mapping[second_drone], arrival_timestamps=second_arrival_timestamps) > solution.drones_flight_duration:
                     continue
 
-                if solution.calculate_drone_energy_consumption(_first_path, config_index=solution.drone_config_mapping[first_drone], arrival_timestamps=first_arrival_timestamps) > config[first_drone].battery:
+                if solution.calculate_drone_energy_consumption(_first_path, config_index=solution.drone_config_mapping[first_drone], arrival_timestamps=first_arrival_timestamps) > first_config.battery:
                     continue
 
-                if solution.calculate_drone_energy_consumption(_second_path, config_index=solution.drone_config_mapping[second_drone], arrival_timestamps=second_arrival_timestamps) > config[second_drone].battery:
+                if solution.calculate_drone_energy_consumption(_second_path, config_index=solution.drone_config_mapping[second_drone], arrival_timestamps=second_arrival_timestamps) > second_config.battery:
                     continue
 
                 _drone_timespans = drone_timespans.copy()
