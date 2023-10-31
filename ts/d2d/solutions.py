@@ -332,7 +332,12 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         velocity = config.maximum_velocity * next(coefficients_iter)
 
         for index in path[1:]:
-            timestamp = result[-1]
+            timestamp = result[-1] + cls.technician_service_time[last]
+            current_within_timespan += cls.technician_service_time[last]
+            while current_within_timespan >= 3600.0:
+                current_within_timespan -= 3600.0
+                velocity = config.maximum_velocity * next(coefficients_iter)
+
             distance = cls.distance(last, index)
 
             while distance > 0:

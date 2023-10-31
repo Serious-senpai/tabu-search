@@ -84,7 +84,7 @@ jobs:
         ${{ matrix.propagation_priority }} \
         --max-propagation ${{ matrix.max_propagation }} \
         --pool-size ${{ matrix.pool_size }} \
-        --dump output-${{ matrix.problem }}-${{ matrix.iterations }}-${{ matrix.tabu_size }}-${{ matrix.propagation_priority }}.json
+        --dump output-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}.json
 
     - name: Upload solution
       uses: actions/upload-artifact@v3

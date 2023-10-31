@@ -9,12 +9,16 @@ from typing import Any, Callable, Dict, Literal, Optional, Set, TYPE_CHECKING
 from ts import d2d, utils
 
 
+LINEAR = "linear"
+NON_LINEAR = "non-linear"
+
+
 class Namespace(argparse.Namespace):
     if TYPE_CHECKING:
         problem: str
         iterations: int
         tabu_size: int
-        energy_mode: Literal["linear", "nonlinear"]
+        energy_mode: Literal["linear", "non-linear"]
         max_distance: bool
         min_distance: bool
         max_propagation: Optional[int]
@@ -38,7 +42,7 @@ if __name__ == "__main__":
     parser.add_argument("problem", type=str, help="the problem name (e.g. \"6.5.1\", \"200.10.1\", ...)")
     parser.add_argument("-i", "--iterations", default=500, type=int, help="the number of iterations to run the tabu search for (default: 500)")
     parser.add_argument("-t", "--tabu-size", default=10, type=int, help="the tabu size for every neighborhood (default: 10)")
-    parser.add_argument("-e", "--energy-mode", default="linear", choices=["linear", "nonlinear"], help="The energy consumption mode to use (default: linear)")
+    parser.add_argument("-e", "--energy-mode", default=LINEAR, choices=[LINEAR, NON_LINEAR], help="The energy consumption mode to use (default: linear)")
     parser.add_argument("--max-distance", action="store_true", help="Set the propagation predicate using the maximum total distance to the Pareto front instead of the propagation rate")
     parser.add_argument("--min-distance", action="store_true", help="Set the propagation predicate using the minimum total distance to the Pareto front instead of the propagation rate")
     parser.add_argument("-m", "--max-propagation", type=int, help="Maximum number of propagating solutions at a time")
@@ -52,9 +56,9 @@ if __name__ == "__main__":
     namespace: Namespace = parser.parse_args()  # type: ignore
     print(namespace)
 
-    if namespace.energy_mode == "linear":
+    if namespace.energy_mode == LINEAR:
         energy_mode = d2d.DroneEnergyConsumptionMode.LINEAR
-    elif namespace.energy_mode == "nonlinear":
+    elif namespace.energy_mode == NON_LINEAR:
         energy_mode = d2d.DroneEnergyConsumptionMode.NON_LINEAR
     else:
         raise ValueError(f"Unknown energy mode {namespace.energy_mode!r}")
@@ -67,7 +71,10 @@ if __name__ == "__main__":
         raise ValueError(message)
 
     propagation_priority_key: Callable[[Set[d2d.D2DPathSolution], d2d.D2DPathSolution], float] = utils.zero
+    propagation_priority: Optional[str] = None
     if namespace.max_distance:
+        propagation_priority = "max-distance"
+
         def propagation_priority_key(pareto_set: Set[d2d.D2DPathSolution], candidate: d2d.D2DPathSolution) -> float:
             cost = candidate.cost()
             result = 0.0
@@ -78,6 +85,8 @@ if __name__ == "__main__":
             return -result
 
     if namespace.min_distance:
+        propagation_priority = "min-distance"
+
         def propagation_priority_key(pareto_set: Set[d2d.D2DPathSolution], candidate: d2d.D2DPathSolution) -> float:
             cost = candidate.cost()
             result = 0.0
@@ -99,17 +108,20 @@ if __name__ == "__main__":
         cProfile.run(eval_func)
         exit(0)
 
-    solutions = d2d.D2DPathSolution.tabu_search(
-        pool_size=namespace.pool_size,
-        iterations_count=namespace.iterations,
-        use_tqdm=namespace.verbose,
-        propagation_priority_key=propagation_priority_key,
-        max_propagation=namespace.max_propagation,
-        plot_pareto_front=namespace.verbose,
+    solutions = sorted(
+        d2d.D2DPathSolution.tabu_search(
+            pool_size=namespace.pool_size,
+            iterations_count=namespace.iterations,
+            use_tqdm=namespace.verbose,
+            propagation_priority_key=propagation_priority_key,
+            max_propagation=namespace.max_propagation,
+            plot_pareto_front=namespace.verbose,
+        ),
+        key=lambda s: s.cost(),
     )
 
     print(f"Found {len(solutions)} solution(s):")
-    for index, solution in enumerate(sorted(solutions, key=lambda s: s.cost())):
+    for index, solution in enumerate(solutions):
         print(f"SOLUTION #{index + 1}: cost = {solution.cost()}")
         print("\n".join(f"Drone #{drone_index + 1}: {paths}" for drone_index, paths in enumerate(solution.drone_paths)))
         print("\n".join(f"Technician #{technician_index + 1}: {path}" for technician_index, path in enumerate(solution.technician_paths)))
@@ -127,6 +139,8 @@ if __name__ == "__main__":
                 "problem": namespace.problem,
                 "iterations": namespace.iterations,
                 "tabu-size": namespace.tabu_size,
+                "energy-mode": namespace.energy_mode,
+                "propagation-priority": propagation_priority,
                 "solutions": [to_json(s) for s in solutions],
             }
             json.dump(data, f)
