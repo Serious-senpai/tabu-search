@@ -277,6 +277,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
         neighborhood.ensure_imported_data()
 
         solution = neighborhood._solution
+        config = solution.drone_linear_config if solution.energy_mode == DroneEnergyConsumptionMode.LINEAR else solution.drone_nonlinear_config
         results: Set[OperationResult] = set()
         swaps_mapping: Dict[OperationResult, Tuple[int, int]] = {}
 
@@ -284,6 +285,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
             # Don't alter the variables without a prefix underscore, edit their copies instead
             technician_path = solution.technician_paths[technician]
             drone_path = solution.drone_paths[drone][drone_path_index]
+            drone_config = config[solution.drone_config_mapping[drone]]
 
             dronable_prefix_sum = tuple(itertools.accumulate(solution.dronable[index] for index in technician_path))
             for technician_start in range(1, len(technician_path) - technician_length):
@@ -302,6 +304,15 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                             config_index=solution.drone_config_mapping[drone],
                             offset=solution.drone_arrival_timestamps[drone][drone_path_index - 1][-1] if drone_path_index > 0 else 0.0,
                         )
+
+                        if solution.calculate_total_weight(_drone_path) > drone_config.capacity:
+                            continue
+
+                        if solution.calculate_drone_flight_duration(_drone_path, config_index=solution.drone_config_mapping[drone], arrival_timestamps=drone_arrival_timestamps) > solution.drones_flight_duration:
+                            continue
+
+                        if solution.calculate_drone_energy_consumption(_drone_path, config_index=solution.drone_config_mapping[drone], arrival_timestamps=drone_arrival_timestamps) > drone_config.battery:
+                            continue
 
                         _technician_timespans = list(solution.technician_timespans)
                         _technician_timespans[technician] = technician_arrival_timestamps[-1]
