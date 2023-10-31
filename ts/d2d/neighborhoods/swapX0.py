@@ -25,4 +25,17 @@ class Swappoint(D2DNeighborhoodMixin, _BaseNeighborhood):
 
     def __init__(self, solution: D2DPathSolution, *, length: int) -> None:
         super().__init__(solution)
+    
+    
+    
+    def find_best_candidates(self, *, pool: p.Pool, pool_size: int) -> Iterable[D2DPathSolution]:
+        solution = self._solution
+        results: Set[OperationResult] = set()
+        swaps_mapping: Dict[OperationResult, Tuple[int, int]] = {}
+        
+        def callback(collected: Iterable[Set[Tuple[OperationResult, Tuple[int, int]]]]) -> None:
+            for s in collected:
+                for result, pair in s:
+                    swaps_mapping[result] = pair
+                    result.add_to_pareto_set(results)
         
