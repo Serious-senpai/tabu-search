@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 from .config import DroneEnduranceConfig, DroneEnergyConsumptionMode, DroneLinearConfig, DroneNonlinearConfig, TruckConfig
 from .errors import ImportException
 from .mixins import SolutionMetricsMixin
-from .neighborhoods import Swap
+from .neighborhoods import Swap, Swappoint
 from ..abc import MultiObjectiveNeighborhood, MultiObjectiveSolution
 
 
@@ -136,6 +136,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
             Swap(self, first_length=1, second_length=1),
             Swap(self, first_length=2, second_length=1),
             Swap(self, first_length=1, second_length=0),
+            Swappoint(self, length = 1),
         )
 
     def plot(self) -> None:
