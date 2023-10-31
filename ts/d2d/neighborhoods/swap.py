@@ -130,7 +130,6 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
         solution = neighborhood._solution
         first_length = neighborhood._first_length
         second_length = neighborhood._second_length
-        config = solution.drone_linear_config if solution.energy_mode == DroneEnergyConsumptionMode.LINEAR else solution.drone_nonlinear_config
 
         # Don't alter the variables without a prefix underscore, edit their copies instead
         drone_paths = list(list(list(path) for path in paths) for paths in solution.drone_paths)
@@ -148,8 +147,8 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
             first_path = drone_paths[first_drone][first_path_index]
             second_path = drone_paths[second_drone][second_path_index]
 
-            first_config = config[solution.drone_config_mapping[first_drone]]
-            second_config = config[solution.drone_config_mapping[second_drone]]
+            first_config = solution.get_drone_config(solution.drone_config_mapping[first_drone])
+            second_config = solution.get_drone_config(solution.drone_config_mapping[second_drone])
 
             for first_start, second_start in itertools.product(
                 range(1, len(first_path) - first_length),
@@ -271,7 +270,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
         neighborhood.ensure_imported_data()
 
         solution = neighborhood._solution
-        config = solution.drone_linear_config if solution.energy_mode == DroneEnergyConsumptionMode.LINEAR else solution.drone_nonlinear_config
+
         results: Set[OperationResult] = set()
         swaps_mapping: Dict[OperationResult, Tuple[int, int]] = {}
 
@@ -279,7 +278,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
             # Don't alter the variables without a prefix underscore, edit their copies instead
             technician_path = solution.technician_paths[technician]
             drone_path = solution.drone_paths[drone][drone_path_index]
-            drone_config = config[solution.drone_config_mapping[drone]]
+            drone_config = solution.get_drone_config(solution.drone_config_mapping[drone])
 
             dronable_prefix_sum = tuple(itertools.accumulate(solution.dronable[index] for index in technician_path))
             for technician_start in range(1, len(technician_path) - technician_length):

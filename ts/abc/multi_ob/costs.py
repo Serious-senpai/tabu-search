@@ -35,8 +35,7 @@ class BaseMulticostComparison:
 
         Returns
         -----
-        `bool`
-            Whether this object was added to the provided set.
+        Whether this object was added to the provided set.
         """
         to_remove = set(o for o in __s if self.dominate(o))
         for item in to_remove:
