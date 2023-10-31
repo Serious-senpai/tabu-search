@@ -100,17 +100,24 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
                 propagate: List[Self] = []
 
                 def process_solution(solution: Self) -> None:
-                    neighborhoods = solution.get_neighborhoods()
-                    for candidate in random.choice(neighborhoods).find_best_candidates(pool=pool, pool_size=pool_size):
-                        if candidate_costs is not None:
-                            candidate_costs.add(candidate.cost())
+                    neighborhoods = list(solution.get_neighborhoods())
+                    random.shuffle(neighborhoods)
+                    for neighborhood in neighborhoods:
+                        propagated = False
 
-                        optimal = candidate.add_to_pareto_set(results)
-                        if not candidate.to_propagate:
-                            continue
+                        for candidate in neighborhood.find_best_candidates(pool=pool, pool_size=pool_size):
+                            if candidate_costs is not None:
+                                candidate_costs.add(candidate.cost())
 
-                        if optimal:
+                            candidate.add_to_pareto_set(results)
+                            if not candidate.to_propagate:
+                                continue
+
+                            propagated = True
                             propagate.append(candidate)
+
+                        if propagated:
+                            break
 
                 with p.ThreadPool(min(pool_size, len(current))) as thread_pool:
                     thread_pool.map(process_solution, current)
