@@ -7,7 +7,7 @@ import re
 from math import sqrt
 from multiprocessing import pool
 from os import path
-from typing import Any, ClassVar, Iterable, List, Optional, Tuple, Union, TYPE_CHECKING
+from typing import Any, ClassVar, Final, Iterable, List, Optional, Tuple, Union, TYPE_CHECKING
 
 from matplotlib import axes, pyplot
 from tqdm import tqdm
@@ -35,8 +35,8 @@ class TSPPathSolution(SingleObjectiveSolution):
     if TYPE_CHECKING:
         _cost: float
         _path: Optional[Tuple[int, ...]]
-        after: Tuple[int, ...]
-        before: Tuple[int, ...]
+        after: Final[Tuple[int, ...]]
+        before: Final[Tuple[int, ...]]
 
         dimension: ClassVar[int]
         edge_weight_type: ClassVar[str]

@@ -126,7 +126,7 @@ class Swap(TSPNeighborhoodMixin, _BaseNeighborhood):
     @staticmethod
     def static_find_best_candidate(bundle: IPCBundle[Swap, List[Tuple[int, int, int, int]]]) -> Tuple[Optional[TSPPathSolution], Optional[Tuple[int, int, int, int]]]:
         neighborhood = bundle.neighborhood
-        neighborhood._ensure_imported_data()
+        neighborhood.ensure_imported_data()
 
         result: Optional[TSPPathSolution] = None
         min_swap: Optional[Tuple[int, int, int, int]] = None

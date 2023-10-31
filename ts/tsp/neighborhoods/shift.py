@@ -91,7 +91,7 @@ class SegmentShift(TSPNeighborhoodMixin, _BaseNeighborhood):
     @staticmethod
     def static_find_best_candidate(bundle: IPCBundle[SegmentShift, List[Tuple[int, int, int]]]) -> Tuple[Optional[TSPPathSolution], Optional[Tuple[int, int, int]]]:
         neighborhood = bundle.neighborhood
-        neighborhood._ensure_imported_data()
+        neighborhood.ensure_imported_data()
 
         result: Optional[TSPPathSolution] = None
         min_args: Optional[Tuple[int, int, int]] = None

@@ -14,7 +14,10 @@ class BaseMulticostComparison:
     __slots__ = ()
 
     def cost(self) -> Tuple[float, ...]:
-        """The cost of this object"""
+        """The cost of this object
+
+        Subclasses must implement this.
+        """
         raise NotImplementedError
 
     @final

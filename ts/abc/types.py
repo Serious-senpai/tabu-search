@@ -28,7 +28,10 @@ class BaseSolution:
     __slots__ = ()
 
     def get_neighborhoods(self) -> Sequence[BaseNeighborhood[Self, Any]]:
-        """Returns all neighborhoods of the current solution"""
+        """Returns all neighborhoods of the current solution
+
+        Subclasses must implement this.
+        """
         raise NotImplementedError
 
     def shuffle(self, *, use_tqdm: bool) -> Self:
@@ -61,7 +64,10 @@ class BaseSolution:
 
     @classmethod
     def initial(cls) -> Self:
-        """Generate the initial solution for tabu search"""
+        """Generate the initial solution for tabu search
+
+        Subclasses must implement this.
+        """
         raise NotImplementedError
 
     def __hash__(self) -> int:

@@ -27,6 +27,10 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
 
     @property
     def to_propagate(self) -> bool:
+        """Whether the tabu search should use this solution for propagation in the next iteration.
+
+        Subclasses must implement this.
+        """
         raise NotImplementedError
 
     @to_propagate.setter
@@ -43,7 +47,6 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
         pool_size: int,
         iterations_count: int,
         use_tqdm: bool,
-        propagation_predicate: Callable[[Set[Self], Self], bool] = true,
         propagation_priority_key: Callable[[Set[Self], Self], float] = zero,
         max_propagation: Union[int, Callable[[Set[Self]], int], None] = None,
         plot_pareto_front: bool = False,
@@ -58,10 +61,6 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
             The number of iterations to improve from the initial solution
         use_tqdm:
             Whether to display the progress bar
-        propagation_predicate:
-            A function taking 2 arguments: The first one is the currently considered Pareto front, the second one is the solution S.
-            It must return a boolean value indicating whether the solution S should be added to the search tree. The provided function
-            mustn't change the Pareto front by any means.
         propagation_priority_key:
             A function taking 2 arguments: The first one is the currently considered Pareto front, the second one is the solution S.
             The less the returned value, the more likely the solution S is added to the search tree. The provided function mustn't
@@ -82,14 +81,13 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
         - https://en.wikipedia.org/wiki/Pareto_front
         """
         initial = cls.initial()
-        results: Set[Self] = set()
-        results.add(initial)
+        results = {initial}
         iterations: Union[range, tqdm[int]] = range(iterations_count)
         if use_tqdm:
             iterations = tqdm(iterations, ascii=" █")
 
-        current = results.copy()
-        candidate_costs = [initial.cost()] if plot_pareto_front else None
+        current = [initial]
+        candidate_costs = {initial.cost()} if plot_pareto_front else None
         if len(initial.cost()) != 2:
             message = f"Cannot plot the Pareto front when the number of objectives is not 2"
             raise ValueError(message)
@@ -105,13 +103,13 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
                     neighborhoods = solution.get_neighborhoods()
                     for candidate in random.choice(neighborhoods).find_best_candidates(pool=pool, pool_size=pool_size):
                         if candidate_costs is not None:
-                            candidate_costs.append(candidate.cost())
+                            candidate_costs.add(candidate.cost())
 
                         optimal = candidate.add_to_pareto_set(results)
                         if not candidate.to_propagate:
                             continue
 
-                        if optimal or propagation_predicate(results, candidate):
+                        if optimal:
                             propagate.append(candidate)
 
                 with p.ThreadPool(min(pool_size, len(current))) as thread_pool:
@@ -119,20 +117,14 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
 
                 if max_propagation is not None:
                     max_propagation_value = max_propagation if isinstance(max_propagation, int) else max_propagation(results)
-                else:
-                    max_propagation_value = None
-
-                if max_propagation_value is not None:
                     propagate.sort(key=partial(propagation_priority_key, results))
-                    for s in propagate[max(1, len(propagate) // 3):]:
-                        current.add(s)
-
-                    while len(current) > max_propagation_value:
-                        current.remove(next(iter(current)))
+                    current = propagate[:max_propagation_value]
 
                 else:
-                    for s in propagate:
-                        current.add(s)
+                    current = propagate
+
+                if len(propagate) == 0:
+                    break
 
         if candidate_costs is not None:
             _, ax = pyplot.subplots()

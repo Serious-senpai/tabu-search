@@ -18,6 +18,8 @@ class MultiObjectiveNeighborhood(BaseNeighborhood[_MultiST, _TT]):
     def find_best_candidates(self, *, pool: pool.Pool, pool_size: int) -> Iterable[_MultiST]:
         """Find all non-dominant solutions in this neighborhood of the current solution.
 
+        Subclasses must implement this.
+
         Parameters
         -----
         pool: `pool.Pool`

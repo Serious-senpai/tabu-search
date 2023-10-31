@@ -13,7 +13,10 @@ class BaseCostComparison:
     __slots__ = ()
 
     def cost(self) -> float:
-        """The cost of this object"""
+        """The cost of this object
+
+        Subclasses must implement this.
+        """
         raise NotImplementedError
 
     @final
