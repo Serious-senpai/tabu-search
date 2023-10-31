@@ -6,7 +6,7 @@ from typing import Dict
 
 
 summary_dir = Path("d2d-summary/")
-field_names = ("Problem", "Iterations", "Tabu size", "Propagation priority", "Service duration", "Total waiting time", "Drone paths", "Technician paths")
+field_names = ("Problem", "Iterations", "Tabu size", "Propagation priority", "Service duration", "Total waiting time", "Drone config mapping", "Drone paths", "Technician paths")
 pattern = re.compile(r"output-([0-9\.]+)-(\d+)-(\d+)-([-a-z]+)?\.json")
 
 
@@ -45,6 +45,7 @@ with open(summary_dir / "summary.csv", "w") as csv:
                             propagation_priority.strip("-"),
                             str(d["cost"][0]),
                             str(d["cost"][1]),
+                            "\"" + str(d["drone_config_mapping"]) + "\"",
                             "\"" + str(d["drone_paths"]) + "\"",
                             "\"" + str(d["technician_paths"]) + "\"",
                         )
