@@ -26,6 +26,7 @@ class Namespace(argparse.Namespace):
 def to_json(solution: d2d.D2DPathSolution) -> Dict[str, Any]:
     return {
         "cost": solution.cost(),
+        "drone_config_mapping": solution.drone_config_mapping,
         "drone_paths": solution.drone_paths,
         "technician_paths": solution.technician_paths,
     }
