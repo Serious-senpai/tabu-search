@@ -77,7 +77,7 @@ class BaseSolution:
         return f"<{self.__class__.__name__} hash={self.__hash__()}>"
 
 
-_ST = TypeVar("_ST", bound=BaseSolution)
+_ST = TypeVar("_ST", bound=BaseSolution, covariant=True)
 _TT = TypeVar("_TT")
 
 

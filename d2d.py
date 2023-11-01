@@ -75,7 +75,7 @@ if __name__ == "__main__":
     if namespace.max_distance:
         propagation_priority = "max-distance"
 
-        def propagation_priority_key(pareto_set: Set[d2d.D2DPathSolution], candidate: d2d.D2DPathSolution) -> float:
+        def propagation_priority_key(pareto_set: Set[d2d.D2DPathSolution], candidate: d2d.D2DPathSolution, /) -> float:
             cost = candidate.cost()
             result = 0.0
             for s in pareto_set:
@@ -87,7 +87,7 @@ if __name__ == "__main__":
     if namespace.min_distance:
         propagation_priority = "min-distance"
 
-        def propagation_priority_key(pareto_set: Set[d2d.D2DPathSolution], candidate: d2d.D2DPathSolution) -> float:
+        def propagation_priority_key(pareto_set: Set[d2d.D2DPathSolution], candidate: d2d.D2DPathSolution, /) -> float:
             cost = candidate.cost()
             result = 0.0
             for s in pareto_set:

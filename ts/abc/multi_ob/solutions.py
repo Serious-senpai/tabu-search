@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 from .costs import BaseMulticostComparison
 from ..types import BaseSolution
-from ...utils import true, zero
+from ...utils import zero
 if TYPE_CHECKING:
     from .neighborhoods import MultiObjectiveNeighborhood
 
