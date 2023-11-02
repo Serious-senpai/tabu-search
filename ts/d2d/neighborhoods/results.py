@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from ..solutions import D2DPathSolution
 
 
-__all__ = ("OperationResult")
+__all__ = ("OperationResult",)
 
 
 class OperationResult(SolutionMetricsMixin):

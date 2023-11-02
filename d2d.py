@@ -42,10 +42,10 @@ if __name__ == "__main__":
     parser.add_argument("problem", type=str, help="the problem name (e.g. \"6.5.1\", \"200.10.1\", ...)")
     parser.add_argument("-i", "--iterations", default=500, type=int, help="the number of iterations to run the tabu search for (default: 500)")
     parser.add_argument("-t", "--tabu-size", default=10, type=int, help="the tabu size for every neighborhood (default: 10)")
-    parser.add_argument("-e", "--energy-mode", default=LINEAR, choices=[LINEAR, NON_LINEAR], help="The energy consumption mode to use (default: linear)")
-    parser.add_argument("--max-distance", action="store_true", help="Set the propagation predicate using the maximum total distance to the Pareto front instead of the propagation rate")
-    parser.add_argument("--min-distance", action="store_true", help="Set the propagation predicate using the minimum total distance to the Pareto front instead of the propagation rate")
-    parser.add_argument("-m", "--max-propagation", type=int, help="Maximum number of propagating solutions at a time")
+    parser.add_argument("-e", "--energy-mode", default=LINEAR, choices=[LINEAR, NON_LINEAR], help="the energy consumption mode to use (default: linear)")
+    parser.add_argument("--max-distance", action="store_true", help="set the propagation predicate using the maximum total distance to the Pareto front instead of the propagation rate")
+    parser.add_argument("--min-distance", action="store_true", help="set the propagation predicate using the minimum total distance to the Pareto front instead of the propagation rate")
+    parser.add_argument("-m", "--max-propagation", type=int, help="maximum number of propagating solutions at a time")
     parser.add_argument("-p", "--profile", action="store_true", help="run in profile mode and exit immediately")
     parser.add_argument("-v", "--verbose", action="store_true", help="whether to display the progress bar and plot the solution")
     parser.add_argument("-d", "--dump", type=str, help="dump the solution to a file")
@@ -75,7 +75,7 @@ if __name__ == "__main__":
     if namespace.max_distance:
         propagation_priority = "max-distance"
 
-        def propagation_priority_key(pareto_set: Set[d2d.D2DPathSolution], candidate: d2d.D2DPathSolution) -> float:
+        def propagation_priority_key(pareto_set: Set[d2d.D2DPathSolution], candidate: d2d.D2DPathSolution, /) -> float:
             cost = candidate.cost()
             result = 0.0
             for s in pareto_set:
@@ -87,7 +87,7 @@ if __name__ == "__main__":
     if namespace.min_distance:
         propagation_priority = "min-distance"
 
-        def propagation_priority_key(pareto_set: Set[d2d.D2DPathSolution], candidate: d2d.D2DPathSolution) -> float:
+        def propagation_priority_key(pareto_set: Set[d2d.D2DPathSolution], candidate: d2d.D2DPathSolution, /) -> float:
             cost = candidate.cost()
             result = 0.0
             for s in pareto_set:

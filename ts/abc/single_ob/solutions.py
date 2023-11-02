@@ -38,7 +38,8 @@ class SingleObjectiveSolution(BaseSolution, BaseCostComparison):
         use_tqdm:
             Whether to display the progress bar
         shuffle_after:
-            After the specified number of non-improving iterations, shuffle the current solution
+            After the specified number of non-improving iterations (start counting when hitting the local optimum),
+            shuffle the current solution
 
         Returns
         -----
@@ -51,6 +52,7 @@ class SingleObjectiveSolution(BaseSolution, BaseCostComparison):
 
         with Pool(pool_size) as pool:
             last_improved = 0
+            local_optimal_hit = False
             for iteration in iterations:
                 if isinstance(iterations, tqdm):
                     iterations.set_description_str(f"Tabu search ({current.cost()}/{result.cost()})")
@@ -60,14 +62,20 @@ class SingleObjectiveSolution(BaseSolution, BaseCostComparison):
                 if best_candidate is None:
                     break
 
-                if best_candidate < current:
+                if not local_optimal_hit:
                     last_improved = iteration
 
+                if best_candidate > current:
+                    local_optimal_hit = True
+
                 current = best_candidate
-                result = min(result, current)
+                if current < result:
+                    result = current
+                    last_improved = iteration
 
                 if iteration - last_improved >= shuffle_after:
                     current = current.shuffle(use_tqdm=use_tqdm)
+                    local_optimal_hit = False
                     last_improved = iteration
 
             return result.post_optimization(pool=pool, pool_size=pool_size, use_tqdm=use_tqdm)

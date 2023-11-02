@@ -10,3 +10,10 @@ Tabu search technique for solving optimization problems. TSP problems are taken 
 ```
 $ pip install -r requirements.txt
 ```
+
+## Developing
+- Codes must be formatted using [autopep8](https://pypi.org/project/autopep8). Run `autopep8` at the root of the repository
+```
+$ autopep8 -aaair .
+```
+- Codes must pass the [mypy](https://pypi.org/project/mypy) type-checking.
