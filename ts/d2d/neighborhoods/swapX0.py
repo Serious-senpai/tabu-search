@@ -6,7 +6,7 @@ from typing import Dict, Iterable, List, Set, Tuple, TYPE_CHECKING
 import itertools
 import functools
 from .mixins import D2DNeighborhoodMixin
-from .results import OperationResult
+from .factory import SolutionFactory
 from ..config import DroneEnergyConsumptionMode
 from ..errors import NeighborhoodException
 from ...abc import MultiObjectiveNeighborhood
@@ -36,22 +36,19 @@ class Swappoint(D2DNeighborhoodMixin, _BaseNeighborhood):
     def __init__(self, solution: D2DPathSolution, *, length: int) -> None:
         super().__init__(solution)
         self.length = length
-        
-        
-    
-    
+
     def find_best_candidates(self, *, pool: p.Pool, pool_size: int) -> Iterable[D2DPathSolution]:
         solution = self._solution
         results: Set[D2DPathSolution] = set()
         swaps_mapping: Dict[D2DPathSolution, Tuple[int, int]] = {}
-        
-        #swap Technician - Technician
-        
+
+        # swap Technician - Technician
+
         for i, j in itertools.permutations(range(solution.technicians_count), 2):
-        
+
             i_path = solution.technician_paths[i]
             j_path = solution.technician_paths[j]
-            
+
             for point_i in range(1, len(i_path) - self.length):
                 for location_j in range(1, len(j_path) - 1):
                     technician_path = list(solution.technician_paths)
@@ -61,17 +58,17 @@ class Swappoint(D2DNeighborhoodMixin, _BaseNeighborhood):
                     pi[point_i:point_i + self.length] = []
                     technician_path[i] = tuple(pi)
                     technician_path[j] = tuple(pj)
-                    s=self.cls(
+                    s = self.cls(
                         drone_paths=solution.drone_paths,
                         technician_paths=tuple(technician_path),
                         drone_config_mapping=solution.drone_config_mapping,
-                    )    
+                    )
                     s.add_to_pareto_set(results)
-                    
-        return results    
-                    
+
+        return results
+
     @staticmethod
-    def swap_technician_technician(bundle: IPCBundle[Swappoint, List[Tuple[int, int]]]) -> Set[Tuple[OperationResult, Tuple[int, int]]]:
+    def swap_technician_technician(bundle: IPCBundle[Swappoint, List[Tuple[int, int]]]) -> Set[Tuple[SolutionFactory, Tuple[int, int]]]:
         neighborhood = bundle.neighborhood
         neighborhood.ensure_imported_data()
 
@@ -82,8 +79,8 @@ class Swappoint(D2DNeighborhoodMixin, _BaseNeighborhood):
         # Don't alter the variables without a prefix underscore, edit their copies instead
         technician_paths = list(list(path) for path in solution.technician_paths)
 
-        results: Set[OperationResult] = set()
-        swaps_mapping: Dict[OperationResult, Tuple[int, int]] = {}
+        results: Set[SolutionFactory] = set()
+        swaps_mapping: Dict[SolutionFactory, Tuple[int, int]] = {}
         for first, second in bundle.data:
             first_path = technician_paths[first]
             second_path = technician_paths[second]
@@ -113,13 +110,8 @@ class Swappoint(D2DNeighborhoodMixin, _BaseNeighborhood):
                 _technician_paths[first] = _first_path
                 _technician_paths[second] = _second_path
 
-                operation_result = OperationResult(
-                    factory=functools.partial(
-                        neighborhood.cls,
-                        drone_paths=solution.drone_paths,
-                        technician_paths=tuple(tuple(path) for path in _technician_paths),
-                        drone_config_mapping=solution.drone_config_mapping,
-                    ),
+                operation_result = SolutionFactory(
+                    update_technicians=((first, tuple(_first_path)), (second, tuple(_second_path))),
                     drone_timespans=solution.drone_timespans,
                     drone_waiting_times=solution.drone_waiting_times,
                     technician_timespans=tuple(_technician_timespans),
