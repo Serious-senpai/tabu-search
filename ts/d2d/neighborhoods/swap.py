@@ -8,7 +8,6 @@ from typing import Dict, Iterable, List, Set, Tuple, TYPE_CHECKING
 
 from .mixins import D2DNeighborhoodMixin
 from .results import OperationResult
-from ..config import DroneEnergyConsumptionMode
 from ..errors import NeighborhoodException
 from ...abc import MultiObjectiveNeighborhood
 from ...bundle import IPCBundle
@@ -216,7 +215,12 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                 _drone_paths[second[0]][second[1]] = _second_path
 
                 operation_result = OperationResult(
-                    factory=functools.partial(neighborhood.cls, drone_paths=_drone_paths, technician_paths=solution.technician_paths, drone_config_mapping=solution.drone_config_mapping),
+                    factory=functools.partial(
+                        neighborhood.cls,
+                        drone_paths=tuple(tuple(tuple(path) for path in paths) for paths in _drone_paths),
+                        technician_paths=solution.technician_paths,
+                        drone_config_mapping=solution.drone_config_mapping,
+                    ),
                     drone_timespans=tuple(_drone_timespans),
                     drone_waiting_times=tuple(tuple(p) for p in _drone_waiting_times),
                     technician_timespans=solution.technician_timespans,
@@ -273,7 +277,12 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                 _technician_paths[second] = _second_path
 
                 operation_result = OperationResult(
-                    factory=functools.partial(neighborhood.cls, drone_paths=solution.drone_paths, technician_paths=_technician_paths, drone_config_mapping=solution.drone_config_mapping),
+                    factory=functools.partial(
+                        neighborhood.cls,
+                        drone_paths=solution.drone_paths,
+                        technician_paths=tuple(tuple(path) for path in _technician_paths),
+                        drone_config_mapping=solution.drone_config_mapping,
+                    ),
                     drone_timespans=solution.drone_timespans,
                     drone_waiting_times=solution.drone_waiting_times,
                     technician_timespans=tuple(_technician_timespans),
@@ -343,7 +352,12 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                         _drone_paths[drone][drone_path_index] = tuple(_drone_path)
 
                         operation_result = OperationResult(
-                            factory=functools.partial(neighborhood.cls, drone_paths=_drone_paths, technician_paths=_technician_paths, drone_config_mapping=solution.drone_config_mapping),
+                            factory=functools.partial(
+                                neighborhood.cls,
+                                drone_paths=tuple(tuple(tuple(path) for path in paths) for paths in _drone_paths),
+                                technician_paths=tuple(tuple(path) for path in _technician_paths),
+                                drone_config_mapping=solution.drone_config_mapping,
+                            ),
                             drone_timespans=tuple(_drone_timespans),
                             drone_waiting_times=tuple(tuple(paths) for paths in _drone_waiting_times),
                             technician_timespans=tuple(_technician_timespans),
@@ -413,7 +427,12 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                     _drone_paths[drone][path_index] = tuple(_path)
 
                     operation_result = OperationResult(
-                        factory=functools.partial(neighborhood.cls, drone_paths=_drone_paths, technician_paths=solution.technician_paths, drone_config_mapping=solution.drone_config_mapping),
+                        factory=functools.partial(
+                            neighborhood.cls,
+                            drone_paths=tuple(tuple(tuple(path) for path in paths) for paths in _drone_paths),
+                            technician_paths=solution.technician_paths,
+                            drone_config_mapping=solution.drone_config_mapping,
+                        ),
                         drone_timespans=tuple(_drone_timespans),
                         drone_waiting_times=tuple(tuple(p) for p in _drone_waiting_times),
                         technician_timespans=solution.technician_timespans,
@@ -460,7 +479,12 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                     _technician_paths[technician] = tuple(_path)
 
                     operation_result = OperationResult(
-                        factory=functools.partial(neighborhood.cls, drone_paths=solution.drone_paths, technician_paths=_technician_paths, drone_config_mapping=solution.drone_config_mapping),
+                        factory=functools.partial(
+                            neighborhood.cls,
+                            drone_paths=solution.drone_paths,
+                            technician_paths=tuple(tuple(path) for path in _technician_paths),
+                            drone_config_mapping=solution.drone_config_mapping,
+                        ),
                         drone_timespans=solution.drone_timespans,
                         drone_waiting_times=solution.drone_waiting_times,
                         technician_timespans=tuple(_technician_timespans),

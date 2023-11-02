@@ -5,7 +5,7 @@ import re
 from functools import partial
 from math import sqrt
 from os.path import join
-from typing import Any, ClassVar, Final, Iterable, List, Optional, Sequence, Tuple, Union, TYPE_CHECKING, final
+from typing import Any, ClassVar, Final, List, Optional, Sequence, Tuple, Union, TYPE_CHECKING, final
 
 from matplotlib import axes, pyplot
 if TYPE_CHECKING:
@@ -65,8 +65,8 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
     def __init__(
         self,
         *,
-        drone_paths: Iterable[Iterable[Iterable[int]]],
-        technician_paths: Iterable[Iterable[int]],
+        drone_paths: Tuple[Tuple[Tuple[int, ...], ...], ...],
+        technician_paths: Tuple[Tuple[int, ...], ...],
         drone_config_mapping: Tuple[int, ...],
         drone_arrival_timestamps: Optional[Tuple[Tuple[Tuple[float, ...], ...], ...]] = None,
         technician_arrival_timestamps: Optional[Tuple[Tuple[float, ...], ...]] = None,
@@ -76,14 +76,14 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         technician_waiting_times: Optional[Tuple[float, ...]] = None,
     ) -> None:
         self._to_propagate = True
-        self.drone_paths = tuple(tuple(tuple(index for index in path) for path in paths) for paths in drone_paths)
-        self.technician_paths = tuple(tuple(index for index in path) for path in technician_paths)
+        self.drone_paths = drone_paths
+        self.technician_paths = technician_paths
         self.drone_config_mapping = drone_config_mapping
 
         if drone_arrival_timestamps is None:
             def get_arrival_timestamps() -> Tuple[Tuple[Tuple[float, ...], ...], ...]:
                 result: List[List[Tuple[float, ...]]] = []
-                for drone, paths in enumerate(self.drone_paths):
+                for drone, paths in enumerate(drone_paths):
                     drone_arrivals: List[Tuple[float, ...]] = []
                     result.append(drone_arrivals)
 
@@ -100,7 +100,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         self.drone_arrival_timestamps = drone_arrival_timestamps
 
         if technician_arrival_timestamps is None:
-            technician_arrival_timestamps = tuple(self.calculate_technician_arrival_timestamps(path) for path in self.technician_paths)
+            technician_arrival_timestamps = tuple(self.calculate_technician_arrival_timestamps(path) for path in technician_paths)
 
         self.technician_arrival_timestamps = technician_arrival_timestamps
 
@@ -117,10 +117,10 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
                     self.calculate_drone_total_waiting_time(path, config_index=drone_config_mapping[drone], arrival_timestamps=arrival_timestamps)
                     for path, arrival_timestamps in zip(paths, self.drone_arrival_timestamps[drone])
                 )
-                for drone, paths in enumerate(self.drone_paths)
+                for drone, paths in enumerate(drone_paths)
             ),
             technician_timespans=technician_timespans or tuple(technician_arrival_timestamp[-1] for technician_arrival_timestamp in self.technician_arrival_timestamps),
-            technician_waiting_times=technician_waiting_times or tuple(self.calculate_technician_total_waiting_time(path, arrival_timestamps=arrival_timestamps) for path, arrival_timestamps in zip(self.technician_paths, self.technician_arrival_timestamps)),
+            technician_waiting_times=technician_waiting_times or tuple(self.calculate_technician_total_waiting_time(path, arrival_timestamps=arrival_timestamps) for path, arrival_timestamps in zip(technician_paths, self.technician_arrival_timestamps)),
         )
 
     @property

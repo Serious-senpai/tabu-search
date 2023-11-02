@@ -22,7 +22,7 @@ class D2DNeighborhoodMixin:
     __slots__ = ()
 
     def __init__(self: D2DNeighborhoodProtocol, solution: D2DPathSolution, /) -> None:
-        # super() should resolve to BaseNeighborhood
+        # super() should resolve to MultiObjectiveNeighborhood
         super().__init__(solution)  # type: ignore
         self.extras["problem"] = solution.problem
         self.extras["energy_mode"] = solution.energy_mode
