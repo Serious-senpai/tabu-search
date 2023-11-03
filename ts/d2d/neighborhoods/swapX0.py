@@ -34,8 +34,8 @@ class Swappoint(D2DNeighborhoodMixin, _BaseNeighborhood):
 
     def find_best_candidates(self, *, pool: p.Pool, pool_size: int) -> Iterable[D2DPathSolution]:
         solution = self._solution
-        results: Set[D2DPathSolution] = set()
-        swaps_mapping: Dict[D2DPathSolution, Tuple[int, int]] = {}
+        results: Set[SolutionFactory] = set()
+        swaps_mapping: Dict[SolutionFactory, Tuple[int, int]] = {}
 
         # swap Technician - Technician
 
@@ -46,7 +46,21 @@ class Swappoint(D2DNeighborhoodMixin, _BaseNeighborhood):
             x = next(bundles_iter)
             x.data.append(pair)  # type: ignore
 
-        return results
+        for candidates in pool.map(self.swap_technician_technician, bundles):
+            for result, pair in candidates:
+                if result.add_to_pareto_set(results):
+                    swaps_mapping[result] = pair
+
+        for result in results:
+            pair = swaps_mapping[result]
+            s = result.from_solution(solution)
+            if pair in self.tabu_set:
+                s.to_propagate = False
+
+            else:
+                self.add_to_tabu(pair)
+
+            yield s
 
     @staticmethod
     def swap_technician_technician(bundle: IPCBundle[Swappoint, List[Tuple[int, int]]]) -> Set[Tuple[SolutionFactory, Tuple[int, int]]]:
