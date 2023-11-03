@@ -135,13 +135,13 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
             r.wait()
 
         for result in results:
-            pair = swaps_mapping[result]
+            pair = (min(swaps_mapping[result]), max(swaps_mapping[result]))
             s = result.from_solution(solution)
             if pair in self.tabu_set:
                 s.to_propagate = False
 
             else:
-                self.add_to_tabu((min(pair), max(pair)))
+                self.add_to_tabu(pair)
 
             yield s
 
@@ -220,8 +220,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                     technician_waiting_times=solution.technician_waiting_times,
                 )
 
-                pair = (first_path[first_start], second_path[second_start])
-                swaps_mapping[factory] = (min(pair), max(pair))
+                swaps_mapping[factory] = (first_path[first_start], second_path[second_start])
                 factory.add_to_pareto_set(results)
 
         return set((r, swaps_mapping[r]) for r in results)
@@ -273,8 +272,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                     technician_waiting_times=tuple(_technician_total_waiting_times),
                 )
 
-                pair = (first_path[first_start], second_path[second_start])
-                swaps_mapping[factory] = (min(pair), max(pair))
+                swaps_mapping[factory] = (first_path[first_start], second_path[second_start])
                 factory.add_to_pareto_set(results)
 
         return set((r, swaps_mapping[r]) for r in results)
@@ -338,8 +336,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                             technician_waiting_times=tuple(_technician_waiting_times),
                         )
 
-                        pair = (technician_path[technician_start], drone_path[drone_start])
-                        swaps_mapping[factory] = (min(pair), max(pair))
+                        swaps_mapping[factory] = (technician_path[technician_start], drone_path[drone_start])
                         factory.add_to_pareto_set(results)
 
         first_length = neighborhood._first_length
@@ -408,8 +405,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                         technician_waiting_times=solution.technician_waiting_times,
                     )
 
-                    pair = (path[first_index], path[second_index])
-                    swaps_mapping[factory] = (min(pair), max(pair))
+                    swaps_mapping[factory] = (path[first_index], path[second_index])
                     factory.add_to_pareto_set(results)
 
         return set((r, swaps_mapping[r]) for r in results)
@@ -452,8 +448,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                         technician_waiting_times=tuple(_technician_waiting_times),
                     )
 
-                    pair = (path[first_index], path[second_index])
-                    swaps_mapping[factory] = (min(pair), max(pair))
+                    swaps_mapping[factory] = (path[first_index], path[second_index])
                     factory.add_to_pareto_set(results)
 
         return set((r, swaps_mapping[r]) for r in results)
