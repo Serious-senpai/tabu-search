@@ -55,9 +55,9 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
         def callback(collected: Iterable[Set[Tuple[SolutionFactory, Tuple[int, int]]]]) -> None:
             for s in collected:
                 for result, pair in s:
-                    swaps_mapping[result] = pair
                     with lock:
-                        result.add_to_pareto_set(results)
+                        if result.add_to_pareto_set(results):
+                            swaps_mapping[result] = pair
 
         def drone_drone_swap() -> p.MapResult[Set[Tuple[SolutionFactory, Tuple[int, int]]]]:
             bundles: List[IPCBundle[Swap, List[Tuple[Tuple[int, int], Tuple[int, int]]]]] = [IPCBundle(self, []) for _ in range(pool_size)]
