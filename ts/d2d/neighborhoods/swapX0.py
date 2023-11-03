@@ -60,6 +60,8 @@ class Swappoint(D2DNeighborhoodMixin, _BaseNeighborhood):
 
         solution = neighborhood._solution
         results: Set[SolutionFactory] = set()
+        swaps_mapping: Dict[SolutionFactory, Tuple[int, int]] = {}
+
         for i, j in bundle.data:
             i_path = solution.technician_paths[i]
             j_path = solution.technician_paths[j]
@@ -82,14 +84,14 @@ class Swappoint(D2DNeighborhoodMixin, _BaseNeighborhood):
                     _technician_total_waiting_times[i] = solution.calculate_technician_total_waiting_time(pi, arrival_timestamps=first_arrival_timestamps)
                     _technician_total_waiting_times[j] = solution.calculate_technician_total_waiting_time(pj, arrival_timestamps=second_arrival_timestamps)
 
-                    operation_result = SolutionFactory(
+                    factory = SolutionFactory(
                         update_technicians=((i, tuple(pi)), (j, tuple(pj))),
                         drone_timespans=solution.drone_timespans,
                         drone_waiting_times=solution.drone_waiting_times,
                         technician_timespans=tuple(_technician_timespans),
                         technician_waiting_times=tuple(_technician_total_waiting_times),
                     )
-                    operation_result.add_to_pareto_set(results)
+                    factory.add_to_pareto_set(results)
                     factory = SolutionFactory(
                         update_technicians=((i, tuple(pi)), (j, tuple(pj))),
                         drone_timespans=solution.drone_timespans,
@@ -98,8 +100,8 @@ class Swappoint(D2DNeighborhoodMixin, _BaseNeighborhood):
                         technician_waiting_times=tuple(_technician_total_waiting_times),
                     )
 
-                pair = (pi[first_start], pj[second_start])
-                swaps_mapping[factory] = (min(pair), max(pair))
-                factory.add_to_pareto_set(results)
+                    pair = (i_path[point_i], j_path[location_j])
+                    swaps_mapping[factory] = (min(pair), max(pair))
+                    factory.add_to_pareto_set(results)
 
         return set((r, swaps_mapping[r]) for r in results)
