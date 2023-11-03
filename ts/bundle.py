@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Generic, TypeVar, TYPE_CHECKING
 
-from .abc.types import BaseNeighborhood
+from .abc.bases import BaseNeighborhood
 
 
 _T = TypeVar("_T")

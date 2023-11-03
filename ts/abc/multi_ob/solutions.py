@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from typing_extensions import Self
 
 from .costs import BaseMulticostComparison
-from ..types import BaseSolution
+from ..bases import BaseSolution
 from ...utils import zero
 if TYPE_CHECKING:
     from .neighborhoods import MultiObjectiveNeighborhood
