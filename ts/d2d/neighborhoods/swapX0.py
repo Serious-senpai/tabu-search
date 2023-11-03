@@ -1,10 +1,11 @@
 from __future__ import annotations
-from multiprocessing import pool as p
-from typing import Iterable, Set, TYPE_CHECKING
-from typing import Dict, Iterable, List, Set, Tuple, TYPE_CHECKING
+
 import itertools
-from .mixins import D2DNeighborhoodMixin
+from multiprocessing import pool as p
+from typing import Dict, Iterable, List, Set, Tuple, TYPE_CHECKING
+
 from .factory import SolutionFactory
+from .mixins import D2DNeighborhoodMixin
 from ...abc import MultiObjectiveNeighborhood
 from ...bundle import IPCBundle
 if TYPE_CHECKING:
