@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 from collections import deque
 from multiprocessing import pool
 from typing import (
@@ -95,6 +96,7 @@ class BaseNeighborhood(Generic[_ST, _TT]):
 
         _maxlen: ClassVar[int]
         _tabu_list: ClassVar[Deque[_TT]]  # type: ignore
+        tabu_lock: ClassVar[threading.Lock] = threading.Lock()
         tabu_set: ClassVar[Set[_TT]]  # type: ignore
 
     def __init__(self, solution: _ST, /) -> None:
@@ -107,26 +109,30 @@ class BaseNeighborhood(Generic[_ST, _TT]):
         super().__init_subclass__(*args, **kwargs)
         cls._maxlen = 10
         cls._tabu_list = deque(maxlen=cls._maxlen)
+        cls.tabu_lock = threading.Lock()
         cls.tabu_set = set()
 
     @final
     @classmethod
     def add_to_tabu(cls, target: _TT) -> None:
-        cls.tabu_set.add(target)
-        cls._tabu_list.append(target)
-        cls.remove_from_tabu()
+        with cls.tabu_lock:
+            cls.tabu_set.add(target)
+            cls._tabu_list.append(target)
+            cls.remove_from_tabu()
 
     @final
     @classmethod
     def remove_from_tabu(cls) -> None:
-        while len(cls.tabu_set) > cls._maxlen:
-            try:
-                cls.tabu_set.remove(cls._tabu_list.popleft())
-            except KeyError:
-                pass
+        with cls.tabu_lock:
+            while len(cls.tabu_set) > cls._maxlen:
+                try:
+                    cls.tabu_set.remove(cls._tabu_list.popleft())
+                except KeyError:
+                    pass
 
     @final
     @classmethod
     def reset_tabu(cls, *, maxlen: int = 10) -> None:
-        cls._maxlen = maxlen
-        cls.remove_from_tabu()
+        with cls.tabu_lock:
+            cls._maxlen = maxlen
+            cls.remove_from_tabu()

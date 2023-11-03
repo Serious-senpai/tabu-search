@@ -4,7 +4,7 @@ from multiprocessing import pool
 from typing import Optional, TypeVar
 
 from .solutions import SingleObjectiveSolution
-from ..types import BaseNeighborhood
+from ..bases import BaseNeighborhood
 
 
 __all__ = ("SingleObjectiveNeighborhood",)

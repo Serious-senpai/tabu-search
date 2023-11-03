@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from typing_extensions import Self
 
 from .costs import BaseCostComparison
-from ..types import BaseSolution
+from ..bases import BaseSolution
 if TYPE_CHECKING:
     from .neighborhoods import SingleObjectiveNeighborhood
 
