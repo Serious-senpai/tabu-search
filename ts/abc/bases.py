@@ -118,21 +118,20 @@ class BaseNeighborhood(Generic[_ST, _TT]):
         with cls.tabu_lock:
             cls.tabu_set.add(target)
             cls._tabu_list.append(target)
-            cls.remove_from_tabu()
+            cls.__remove_from_tabu()
 
     @final
     @classmethod
-    def remove_from_tabu(cls) -> None:
-        with cls.tabu_lock:
-            while len(cls.tabu_set) > cls._maxlen:
-                try:
-                    cls.tabu_set.remove(cls._tabu_list.popleft())
-                except KeyError:
-                    pass
+    def __remove_from_tabu(cls) -> None:
+        while len(cls.tabu_set) > cls._maxlen:
+            try:
+                cls.tabu_set.remove(cls._tabu_list.popleft())
+            except KeyError:
+                pass
 
     @final
     @classmethod
     def reset_tabu(cls, *, maxlen: int = 10) -> None:
         with cls.tabu_lock:
             cls._maxlen = maxlen
-            cls.remove_from_tabu()
+            cls.__remove_from_tabu()
