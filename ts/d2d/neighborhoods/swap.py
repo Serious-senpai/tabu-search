@@ -3,7 +3,7 @@ from __future__ import annotations
 import itertools
 import threading
 from multiprocessing import pool as p
-from typing import Dict, Iterable, List, Set, Tuple, TYPE_CHECKING
+from typing import Dict, Final, Iterable, List, Set, Tuple, TYPE_CHECKING
 
 from .factory import SolutionFactory
 from .mixins import D2DNeighborhoodMixin
@@ -30,8 +30,8 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
         "_second_length",
     )
     if TYPE_CHECKING:
-        _first_length: int
-        _second_length: int
+        _first_length: Final[int]
+        _second_length: Final[int]
 
     def __init__(self, solution: D2DPathSolution, *, first_length: int, second_length: int) -> None:
         super().__init__(solution)

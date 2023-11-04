@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Generic, TypeVar, TYPE_CHECKING
+from typing import Final, Generic, TypeVar, TYPE_CHECKING
 
 from .abc.bases import BaseNeighborhood
 
@@ -21,8 +21,8 @@ class IPCBundle(Generic[_NT, _T]):
         "data",
     )
     if TYPE_CHECKING:
-        neighborhood: _NT
-        data: _T
+        neighborhood: Final[_NT]
+        data: Final[_T]
 
     def __init__(self, neighborhood: _NT, data: _T) -> None:
         self.neighborhood = neighborhood
