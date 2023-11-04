@@ -6,7 +6,7 @@ import json
 import os
 from typing import Optional, TYPE_CHECKING
 
-from ts import tsp
+from ts import tsp, utils
 
 
 class Namespace(argparse.Namespace):
@@ -35,6 +35,8 @@ if __name__ == "__main__":
 
     default_pool_size = os.cpu_count() or 1
     parser.add_argument("--pool-size", default=default_pool_size, type=int, help=f"the size of the process pool (default: {default_pool_size})")
+
+    utils.display_platform()
 
     namespace: Namespace = parser.parse_args()  # type: ignore
     print(namespace)
