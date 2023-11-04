@@ -4,7 +4,7 @@ import argparse
 import cProfile
 import json
 import os
-from typing import Any, Callable, Dict, Literal, Optional, Set, TYPE_CHECKING
+from typing import Any, Callable, Dict, List, Literal, Optional, Set, TYPE_CHECKING
 
 from ts import d2d, utils
 
@@ -18,6 +18,7 @@ class Namespace(argparse.Namespace):
         problem: str
         iterations: int
         tabu_size: int
+        drone_config_mapping: List[int]
         energy_mode: Literal["linear", "non-linear"]
         max_distance: bool
         min_distance: bool
@@ -42,6 +43,7 @@ if __name__ == "__main__":
     parser.add_argument("problem", type=str, help="the problem name (e.g. \"6.5.1\", \"200.10.1\", ...)")
     parser.add_argument("-i", "--iterations", default=500, type=int, help="the number of iterations to run the tabu search for (default: 500)")
     parser.add_argument("-t", "--tabu-size", default=10, type=int, help="the tabu size for every neighborhood (default: 10)")
+    parser.add_argument("-c", "--drone-config-mapping", nargs="+", default=[0, 0, 0, 0], type=int, help="the energy configuration index for each drone")
     parser.add_argument("-e", "--energy-mode", default=LINEAR, choices=[LINEAR, NON_LINEAR], help="the energy consumption mode to use (default: linear)")
     parser.add_argument("--max-distance", action="store_true", help="set the propagation predicate using the maximum total distance to the Pareto front instead of the propagation rate")
     parser.add_argument("--min-distance", action="store_true", help="set the propagation predicate using the minimum total distance to the Pareto front instead of the propagation rate")
@@ -65,7 +67,11 @@ if __name__ == "__main__":
     else:
         raise ValueError(f"Unknown energy mode {namespace.energy_mode!r}")
 
-    d2d.D2DPathSolution.import_problem(namespace.problem, energy_mode=energy_mode)
+    d2d.D2DPathSolution.import_problem(
+        namespace.problem,
+        drone_config_mapping=tuple(namespace.drone_config_mapping),
+        energy_mode=energy_mode,
+    )
     d2d.Swap.reset_tabu(maxlen=namespace.tabu_size)
 
     if namespace.max_distance and namespace.min_distance:
@@ -131,7 +137,6 @@ if __name__ == "__main__":
         check = d2d.D2DPathSolution(
             drone_paths=solution.drone_paths,
             technician_paths=solution.technician_paths,
-            drone_config_mapping=solution.drone_config_mapping,
         )
         assert check.cost() == solution.cost()
 
