@@ -8,6 +8,7 @@ __all__ = (
     "false",
     "true",
     "zero",
+    "ngettext",
     "display_platform",
 )
 
@@ -24,8 +25,14 @@ def zero(*args: Any, **kwargs: Any) -> Literal[0]:
     return 0
 
 
+def ngettext(predicate: bool, if_true: str, if_false: str, /) -> str:
+    return if_true if predicate else if_false
+
+
 def display_platform() -> None:
-    print(
-        f"Running on {sys.platform}\nPython {sys.version}\nCPU count = {os.cpu_count()}\n"
-        + ", ".join((platform.platform(), platform.processor()))
-    )
+    cpu_count = os.cpu_count() or 1
+
+    display = f"Running on {sys.platform} with {cpu_count} " + ngettext(cpu_count == 1, "CPU", "CPUs") + "\n"
+    display += f"Python {sys.version}\n"
+    display += ", ".join((platform.platform(), platform.processor()))
+    print(display)

@@ -122,7 +122,7 @@ if __name__ == "__main__":
         key=lambda s: s.cost(),
     )
 
-    print(f"Found {len(solutions)} solution(s):")
+    print(f"Found {len(solutions)} " + utils.ngettext(len(solutions) == 1, "solution", "solutions") + ":")
     for index, solution in enumerate(solutions):
         print(f"SOLUTION #{index + 1}: cost = {solution.cost()}")
         print("\n".join(f"Drone #{drone_index + 1}: {paths}" for drone_index, paths in enumerate(solution.drone_paths)))
