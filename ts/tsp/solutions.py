@@ -7,7 +7,7 @@ import re
 from math import sqrt
 from multiprocessing import pool
 from os import path
-from typing import Any, ClassVar, Final, Iterable, List, Optional, Tuple, Union, TYPE_CHECKING
+from typing import Any, ClassVar, Final, List, Optional, Tuple, Union, TYPE_CHECKING
 
 from matplotlib import axes, pyplot
 from tqdm import tqdm
@@ -45,9 +45,9 @@ class TSPPathSolution(SingleObjectiveSolution):
         x: Tuple[float, ...]
         y: Tuple[float, ...]
 
-    def __init__(self, *, after: Iterable[int], before: Iterable[int], cost: Optional[float] = None) -> None:
-        self.after = tuple(after)
-        self.before = tuple(before)
+    def __init__(self, *, after: Tuple[int, ...], before: Tuple[int, ...], cost: Optional[float] = None) -> None:
+        self.after = after
+        self.before = before
 
         if cost is None:
             result = 0.0
@@ -168,7 +168,7 @@ class TSPPathSolution(SingleObjectiveSolution):
             after[path[index]] = path[(index + 1) % cls.dimension]
             before[path[index]] = path[(index - 1 + cls.dimension) % cls.dimension]
 
-        return cls(after=after, before=before)
+        return cls(after=tuple(after), before=tuple(before))
 
     @classmethod
     def read_optimal_solution(cls) -> TSPPathSolution:
@@ -201,7 +201,7 @@ class TSPPathSolution(SingleObjectiveSolution):
             after[current] = path[(index + 1) % cls.dimension]
             before[current] = path[(index + cls.dimension - 1) % cls.dimension]
 
-        return cls(after=after, before=before)
+        return cls(after=tuple(after), before=tuple(before))
 
     @classmethod
     def import_problem(cls, problem: str, *, precalculated_distances: Optional[Tuple[Tuple[float, ...], ...]] = None) -> None:

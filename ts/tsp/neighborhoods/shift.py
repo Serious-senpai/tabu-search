@@ -56,7 +56,7 @@ class SegmentShift(TSPNeighborhoodMixin, _BaseNeighborhood):
         after[x], before[segment_first] = segment_first, x
         after[segment_last], before[after_x] = after_x, segment_last
 
-        return self.cls(after=after, before=before, cost=cost)
+        return self.cls(after=tuple(after), before=tuple(before), cost=cost)
 
     def find_best_candidate(self, *, pool: pool.Pool, pool_size: int) -> Optional[TSPPathSolution]:
         solution = self._solution

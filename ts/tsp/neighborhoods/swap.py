@@ -81,7 +81,7 @@ class Swap(TSPNeighborhoodMixin, _BaseNeighborhood):
             after[second_tail], before[after_first] = after_first, second_tail
             after[first_tail], before[after_second] = after_second, first_tail
 
-        return self.cls(after=after, before=before, cost=cost)
+        return self.cls(after=tuple(after), before=tuple(before), cost=cost)
 
     def find_best_candidate(self, *, pool: pool.Pool, pool_size: int) -> Optional[TSPPathSolution]:
         solution = self._solution
