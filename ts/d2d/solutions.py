@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import random
 import re
 from functools import partial
 from math import sqrt
@@ -130,6 +131,27 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
     @to_propagate.setter
     def to_propagate(self, propagate: bool) -> None:
         self._to_propagate = propagate
+
+    def shuffle(self, *, use_tqdm: bool) -> D2DPathSolution:
+        drone_paths = list(list(paths) for paths in self.drone_paths)
+        technician_paths = list(self.technician_paths)
+
+        for drone, paths in enumerate(drone_paths):
+            for path_index, path in enumerate(paths):
+                if random.random() < 0.5:
+                    drone_paths[drone][path_index] = tuple(reversed(path))
+
+        for technician, path in enumerate(technician_paths):
+            if random.random() < 0.5:
+                technician_paths[technician] = tuple(reversed(path))
+
+        return D2DPathSolution(
+            drone_paths=tuple(tuple(paths) for paths in drone_paths),
+            technician_paths=tuple(technician_paths),
+            drone_config_mapping=self.drone_config_mapping,
+            drone_timespans=self.drone_timespans,
+            technician_timespans=self.technician_timespans,
+        )
 
     def get_neighborhoods(self) -> Tuple[MultiObjectiveNeighborhood[Self, Any], ...]:
         return (
