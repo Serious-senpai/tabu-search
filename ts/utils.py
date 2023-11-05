@@ -34,5 +34,7 @@ def display_platform() -> None:
 
     display = f"Running on {sys.platform} with {cpu_count} " + ngettext(cpu_count == 1, "CPU", "CPUs") + "\n"
     display += f"Python {sys.version}\n"
-    display += ", ".join((platform.platform(), platform.processor()))
+    display += ", ".join((platform.platform(), platform.processor())) + "\n"
+    display += "-" * 30
+
     print(display)
