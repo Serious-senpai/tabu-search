@@ -159,6 +159,7 @@ jobs:
     - name: Combine coverage results
       run: |
         coverage combine tsp-summary/ d2d-summary/
+        coverage html --directory=coverage-html
         coverage report
 
     - name: Upload TSP summary
@@ -176,5 +177,5 @@ jobs:
     - name: Upload coverage results
       uses: actions/upload-artifact@v3
       with:
-        name: coverage-results
-        path: .coverage
+        name: coverage-html
+        path: coverage-html/
