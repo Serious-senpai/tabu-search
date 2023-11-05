@@ -110,7 +110,7 @@ class BaseNeighborhood(Generic[_ST, _TT]):
     def __init_subclass__(cls, *args: Any, **kwargs: Any) -> None:
         super().__init_subclass__(*args, **kwargs)
         cls._maxlen = 10
-        cls._tabu_list = deque(maxlen=cls._maxlen)
+        cls._tabu_list = deque()
         cls._tabu_lock = threading.Lock()
         cls.tabu_set = set()
 
