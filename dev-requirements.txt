@@ -5,7 +5,7 @@ coverage==7.3.2
 cycler==0.12.1
 fonttools==4.44.0
 kiwisolver==1.4.5
-matplotlib==3.8.0
+matplotlib==3.8.1
 mypy==1.6.1
 mypy-extensions==1.0.0
 numpy==1.26.1
