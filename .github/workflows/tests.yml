@@ -21,9 +21,9 @@ jobs:
       fail-fast: false
       matrix:
         problem: [berlin52, bier127, ch150, eil101, pr144]
-        iterations: [1000, 2000, 4000]
+        iterations: [1000, 2000, 3000]
         tabu_size: [5, 10, 40]
-        shuffle_after: [3, 5, 10, 100]
+        shuffle_after: [5, 10, 100]
 
     steps:
     - name: Checkout repository
@@ -37,17 +37,25 @@ jobs:
         python-version: "3.11"
 
     - name: Install dependencies
-      run: pip install -r requirements.txt
+      run: pip install -r dev-requirements.txt
 
     - name: Test sample
       timeout-minutes: 60
-      run: python tsp.py ${{ matrix.problem }} --iter ${{ matrix.iterations }} --tabu-size ${{ matrix.tabu_size }} --shuffle-after ${{ matrix.shuffle_after }} --dump output-${{ matrix.problem }}-${{ matrix.iterations }}-${{ matrix.tabu_size }}-${{ matrix.shuffle_after }}.json
+      run: |
+        coverage run --data-file=.coverage.${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.shuffle_after }} \
+        tsp.py ${{ matrix.problem }} \
+        --iterations ${{ matrix.iterations }} \
+        --tabu-size ${{ matrix.tabu_size }} \
+        --shuffle-after ${{ matrix.shuffle_after }} \
+        --dump output-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.shuffle_after }}.json
 
     - name: Upload solution
       uses: actions/upload-artifact@v3
       with:
         name: tsp-summary
-        path: output-**.json
+        path: |
+          output-**.json
+          .coverage.**
 
   d2d-test:
     name: Solve D2D
@@ -79,12 +87,13 @@ jobs:
         python-version: "3.11"
 
     - name: Install dependencies
-      run: pip install -r requirements.txt
+      run: pip install -r dev-requirements.txt
 
     - name: Test sample
       timeout-minutes: 60
       run: |
-        python d2d.py ${{ matrix.problem }} \
+        coverage run --data-file=.coverage.${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }} \
+        d2d.py ${{ matrix.problem }} \
         --iterations ${{ matrix.iterations }} \
         --tabu-size ${{ matrix.tabu_size }} \
         --energy-mode ${{ matrix.energy_mode }} \
@@ -97,7 +106,9 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: d2d-summary
-        path: output-**.json
+        path: |
+          output-**.json
+          .coverage.**
 
   summary:
     name: Summarize solutions
@@ -129,12 +140,18 @@ jobs:
         python-version: "3.11"
 
     - name: Install dependencies
-      run: pip install -r requirements.txt
+      run: pip install -r dev-requirements.txt
 
     - name: Summarize solutions
       run: |
         python tsp-summary.py
         python d2d-summary.py
+
+    - name: Combine coverage results
+      run: |
+        coverage combine tsp-summary/ d2d-summary/
+        coverage html --directory=coverage-html
+        coverage report
 
     - name: Upload TSP summary
       uses: actions/upload-artifact@v3
@@ -147,3 +164,9 @@ jobs:
       with:
         name: d2d-summary
         path: d2d-summary/*.csv
+
+    - name: Upload coverage results
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-html
+        path: coverage-html/

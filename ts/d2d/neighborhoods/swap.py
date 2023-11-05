@@ -377,8 +377,10 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                 for second_index in range(first_index + first_length, len(path) - second_length):
                     _path = list(path)
 
-                    _path[first_index:first_index + first_length] = path[second_index:second_index + second_length]
+                    # MUST replace [second_index:second_index + second_length] first, otherwise the indices will be incorrect
+                    # in case of asymmetric swaps
                     _path[second_index:second_index + second_length] = path[first_index:first_index + first_length]
+                    _path[first_index:first_index + first_length] = path[second_index:second_index + second_length]
 
                     arrival_timestamps = solution.calculate_drone_arrival_timestamps(
                         _path,
@@ -439,8 +441,10 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                 for second_index in range(first_index + first_length, len(path) - second_length):
                     _path = list(path)
 
-                    _path[first_index:first_index + first_length] = path[second_index:second_index + second_length]
+                    # MUST replace [second_index:second_index + second_length] first, otherwise the indices will be incorrect
+                    # in case of asymmetric swaps
                     _path[second_index:second_index + second_length] = path[first_index:first_index + first_length]
+                    _path[first_index:first_index + first_length] = path[second_index:second_index + second_length]
 
                     arrival_timestamps = solution.calculate_technician_arrival_timestamps(_path)
 

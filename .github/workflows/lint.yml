@@ -20,14 +20,8 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Install checkers
-      run: pip install autopep8 mypy
-
     - name: Install dependencies
-      run: pip install -r requirements.txt
-
-    - name: Install stub packages
-      run: pip install types-tqdm
+      run: pip install -r dev-requirements.txt
 
     - name: Check code format
       run: autopep8 --exit-code --diff -aaar .

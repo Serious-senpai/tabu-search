@@ -10,7 +10,7 @@ from ts import tsp
 
 summary_dir = Path("tsp-summary/")
 field_names = ("Problem", "Iterations", "Tabu size", "Shuffle after", "Cost", "Path")
-pattern = re.compile(r"output-([a-z0-9]+)-(\d+)-(\d+)-(\d+)\.json")
+pattern = re.compile(r"output-([a-z0-9]+)\.(\d+)\.(\d+)\.(\d+)\.json")
 
 
 def to_map(*args: str) -> Dict[str, str]:
