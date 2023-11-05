@@ -37,10 +37,7 @@ jobs:
         python-version: "3.11"
 
     - name: Install dependencies
-      run: pip install -r requirements.txt
-
-    - name: Install coverage
-      run: pip install coverage
+      run: pip install -r dev-requirements.txt
 
     - name: Test sample
       timeout-minutes: 60
@@ -90,10 +87,7 @@ jobs:
         python-version: "3.11"
 
     - name: Install dependencies
-      run: pip install -r requirements.txt
-
-    - name: Install coverage
-      run: pip install coverage
+      run: pip install -r dev-requirements.txt
 
     - name: Test sample
       timeout-minutes: 60
@@ -146,10 +140,7 @@ jobs:
         python-version: "3.11"
 
     - name: Install dependencies
-      run: pip install -r requirements.txt
-
-    - name: Install coverage
-      run: pip install coverage
+      run: pip install -r dev-requirements.txt
 
     - name: Summarize solutions
       run: |
