@@ -126,6 +126,9 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
                 with p.ThreadPool(min(pool_size, len(current))) as thread_pool:
                     thread_pool.map(process_solution, current)
 
+                if len(propagate) == 0:
+                    propagate = [solution.shuffle(use_tqdm=use_tqdm) for solution in current]
+
                 if max_propagation is not None:
                     max_propagation_value = max_propagation if isinstance(max_propagation, int) else max_propagation(results)
                     propagate.sort(key=partial(propagation_priority_key, results))
@@ -133,9 +136,6 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
 
                 else:
                     current = propagate
-
-                if len(propagate) == 0:
-                    break
 
         if candidate_costs is not None:
             _, ax = pyplot.subplots()

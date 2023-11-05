@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import random
 import re
 from functools import partial
 from math import sqrt
@@ -28,7 +29,6 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
     __slots__ = (
         "_to_propagate",
         "drone_arrival_timestamps",
-        "drone_config_mapping",
         "drone_paths",
         "technician_arrival_timestamps",
         "technician_paths",
@@ -38,7 +38,6 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
     if TYPE_CHECKING:
         _to_propagate: bool
         drone_arrival_timestamps: Final[Tuple[Tuple[Tuple[float, ...], ...], ...]]
-        drone_config_mapping: Final[Tuple[int, ...]]
         drone_paths: Final[Tuple[Tuple[Tuple[int, ...], ...], ...]]
         technician_arrival_timestamps: Final[Tuple[Tuple[float, ...], ...]]
         technician_paths: Final[Tuple[Tuple[int, ...], ...]]
@@ -56,6 +55,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         technician_service_time: ClassVar[Tuple[float, ...]]
 
         # Global configuration data
+        drone_config_mapping: ClassVar[Tuple[int, ...]]
         energy_mode: ClassVar[DroneEnergyConsumptionMode]
         truck_config: ClassVar[TruckConfig]
         drone_linear_config: ClassVar[Tuple[DroneLinearConfig, ...]]
@@ -67,7 +67,6 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         *,
         drone_paths: Tuple[Tuple[Tuple[int, ...], ...], ...],
         technician_paths: Tuple[Tuple[int, ...], ...],
-        drone_config_mapping: Tuple[int, ...],
         drone_arrival_timestamps: Optional[Tuple[Tuple[Tuple[float, ...], ...], ...]] = None,
         technician_arrival_timestamps: Optional[Tuple[Tuple[float, ...], ...]] = None,
         drone_timespans: Optional[Tuple[float, ...]] = None,
@@ -78,7 +77,6 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         self._to_propagate = True
         self.drone_paths = drone_paths
         self.technician_paths = technician_paths
-        self.drone_config_mapping = drone_config_mapping
 
         if drone_arrival_timestamps is None:
             def get_arrival_timestamps() -> Tuple[Tuple[Tuple[float, ...], ...], ...]:
@@ -89,7 +87,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
 
                     offset = 0.0
                     for path in paths:
-                        arrivals = self.calculate_drone_arrival_timestamps(path, config_index=drone_config_mapping[drone], offset=offset)
+                        arrivals = self.calculate_drone_arrival_timestamps(path, config_index=self.drone_config_mapping[drone], offset=offset)
                         offset = arrivals[-1]
                         drone_arrivals.append(arrivals)
 
@@ -114,7 +112,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
             drone_timespans=drone_timespans or tuple(__last_element(single_drone_arrival_timestamps) for single_drone_arrival_timestamps in self.drone_arrival_timestamps),
             drone_waiting_times=drone_waiting_times or tuple(
                 tuple(
-                    self.calculate_drone_total_waiting_time(path, config_index=drone_config_mapping[drone], arrival_timestamps=arrival_timestamps)
+                    self.calculate_drone_total_waiting_time(path, config_index=self.drone_config_mapping[drone], arrival_timestamps=arrival_timestamps)
                     for path, arrival_timestamps in zip(paths, self.drone_arrival_timestamps[drone])
                 )
                 for drone, paths in enumerate(drone_paths)
@@ -130,6 +128,26 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
     @to_propagate.setter
     def to_propagate(self, propagate: bool) -> None:
         self._to_propagate = propagate
+
+    def shuffle(self, *, use_tqdm: bool) -> D2DPathSolution:
+        drone_paths = list(list(paths) for paths in self.drone_paths)
+        technician_paths = list(self.technician_paths)
+
+        for drone, paths in enumerate(drone_paths):
+            for path_index, path in enumerate(paths):
+                if random.random() < 0.5:
+                    drone_paths[drone][path_index] = tuple(reversed(path))
+
+        for technician, path in enumerate(technician_paths):
+            if random.random() < 0.5:
+                technician_paths[technician] = tuple(reversed(path))
+
+        return D2DPathSolution(
+            drone_paths=tuple(tuple(paths) for paths in drone_paths),
+            technician_paths=tuple(technician_paths),
+            drone_timespans=self.drone_timespans,
+            technician_timespans=self.technician_timespans,
+        )
 
     def get_neighborhoods(self) -> Tuple[MultiObjectiveNeighborhood[Self, Any], ...]:
         return (
@@ -477,7 +495,6 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         # After this step, some technician paths may still be empty (i.e. [0, 0]), just leave them unchanged
 
         # Serve all dronable waypoints
-        drone_config_mapping = (0, 0, 0, 0)
         drone_paths = [[[0]] for _ in range(cls.drones_count)]
         dronable = set(e for e in range(1, 1 + cls.customers_count) if cls.dronable[e])
 
@@ -485,16 +502,16 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         while len(dronable) > 0:
             drone = next(drone_iter)
             paths = drone_paths[drone]
-            config = cls.get_drone_config(drone_config_mapping[drone])
+            config = cls.get_drone_config(cls.drone_config_mapping[drone])
 
             path = paths[-1]
             index = min(dronable, key=partial(cls.distance, path[-1]))
 
             hypothetical_path = path + [index, 0]
-            hypothetical_arrival_timestamps = cls.calculate_drone_arrival_timestamps(hypothetical_path, config_index=drone_config_mapping[drone], offset=0.0)
+            hypothetical_arrival_timestamps = cls.calculate_drone_arrival_timestamps(hypothetical_path, config_index=cls.drone_config_mapping[drone], offset=0.0)
             if (
                 cls.calculate_total_weight(hypothetical_path) > config.capacity
-                or cls.calculate_drone_energy_consumption(hypothetical_path, config_index=drone_config_mapping[drone], arrival_timestamps=hypothetical_arrival_timestamps) > config.battery
+                or cls.calculate_drone_energy_consumption(hypothetical_path, config_index=cls.drone_config_mapping[drone], arrival_timestamps=hypothetical_arrival_timestamps) > config.battery
             ):
                 path.append(0)
                 paths.append([0])
@@ -513,7 +530,6 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         return cls(
             drone_paths=tuple(tuple(tuple(path) for path in paths if len(path) > 2) for paths in drone_paths),
             technician_paths=tuple(tuple(path) for path in technician_paths),
-            drone_config_mapping=drone_config_mapping,
         )
 
     @classmethod
@@ -534,7 +550,13 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         cls.drone_endurance_config = DroneEnduranceConfig.import_data()
 
     @classmethod
-    def import_problem(cls, problem: str, *, energy_mode: DroneEnergyConsumptionMode = DroneEnergyConsumptionMode.LINEAR) -> None:
+    def import_problem(
+        cls,
+        problem: str,
+        *,
+        drone_config_mapping: Tuple[int, ...],
+        energy_mode: DroneEnergyConsumptionMode,
+    ) -> None:
         if not cls.__config_imported:
             cls.import_config()
             cls.__config_imported = True
@@ -572,6 +594,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
             cls.technician_service_time = tuple(cls_technician_service_time)
             cls.drone_service_time = tuple(cls_drone_service_time)
 
+            cls.drone_config_mapping = drone_config_mapping
             cls.energy_mode = energy_mode
 
         except Exception as e:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import itertools
 import threading
 from multiprocessing import pool as p
-from typing import Dict, Iterable, List, Set, Tuple, TYPE_CHECKING
+from typing import Dict, Final, Iterable, List, Set, Tuple, TYPE_CHECKING
 
 from .factory import SolutionFactory
 from .mixins import D2DNeighborhoodMixin
@@ -30,8 +30,8 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
         "_second_length",
     )
     if TYPE_CHECKING:
-        _first_length: int
-        _second_length: int
+        _first_length: Final[int]
+        _second_length: Final[int]
 
     def __init__(self, solution: D2DPathSolution, *, first_length: int, second_length: int) -> None:
         super().__init__(solution)
@@ -52,7 +52,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
 
         lock = threading.Lock()
 
-        def callback(collected: Iterable[Set[Tuple[SolutionFactory, Tuple[int, int]]]]) -> None:
+        def callback(collected: List[Set[Tuple[SolutionFactory, Tuple[int, int]]]]) -> None:
             for s in collected:
                 for result, pair in s:
                     with lock:
@@ -123,7 +123,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
 
             return pool.map_async(self.swap_technician_self, bundles, callback=callback)  # type: ignore  # typing bug in multiprocessing.pool module
 
-        # Wait for https://github.com/python/typeshed/pull/10949 to be merged
+        # Wait for https://github.com/microsoft/pyright/pull/6323 to be merged
 
         for r in (
             drone_drone_swap(),

@@ -55,7 +55,7 @@ class SegmentReverse(TSPNeighborhoodMixin, _BaseNeighborhood):
         before[segment[-1]], after[before_segment] = before_segment, segment[-1]
         before[after_segment], after[segment[0]] = segment[0], after_segment
 
-        return self.cls(after=after, before=before, cost=cost)
+        return self.cls(after=tuple(after), before=tuple(before), cost=cost)
 
     def find_best_candidate(self, *, pool: pool.Pool, pool_size: int) -> Optional[TSPPathSolution]:
         solution = self._solution

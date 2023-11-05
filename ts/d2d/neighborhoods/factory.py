@@ -66,7 +66,6 @@ class SolutionFactory(SolutionMetricsMixin):
         return cls(
             drone_paths=drone_paths,
             technician_paths=technician_paths,
-            drone_config_mapping=__s.drone_config_mapping,
         )
 
     def __hash__(self) -> int:

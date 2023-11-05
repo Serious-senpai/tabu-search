@@ -72,6 +72,9 @@ if __name__ == "__main__":
                 shuffle_after=namespace.shuffle_after,
             )
 
+            check = tsp.TSPPathSolution(after=solution.after, before=solution.before)
+            assert check.cost() == solution.cost()
+
     print(f"Solution cost = {solution.cost()}\nSolution path: {solution.path}")
 
     if namespace.verbose:

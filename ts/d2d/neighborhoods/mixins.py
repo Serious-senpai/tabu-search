@@ -25,8 +25,13 @@ class D2DNeighborhoodMixin:
         # super() should resolve to MultiObjectiveNeighborhood
         super().__init__(solution)  # type: ignore
         self.extras["problem"] = solution.problem
+        self.extras["drone_config_mapping"] = solution.drone_config_mapping
         self.extras["energy_mode"] = solution.energy_mode
 
     def ensure_imported_data(self: D2DNeighborhoodProtocol) -> None:
         if self.cls.problem != self.extras["problem"]:
-            self.cls.import_problem(self.extras["problem"], energy_mode=self.extras["energy_mode"])
+            self.cls.import_problem(
+                self.extras["problem"],
+                drone_config_mapping=self.extras["drone_config_mapping"],
+                energy_mode=self.extras["energy_mode"],
+            )
