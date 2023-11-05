@@ -1,6 +1,6 @@
 autopep8==2.0.4
 colorama==0.4.6
-contourpy==1.1.1
+contourpy==1.2.0
 coverage==7.3.2
 cycler==0.12.1
 fonttools==4.44.0
