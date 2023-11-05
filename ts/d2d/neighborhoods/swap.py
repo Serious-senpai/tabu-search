@@ -18,7 +18,7 @@ __all__ = ("Swap",)
 
 
 if TYPE_CHECKING:
-    _BaseNeighborhood = MultiObjectiveNeighborhood[D2DPathSolution, Tuple[int, int]]
+    _BaseNeighborhood = MultiObjectiveNeighborhood[D2DPathSolution, Tuple[Tuple[int, int], Tuple[int, int]]]
 else:
     _BaseNeighborhood = MultiObjectiveNeighborhood
 
@@ -48,11 +48,11 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
     def find_best_candidates(self, *, pool: p.Pool, pool_size: int) -> Iterable[D2DPathSolution]:
         solution = self._solution
         results: Set[SolutionFactory] = set()
-        swaps_mapping: Dict[SolutionFactory, Tuple[int, int]] = {}
+        swaps_mapping: Dict[SolutionFactory, Tuple[Tuple[int, int], Tuple[int, int]]] = {}
 
         lock = threading.Lock()
 
-        def callback(collected: List[Set[Tuple[SolutionFactory, Tuple[int, int]]]]) -> None:
+        def callback(collected: List[Set[Tuple[SolutionFactory, Tuple[Tuple[int, int], Tuple[int, int]]]]]) -> None:
             for s in collected:
                 for result, pair in s:
                     with lock:
@@ -135,7 +135,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
             r.wait()
 
         for result in results:
-            pair = (min(swaps_mapping[result]), max(swaps_mapping[result]))
+            pair = swaps_mapping[result]
             s = result.from_solution(solution)
             if pair in self.tabu_set:
                 s.to_propagate = False
@@ -146,7 +146,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
             yield s
 
     @staticmethod
-    def swap_drone_drone(bundle: IPCBundle[Swap, List[Tuple[Tuple[int, int], Tuple[int, int]]]]) -> Set[Tuple[SolutionFactory, Tuple[int, int]]]:
+    def swap_drone_drone(bundle: IPCBundle[Swap, List[Tuple[Tuple[int, int], Tuple[int, int]]]]) -> Set[Tuple[SolutionFactory, Tuple[Tuple[int, int], Tuple[int, int]]]]:
         neighborhood = bundle.neighborhood
         neighborhood.ensure_imported_data()
 
@@ -160,7 +160,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
         drone_waiting_times = list(list(w) for w in solution.drone_waiting_times)
 
         results: Set[SolutionFactory] = set()
-        swaps_mapping: Dict[SolutionFactory, Tuple[int, int]] = {}
+        swaps_mapping: Dict[SolutionFactory, Tuple[Tuple[int, int], Tuple[int, int]]] = {}
         for first, second in bundle.data:
             # Indices of the 2 drones whose paths are altered (cannot be of the same drone)
             first_drone, first_path_index = first
@@ -220,13 +220,16 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                     technician_waiting_times=solution.technician_waiting_times,
                 )
 
-                swaps_mapping[factory] = (first_path[first_start], second_path[second_start])
-                factory.add_to_pareto_set(results)
+                if factory.add_to_pareto_set(results):
+                    swaps_mapping[factory] = (
+                        (first_path[first_start], first_path[first_start + first_length - 1]),
+                        (second_path[second_start], second_path[second_start + second_length - 1]),
+                    )
 
         return set((r, swaps_mapping[r]) for r in results)
 
     @staticmethod
-    def swap_technician_technician(bundle: IPCBundle[Swap, List[Tuple[int, int]]]) -> Set[Tuple[SolutionFactory, Tuple[int, int]]]:
+    def swap_technician_technician(bundle: IPCBundle[Swap, List[Tuple[int, int]]]) -> Set[Tuple[SolutionFactory, Tuple[Tuple[int, int], Tuple[int, int]]]]:
         neighborhood = bundle.neighborhood
         neighborhood.ensure_imported_data()
 
@@ -238,7 +241,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
         technician_paths = list(list(path) for path in solution.technician_paths)
 
         results: Set[SolutionFactory] = set()
-        swaps_mapping: Dict[SolutionFactory, Tuple[int, int]] = {}
+        swaps_mapping: Dict[SolutionFactory, Tuple[Tuple[int, int], Tuple[int, int]]] = {}
         for first, second in bundle.data:
             first_path = technician_paths[first]
             second_path = technician_paths[second]
@@ -272,20 +275,23 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                     technician_waiting_times=tuple(_technician_total_waiting_times),
                 )
 
-                swaps_mapping[factory] = (first_path[first_start], second_path[second_start])
-                factory.add_to_pareto_set(results)
+                if factory.add_to_pareto_set(results):
+                    swaps_mapping[factory] = (
+                        (first_path[first_start], first_path[first_start + first_length - 1]),
+                        (second_path[second_start], second_path[second_start + second_length - 1]),
+                    )
 
         return set((r, swaps_mapping[r]) for r in results)
 
     @staticmethod
-    def swap_technician_drone(bundle: IPCBundle[Swap, List[Tuple[int, Tuple[int, int]]]]) -> Set[Tuple[SolutionFactory, Tuple[int, int]]]:
+    def swap_technician_drone(bundle: IPCBundle[Swap, List[Tuple[int, Tuple[int, int]]]]) -> Set[Tuple[SolutionFactory, Tuple[Tuple[int, int], Tuple[int, int]]]]:
         neighborhood = bundle.neighborhood
         neighborhood.ensure_imported_data()
 
         solution = neighborhood._solution
 
         results: Set[SolutionFactory] = set()
-        swaps_mapping: Dict[SolutionFactory, Tuple[int, int]] = {}
+        swaps_mapping: Dict[SolutionFactory, Tuple[Tuple[int, int], Tuple[int, int]]] = {}
 
         def populate_results(technician: int, drone: int, drone_path_index: int, technician_length: int, drone_length: int) -> None:
             # Don't alter the variables without a prefix underscore, edit their copies instead
@@ -336,8 +342,11 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                             technician_waiting_times=tuple(_technician_waiting_times),
                         )
 
-                        swaps_mapping[factory] = (technician_path[technician_start], drone_path[drone_start])
-                        factory.add_to_pareto_set(results)
+                        if factory.add_to_pareto_set(results):
+                            swaps_mapping[factory] = (
+                                (technician_path[technician_start], technician_path[technician_start + technician_length - 1]),
+                                (drone_path[drone_start], drone_path[drone_start + drone_length - 1]),
+                            )
 
         first_length = neighborhood._first_length
         second_length = neighborhood._second_length
@@ -349,7 +358,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
         return set((r, swaps_mapping[r]) for r in results)
 
     @staticmethod
-    def swap_drone_self(bundle: IPCBundle[Swap, List[Tuple[int, int]]]) -> Set[Tuple[SolutionFactory, Tuple[int, int]]]:
+    def swap_drone_self(bundle: IPCBundle[Swap, List[Tuple[int, int]]]) -> Set[Tuple[SolutionFactory, Tuple[Tuple[int, int], Tuple[int, int]]]]:
         neighborhood = bundle.neighborhood
         neighborhood.ensure_imported_data()
 
@@ -358,7 +367,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
         second_length = neighborhood._second_length
 
         results: Set[SolutionFactory] = set()
-        swaps_mapping: Dict[SolutionFactory, Tuple[int, int]] = {}
+        swaps_mapping: Dict[SolutionFactory, Tuple[Tuple[int, int], Tuple[int, int]]] = {}
 
         for drone, path_index in bundle.data:
             path = solution.drone_paths[drone][path_index]
@@ -368,9 +377,8 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                 for second_index in range(first_index + first_length, len(path) - second_length):
                     _path = list(path)
 
-                    # MUST replace [second_index:second_index + second_length] first
-                    _path[second_index:second_index + second_length] = path[first_index:first_index + first_length]
                     _path[first_index:first_index + first_length] = path[second_index:second_index + second_length]
+                    _path[second_index:second_index + second_length] = path[first_index:first_index + first_length]
 
                     arrival_timestamps = solution.calculate_drone_arrival_timestamps(
                         _path,
@@ -405,13 +413,16 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                         technician_waiting_times=solution.technician_waiting_times,
                     )
 
-                    swaps_mapping[factory] = (path[first_index], path[second_index])
-                    factory.add_to_pareto_set(results)
+                    if factory.add_to_pareto_set(results):
+                        swaps_mapping[factory] = (
+                            (path[first_index], path[first_index + first_length - 1]),
+                            (path[second_index], path[second_index + second_length - 1]),
+                        )
 
         return set((r, swaps_mapping[r]) for r in results)
 
     @staticmethod
-    def swap_technician_self(bundle: IPCBundle[Swap, List[int]]) -> Set[Tuple[SolutionFactory, Tuple[int, int]]]:
+    def swap_technician_self(bundle: IPCBundle[Swap, List[int]]) -> Set[Tuple[SolutionFactory, Tuple[Tuple[int, int], Tuple[int, int]]]]:
         neighborhood = bundle.neighborhood
         neighborhood.ensure_imported_data()
 
@@ -420,7 +431,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
         second_length = neighborhood._second_length
 
         results: Set[SolutionFactory] = set()
-        swaps_mapping: Dict[SolutionFactory, Tuple[int, int]] = {}
+        swaps_mapping: Dict[SolutionFactory, Tuple[Tuple[int, int], Tuple[int, int]]] = {}
 
         for technician in bundle.data:
             path = solution.technician_paths[technician]
@@ -428,9 +439,8 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                 for second_index in range(first_index + first_length, len(path) - second_length):
                     _path = list(path)
 
-                    # MUST replace [second_index:second_index + second_length] first
-                    _path[second_index:second_index + second_length] = path[first_index:first_index + first_length]
                     _path[first_index:first_index + first_length] = path[second_index:second_index + second_length]
+                    _path[second_index:second_index + second_length] = path[first_index:first_index + first_length]
 
                     arrival_timestamps = solution.calculate_technician_arrival_timestamps(_path)
 
@@ -448,7 +458,10 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                         technician_waiting_times=tuple(_technician_waiting_times),
                     )
 
-                    swaps_mapping[factory] = (path[first_index], path[second_index])
-                    factory.add_to_pareto_set(results)
+                    if factory.add_to_pareto_set(results):
+                        swaps_mapping[factory] = (
+                            (path[first_index], path[first_index + first_length - 1]),
+                            (path[second_index], path[second_index + second_length - 1]),
+                        )
 
         return set((r, swaps_mapping[r]) for r in results)
