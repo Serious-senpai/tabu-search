@@ -139,6 +139,8 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
                 else:
                     current = propagate
 
+            results = set(r.post_optimization(pool=pool, pool_size=pool_size, use_tqdm=use_tqdm) for r in results)
+
             pool.close()
             pool.join()
 
@@ -164,4 +166,4 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
             pyplot.legend()
             pyplot.show()
 
-        return set(r.post_optimization(pool=pool, pool_size=pool_size, use_tqdm=use_tqdm) for r in results)
+        return results

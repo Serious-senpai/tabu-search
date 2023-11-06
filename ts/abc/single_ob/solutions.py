@@ -78,7 +78,9 @@ class SingleObjectiveSolution(BaseSolution, BaseCostComparison):
                     local_optimal_hit = False
                     last_improved = iteration
 
+            result = result.post_optimization(pool=pool, pool_size=pool_size, use_tqdm=use_tqdm)
+
             pool.close()
             pool.join()
 
-            return result.post_optimization(pool=pool, pool_size=pool_size, use_tqdm=use_tqdm)
+        return result
