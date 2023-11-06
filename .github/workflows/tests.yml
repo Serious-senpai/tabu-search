@@ -78,7 +78,13 @@ jobs:
         energy_mode: ["linear", "non-linear"]
         propagation_priority: ["", "--min-distance", "--max-distance"]
         max_propagation: [5]
+        profile: [""]
         pool_size: [8]
+        include:
+        - problem: "200.10.1"
+          energy_mode: "linear"
+          propagation_priority: ""
+          profile: "--profile"
 
     steps:
     - name: Checkout repository
@@ -104,6 +110,7 @@ jobs:
         --energy-mode ${{ matrix.energy_mode }} \
         ${{ matrix.propagation_priority }} \
         --max-propagation ${{ matrix.max_propagation }} \
+        ${{ matrix.profile }} \
         --pool-size ${{ matrix.pool_size }} \
         --dump output-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}.json
 
