@@ -37,7 +37,7 @@ def write_summary_rows(
     file.write("\n")
 
 
-with open(summary_dir / "summary.csv", "w") as csv:
+with open(summary_dir / "tsp-summary.csv", "w") as csv:
     csv.write(",".join(field_names) + "\n")
 
     last_problem = None

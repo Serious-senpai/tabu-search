@@ -16,7 +16,7 @@ def to_map(*args: str) -> Dict[str, str]:
     return result
 
 
-with open(summary_dir / "summary.csv", "w") as csv:
+with open(summary_dir / "d2d-summary.csv", "w") as csv:
     csv.write(",".join(field_names) + "\n")
 
     for file in sorted(os.listdir(summary_dir)):
