@@ -82,9 +82,11 @@ jobs:
         pool_size: [8]
         include:
         - problem: "200.10.1"
+          iterations: 250
+          tabu_size: 10
           energy_mode: "linear"
-          propagation_priority: ""
           profile: "--profile"
+          pool_size: 8
 
     steps:
     - name: Checkout repository
