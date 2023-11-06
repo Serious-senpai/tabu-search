@@ -62,6 +62,27 @@ class Swappoint(D2DNeighborhoodMixin, _BaseNeighborhood):
 
             yield s
 
+        # swap Drone - Drone
+        for pair in itertools.permutations(range(solution.drones_count), 2):
+            x = next(bundles_iter)
+            x.data.append(pair)  # type: ignore
+
+        for candidates in pool.map(self.swap_drone_drone, bundles):
+            for result, pair in candidates:
+                if result.add_to_pareto_set(results):
+                    swaps_mapping[result] = pair
+
+        for result in results:
+            pair = swaps_mapping[result]
+            s = result.from_solution(solution)
+            if pair in self.tabu_set:
+                s.to_propagate = False
+
+            else:
+                self.add_to_tabu(pair)
+
+            yield s
+
     @staticmethod
     def swap_technician_technician(bundle: IPCBundle[Swappoint, List[Tuple[int, int]]]) -> Set[Tuple[SolutionFactory, Tuple[int, int]]]:
         neighborhood = bundle.neighborhood
@@ -112,5 +133,70 @@ class Swappoint(D2DNeighborhoodMixin, _BaseNeighborhood):
                     pair = (i_path[point_i], j_path[location_j])
                     swaps_mapping[factory] = (min(pair), max(pair))
                     factory.add_to_pareto_set(results)
+
+        return set((r, swaps_mapping[r]) for r in results)
+
+    @staticmethod
+    def swap_drone_drone(bundle: IPCBundle[Swappoint, List[Tuple[int, int]]]) -> Set[Tuple[SolutionFactory, Tuple[int, int]]]:
+        neighborhood = bundle.neighborhood
+        neighborhood.ensure_imported_data()
+
+        solution = neighborhood._solution
+        results: Set[SolutionFactory] = set()
+        swaps_mapping: Dict[SolutionFactory, Tuple[int, int]] = {}
+
+        for first_drone, second_drone in bundle.data:
+            first_paths = solution.drone_paths[first_drone]
+            second_paths = solution.drone_paths[second_drone]
+            first_config = solution.get_drone_config(solution.drone_config_mapping[first_drone])
+            second_config = solution.get_drone_config(solution.drone_config_mapping[second_drone])
+
+            for first_path_index, first_path in enumerate(first_paths):
+                for second_path_index, second_path in enumerate(second_paths):
+                    for first_point in range(1, len(first_path) - neighborhood.length):
+                        for second_location in range(1, len(second_path) - 1):
+                            p1 = list(first_path)
+                            p2 = list(second_path)
+                            p2[second_location:second_location] = p1[first_point: first_point + neighborhood.length]
+                            p1[first_point: first_point + neighborhood.length] = []
+
+                            first_arrival_timestamps = solution.calculate_drone_arrival_timestamps(
+                                p1,
+                                config_index=solution.drone_config_mapping[first_drone],
+                                offset=solution.drone_arrival_timestamps[first_drone][first_path_index - 1][-1] if first_path_index > 0 else 0.0,
+                            )
+                            second_arrival_timestamps = solution.calculate_drone_arrival_timestamps(
+                                p2,
+                                config_index=solution.drone_config_mapping[second_drone],
+                                offset=solution.drone_arrival_timestamps[second_drone][second_path_index - 1][-1] if second_path_index > 0 else 0.0,
+                            )
+
+                            if solution.calculate_total_weight(p1) > first_config.capacity or solution.calculate_total_weight(p2) > second_config.capacity:
+                                continue
+
+                            if solution.calculate_drone_energy_consumption(p1, config_index=solution.drone_config_mapping[first_drone], arrival_timestamps=first_arrival_timestamps) > first_config.battery:
+                                continue
+
+                            if solution.calculate_drone_energy_consumption(p2, config_index=solution.drone_config_mapping[second_drone], arrival_timestamps=second_arrival_timestamps) > second_config.battery:
+                                continue
+
+                            _drone_timespans = list(solution.drone_timespans)
+                            _drone_timespans[first_drone] += first_arrival_timestamps[-1] - solution.drone_arrival_timestamps[first_drone][first_path_index][-1]
+                            _drone_timespans[second_drone] += second_arrival_timestamps[-1] - solution.drone_arrival_timestamps[second_drone][second_path_index][-1]
+
+                            _drone_waiting_times = list(list(w) for w in solution.drone_waiting_times)
+                            _drone_waiting_times[first_drone][first_path_index] = solution.calculate_drone_total_waiting_time(p1, config_index=solution.drone_config_mapping[first_drone], arrival_timestamps=first_arrival_timestamps)
+                            _drone_waiting_times[second_drone][second_path_index] = solution.calculate_drone_total_waiting_time(p2, config_index=solution.drone_config_mapping[second_drone], arrival_timestamps=second_arrival_timestamps)
+                            factory = SolutionFactory(
+                                update_drones=((first_drone, first_path_index, tuple(p1)), (second_drone, second_path_index, tuple(p2))),
+                                technician_timespans=solution.technician_timespans,
+                                technician_waiting_times=solution.technician_waiting_times,
+                                drone_timespans=tuple(_drone_timespans),
+                                drone_waiting_times=tuple(tuple(w) for w in solution.drone_waiting_times),
+                            )
+                            factory.add_to_pareto_set(results)
+
+                            pair = (first_path[first_point], second_path[second_location])
+                            swaps_mapping[factory] = (min(pair), max(pair))
 
         return set((r, swaps_mapping[r]) for r in results)
