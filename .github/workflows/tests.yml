@@ -78,7 +78,6 @@ jobs:
         energy_mode: ["linear", "non-linear"]
         propagation_priority: ["", "--min-distance", "--max-distance"]
         max_propagation: [5]
-        profile: [""]
         pool_size: [8]
         include:
         - problem: "200.10.1"
@@ -86,6 +85,7 @@ jobs:
           tabu_size: 10
           energy_mode: "linear"
           profile: "--profile"
+          max_propagation: 5
           pool_size: 8
 
     steps:
