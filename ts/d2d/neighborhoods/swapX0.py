@@ -152,6 +152,21 @@ class Swappoint(D2DNeighborhoodMixin, _BaseNeighborhood):
             second_config = solution.get_drone_config(solution.drone_config_mapping[second_drone])
 
             for first_path_index, first_path in enumerate(first_paths):
+                for first_point in range(1, len(first_path) - neighborhood.length):
+                    new_path = (0,) + first_path[first_point: first_point + neighborhood.length] + (0,)
+                    if solution.calculate_total_weight(new_path) > second_config.capacity:
+                        continue
+                    if solution.calculate_drone_energy_consumption(
+                        new_path,
+                        config_index=solution.drone_config_mapping[second_drone],
+                        arrival_timestamps=solution.calculate_drone_arrival_timestamps(
+                            new_path,
+                            config_index=solution.drone_config_mapping[first_drone],
+                            offset=solution.drone_timespans[second_drone],
+                        ),
+                    ) > second_config.battery:
+                        continue
+
                 for second_path_index, second_path in enumerate(second_paths):
                     for first_point in range(1, len(first_path) - neighborhood.length):
                         for second_location in range(1, len(second_path) - 1):
