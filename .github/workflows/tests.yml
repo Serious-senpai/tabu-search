@@ -21,7 +21,7 @@ jobs:
       fail-fast: false
       matrix:
         problem: [berlin52, bier127, ch150, eil101, pr144]
-        iterations: [1000, 2000, 3000]
+        iterations: [1000, 2000]
         tabu_size: [5, 10, 40]
         shuffle_after: [5, 10, 100]
 
@@ -85,8 +85,8 @@ jobs:
           tabu_size: 10
           energy_mode: "linear"
           profile: "--profile"
-          max_propagation: 5
-          pool_size: 8
+          max_propagation: 3
+          pool_size: 4
 
     steps:
     - name: Checkout repository
