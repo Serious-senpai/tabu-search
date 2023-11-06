@@ -208,9 +208,9 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
 
                 _drone_waiting_times = drone_waiting_times.copy()
                 _drone_waiting_times[first_drone] = _drone_waiting_times[first_drone].copy()
-                _drone_waiting_times[first_drone][first_path_index] = solution.calculate_drone_total_waiting_time(_first_path, config_index=solution.drone_config_mapping[first_drone], arrival_timestamps=first_arrival_timestamps)
+                _drone_waiting_times[first_drone][first_path_index] = solution.calculate_drone_total_waiting_time(_first_path, arrival_timestamps=first_arrival_timestamps)
                 _drone_waiting_times[second_drone] = _drone_waiting_times[second_drone].copy()
-                _drone_waiting_times[second_drone][second_path_index] = solution.calculate_drone_total_waiting_time(_second_path, config_index=solution.drone_config_mapping[second_drone], arrival_timestamps=second_arrival_timestamps)
+                _drone_waiting_times[second_drone][second_path_index] = solution.calculate_drone_total_waiting_time(_second_path, arrival_timestamps=second_arrival_timestamps)
 
                 factory = SolutionFactory(
                     update_drones=((first_drone, first_path_index, tuple(_first_path)), (second_drone, second_path_index, tuple(_second_path))),
@@ -331,7 +331,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                         _technician_waiting_times = list(solution.technician_waiting_times)
                         _technician_waiting_times[technician] = solution.calculate_technician_total_waiting_time(_technician_path, arrival_timestamps=technician_arrival_timestamps)
                         _drone_waiting_times = list(list(paths) for paths in solution.drone_waiting_times)
-                        _drone_waiting_times[drone][drone_path_index] = solution.calculate_drone_total_waiting_time(_drone_path, config_index=solution.drone_config_mapping[drone], arrival_timestamps=drone_arrival_timestamps)
+                        _drone_waiting_times[drone][drone_path_index] = solution.calculate_drone_total_waiting_time(_drone_path, arrival_timestamps=drone_arrival_timestamps)
 
                         factory = SolutionFactory(
                             update_drones=((drone, drone_path_index, tuple(_drone_path)),),
@@ -398,11 +398,7 @@ class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
                     _drone_timespans[drone] += arrival_timestamps[-1] - solution.drone_arrival_timestamps[drone][path_index][-1]
 
                     _drone_waiting_times = list(list(p) for p in solution.drone_waiting_times)
-                    _drone_waiting_times[drone][path_index] = solution.calculate_drone_total_waiting_time(
-                        _path,
-                        config_index=solution.drone_config_mapping[drone],
-                        arrival_timestamps=arrival_timestamps,
-                    )
+                    _drone_waiting_times[drone][path_index] = solution.calculate_drone_total_waiting_time(_path, arrival_timestamps=arrival_timestamps)
 
                     _drone_paths = list(list(p) for p in solution.drone_paths)
                     _drone_paths[drone][path_index] = tuple(_path)

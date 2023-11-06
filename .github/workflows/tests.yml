@@ -80,13 +80,14 @@ jobs:
         max_propagation: [5]
         pool_size: [8]
         include:
-        - problem: "200.10.1"
+        - problem: "100.10.1"
           iterations: 250
           tabu_size: 10
           energy_mode: "linear"
           profile: "--profile"
           max_propagation: 3
           pool_size: 4
+          verbose: "--verbose"
 
     steps:
     - name: Checkout repository
@@ -114,6 +115,7 @@ jobs:
         --max-propagation ${{ matrix.max_propagation }} \
         ${{ matrix.profile }} \
         --pool-size ${{ matrix.pool_size }} \
+        ${{ matrix.verbose }} \
         --dump output-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}.json
 
     - name: Combine coverage reports
