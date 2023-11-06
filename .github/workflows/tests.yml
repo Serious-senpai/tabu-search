@@ -20,10 +20,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        problem: [berlin52, bier127, ch150, eil101, pr144]
+        problem: ["berlin52", "bier127", "ch150", "eil101", "pr144"]
         iterations: [1000, 2000]
         tabu_size: [5, 10, 40]
         shuffle_after: [5, 10, 100]
+        include:
+          - problem: "a280"
+            iterations: 1000
+            tabu_size: 5
+            shuffle_after: 5
+            profile: "--profile"
+            verbose: "--verbose"
 
     steps:
     - name: Checkout repository
@@ -47,6 +54,8 @@ jobs:
         --iterations ${{ matrix.iterations }} \
         --tabu-size ${{ matrix.tabu_size }} \
         --shuffle-after ${{ matrix.shuffle_after }} \
+        ${{ matrix.profile }} \
+        ${{ matrix.verbose }} \
         --dump output-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.shuffle_after }}.json
 
     - name: Combine coverage reports
@@ -80,13 +89,14 @@ jobs:
         max_propagation: [5]
         pool_size: [8]
         include:
-        - problem: "200.10.1"
+        - problem: "100.10.1"
           iterations: 250
           tabu_size: 10
           energy_mode: "linear"
           profile: "--profile"
           max_propagation: 3
           pool_size: 4
+          verbose: "--verbose"
 
     steps:
     - name: Checkout repository
@@ -114,6 +124,7 @@ jobs:
         --max-propagation ${{ matrix.max_propagation }} \
         ${{ matrix.profile }} \
         --pool-size ${{ matrix.pool_size }} \
+        ${{ matrix.verbose }} \
         --dump output-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}.json
 
     - name: Combine coverage reports
