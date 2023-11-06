@@ -156,6 +156,22 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
             Swap(self, first_length=2, second_length=2),
         )
 
+    def feasible(self) -> bool:
+        for drone, drone_paths in enumerate(self.drone_paths):
+            config = self.get_drone_config(self.drone_config_mapping[drone])
+            for drone_path_index, drone_path in enumerate(drone_paths):
+                if self.calculate_total_weight(drone_path) > config.capacity:
+                    return False
+
+                if self.calculate_drone_energy_consumption(
+                    drone_path,
+                    config_index=self.drone_config_mapping[drone],
+                    arrival_timestamps=self.drone_arrival_timestamps[drone][drone_path_index],
+                ) > config.battery:
+                    return False
+
+        return True
+
     def plot(self) -> None:
         _, ax = pyplot.subplots()
         assert isinstance(ax, axes.Axes)
