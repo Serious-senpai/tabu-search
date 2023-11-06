@@ -3,5 +3,6 @@
 d2d-summary/
 tsp-summary/
 
-.coverage
+**/.coverage
+**/.coverage.*
 run.bat

@@ -47,7 +47,7 @@ if __name__ == "__main__":
     parser.add_argument("-e", "--energy-mode", default=LINEAR, choices=[LINEAR, NON_LINEAR], help="the energy consumption mode to use (default: linear)")
     parser.add_argument("--max-distance", action="store_true", help="set the propagation predicate using the maximum total distance to the Pareto front instead of the propagation rate")
     parser.add_argument("--min-distance", action="store_true", help="set the propagation predicate using the minimum total distance to the Pareto front instead of the propagation rate")
-    parser.add_argument("-m", "--max-propagation", type=int, help="maximum number of propagating solutions at a time")
+    parser.add_argument("-m", "--max-propagation", default=5, type=int, help="maximum number of propagating solutions at a time (default: 5)")
     parser.add_argument("-p", "--profile", action="store_true", help="run in profile mode and exit immediately")
     parser.add_argument("-v", "--verbose", action="store_true", help="whether to display the progress bar and plot the solution")
     parser.add_argument("-d", "--dump", type=str, help="dump the solution to a file")

@@ -42,12 +42,17 @@ jobs:
     - name: Test sample
       timeout-minutes: 60
       run: |
-        coverage run --data-file=.coverage.${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.shuffle_after }} \
+        coverage run \
         tsp.py ${{ matrix.problem }} \
         --iterations ${{ matrix.iterations }} \
         --tabu-size ${{ matrix.tabu_size }} \
         --shuffle-after ${{ matrix.shuffle_after }} \
         --dump output-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.shuffle_after }}.json
+
+    - name: Combine coverage reports
+      run: |
+        coverage combine
+        mv .coverage .coverage.${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.shuffle_after }}
 
     - name: Upload solution
       uses: actions/upload-artifact@v3
@@ -74,6 +79,14 @@ jobs:
         propagation_priority: ["", "--min-distance", "--max-distance"]
         max_propagation: [5]
         pool_size: [8]
+        include:
+        - problem: "200.10.1"
+          iterations: 250
+          tabu_size: 10
+          energy_mode: "linear"
+          profile: "--profile"
+          max_propagation: 5
+          pool_size: 8
 
     steps:
     - name: Checkout repository
@@ -92,15 +105,21 @@ jobs:
     - name: Test sample
       timeout-minutes: 60
       run: |
-        coverage run --data-file=.coverage.${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }} \
+        coverage run \
         d2d.py ${{ matrix.problem }} \
         --iterations ${{ matrix.iterations }} \
         --tabu-size ${{ matrix.tabu_size }} \
         --energy-mode ${{ matrix.energy_mode }} \
         ${{ matrix.propagation_priority }} \
         --max-propagation ${{ matrix.max_propagation }} \
+        ${{ matrix.profile }} \
         --pool-size ${{ matrix.pool_size }} \
         --dump output-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}.json
+
+    - name: Combine coverage reports
+      run: |
+        coverage combine
+        mv .coverage .coverage.${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}
 
     - name: Upload solution
       uses: actions/upload-artifact@v3
@@ -151,22 +170,15 @@ jobs:
       run: |
         coverage combine tsp-summary/ d2d-summary/
         coverage html --directory=coverage-html
-        coverage report
 
-    - name: Upload TSP summary
+    - name: Report coverage results
+      run: coverage report
+
+    - name: Upload summary
       uses: actions/upload-artifact@v3
       with:
-        name: tsp-summary
-        path: tsp-summary/*.csv
-
-    - name: Upload D2D summary
-      uses: actions/upload-artifact@v3
-      with:
-        name: d2d-summary
-        path: d2d-summary/*.csv
-
-    - name: Upload coverage results
-      uses: actions/upload-artifact@v3
-      with:
-        name: coverage-html
-        path: coverage-html/
+        name: summary
+        path: |
+          tsp-summary/tsp-summary.csv
+          d2d-summary/d2d-summary.csv
+          coverage-html/
