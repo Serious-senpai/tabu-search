@@ -138,8 +138,9 @@ jobs:
       with:
         name: d2d-summary
         path: |
-          output-**.json
-          .coverage.**
+          output-*.json
+          log-*.log.csv
+          .coverage.*
 
   summary:
     name: Summarize solutions
