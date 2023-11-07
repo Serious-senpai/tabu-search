@@ -103,7 +103,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
                     iterations.set_description_str(f"Tabu search ({len(current)}/{len(results)} solution(s))")
 
                 if logger is not None:
-                    logger(f"Started iteration #{iteration}/{iterations_count}")
+                    logger(f"Iteration #{iteration + 1}/{iterations_count}\n")
 
                 propagate: List[Self] = []
 

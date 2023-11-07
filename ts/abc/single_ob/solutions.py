@@ -68,7 +68,7 @@ class SingleObjectiveSolution(BaseSolution, BaseCostComparison):
                     iterations.set_description_str(f"Tabu search ({current.cost()}/{result.cost()})")
 
                 if logger is not None:
-                    logger(f"Started iteration #{iteration}/{iterations_count}")
+                    logger(f"Iteration #{iteration + 1}/{iterations_count}\n")
 
                 neighborhoods = current.get_neighborhoods()
                 best_candidate = random.choice(neighborhoods).find_best_candidate(pool=pool, pool_size=pool_size, logger=logger)
