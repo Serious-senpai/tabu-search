@@ -51,7 +51,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
         propagation_priority_key: Callable[[Set[Self], Self], float] = zero,
         max_propagation: Union[int, Callable[[Set[Self]], int], None] = None,
         plot_pareto_front: bool = False,
-        logger: Optional[Callable[[str], None]] = None,
+        logger: Optional[Callable[[str], Any]] = None,
     ) -> Set[Self]:
         """Run the tabu search algorithm to find the Pareto front for this multi-objective optimization problem.
 

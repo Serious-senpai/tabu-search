@@ -125,7 +125,8 @@ jobs:
         ${{ matrix.profile }} \
         --pool-size ${{ matrix.pool_size }} \
         ${{ matrix.verbose }} \
-        --dump output-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}.json
+        --dump output-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}.json \
+        --log log-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}.log.csv
 
     - name: Combine coverage reports
       run: |
@@ -190,6 +191,6 @@ jobs:
       with:
         name: summary
         path: |
-          tsp-summary/tsp-summary.csv
-          d2d-summary/d2d-summary.csv
+          tsp-summary/*.csv
+          d2d-summary/*.csv
           coverage-html/

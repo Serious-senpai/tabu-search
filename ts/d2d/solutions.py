@@ -132,7 +132,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
     def to_propagate(self, propagate: bool) -> None:
         self._to_propagate = propagate
 
-    def shuffle(self, *, use_tqdm: bool, logger: Optional[Callable[[str], None]]) -> D2DPathSolution:
+    def shuffle(self, *, use_tqdm: bool, logger: Optional[Callable[[str], Any]]) -> D2DPathSolution:
         drone_paths = list(list(paths) for paths in self.drone_paths)
         technician_paths = list(self.technician_paths)
 

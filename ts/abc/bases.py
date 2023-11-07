@@ -40,7 +40,7 @@ class BaseSolution:
         """
         raise NotImplementedError
 
-    def shuffle(self, *, use_tqdm: bool, logger: Optional[Callable[[str], None]]) -> Self:
+    def shuffle(self, *, use_tqdm: bool, logger: Optional[Callable[[str], Any]]) -> Self:
         """Shuffle the current solution
 
         The default implementation does nothing.
@@ -60,7 +60,7 @@ class BaseSolution:
         pool: pool.Pool,
         pool_size: int,
         use_tqdm: bool,
-        logger: Optional[Callable[[str], None]],
+        logger: Optional[Callable[[str], Any]],
     ) -> Self:
         """Perform post-optimization for this solution
 
