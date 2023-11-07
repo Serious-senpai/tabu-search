@@ -8,6 +8,7 @@ from typing import (
     ClassVar,
     Deque,
     Dict,
+    Final,
     Generic,
     Sequence,
     Set,
@@ -92,9 +93,8 @@ class BaseNeighborhood(Generic[_ST, _TT]):
         "extras",
     )
     if TYPE_CHECKING:
-        _solution: _ST
-        cls: Type[_ST]
-        extras: Dict[Any, Any]
+        # https://github.com/python/mypy/issues/8982
+        # https://stackoverflow.com/a/75160662
 
         _maxlen: ClassVar[int]
         _tabu_list: ClassVar[Deque[_TT]]  # type: ignore
@@ -102,9 +102,9 @@ class BaseNeighborhood(Generic[_ST, _TT]):
         tabu_set: ClassVar[Set[_TT]]  # type: ignore
 
     def __init__(self, solution: _ST, /) -> None:
-        self._solution = solution
-        self.cls = type(solution)
-        self.extras = {}
+        self._solution: Final[_ST] = solution
+        self.cls: Final[Type[_ST]] = type(solution)
+        self.extras: Final[Dict[Any, Any]] = {}
 
     @final
     def __init_subclass__(cls, *args: Any, **kwargs: Any) -> None:
