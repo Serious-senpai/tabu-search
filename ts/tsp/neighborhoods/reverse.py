@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import itertools
 from multiprocessing import pool
-from typing import List, Optional, Tuple, TYPE_CHECKING
+from typing import Callable, List, Optional, Tuple, TYPE_CHECKING
 
-from .mixins import TSPNeighborhoodMixin
-from ...abc import SingleObjectiveNeighborhood
+from .mixins import TSPBaseNeighborhood
 from ...bundle import IPCBundle
 if TYPE_CHECKING:
     from ..solutions import TSPPathSolution
@@ -14,13 +13,7 @@ if TYPE_CHECKING:
 __all__ = ("SegmentReverse",)
 
 
-if TYPE_CHECKING:
-    _BaseNeighborhood = SingleObjectiveNeighborhood[TSPPathSolution, Tuple[int, int]]
-else:
-    _BaseNeighborhood = SingleObjectiveNeighborhood
-
-
-class SegmentReverse(TSPNeighborhoodMixin, _BaseNeighborhood):
+class SegmentReverse(TSPBaseNeighborhood[Tuple[int, int]]):
 
     __slots__ = (
         "_segment_length",
@@ -57,7 +50,7 @@ class SegmentReverse(TSPNeighborhoodMixin, _BaseNeighborhood):
 
         return self.cls(after=tuple(after), before=tuple(before), cost=cost)
 
-    def find_best_candidate(self, *, pool: pool.Pool, pool_size: int) -> Optional[TSPPathSolution]:
+    def find_best_candidate(self, *, pool: pool.Pool, pool_size: int, logger: Optional[Callable[[str], None]]) -> Optional[TSPPathSolution]:
         solution = self._solution
 
         bundles: List[IPCBundle[SegmentReverse, List[List[int]]]] = [IPCBundle(self, []) for _ in range(pool_size)]

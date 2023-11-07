@@ -14,16 +14,19 @@ class SolutionFactory(SolutionMetricsMixin):
     """Factory for initializing a solution from another one"""
 
     __slots__ = (
+        "__append_drones",
         "__update_drones",
         "__update_technicians",
     )
     if TYPE_CHECKING:
+        __append_drones: Sequence[Tuple[int, Tuple[int, ...]]]
         __update_drones: Sequence[Tuple[int, int, Tuple[int, ...]]]
         __update_technicians: Sequence[Tuple[int, Tuple[int, ...]]]
 
     def __init__(
         self,
         *,
+        append_drones: Sequence[Tuple[int, Tuple[int, ...]]] = (),
         update_drones: Sequence[Tuple[int, int, Tuple[int, ...]]] = (),
         update_technicians: Sequence[Tuple[int, Tuple[int, ...]]] = (),
         drone_timespans: Tuple[float, ...],
@@ -38,12 +41,16 @@ class SolutionFactory(SolutionMetricsMixin):
             technician_waiting_times=technician_waiting_times,
         )
 
+        self.__append_drones = append_drones
         self.__update_drones = update_drones
         self.__update_technicians = update_technicians
 
     def from_solution(self, __s: D2DPathSolution, /) -> D2DPathSolution:
-        if len(self.__update_drones) > 0:
+        if len(self.__append_drones) + len(self.__update_drones) > 0:
             _drone_paths = list(list(paths) for paths in __s.drone_paths)
+            for drone, new_path in self.__append_drones:
+                _drone_paths[drone].append(new_path)
+
             for drone, drone_path_index, new_path in self.__update_drones:
                 _drone_paths[drone][drone_path_index] = new_path
 

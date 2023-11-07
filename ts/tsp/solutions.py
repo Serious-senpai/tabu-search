@@ -7,7 +7,7 @@ import re
 from math import sqrt
 from multiprocessing import pool
 from os import path
-from typing import Any, ClassVar, Final, List, Optional, Tuple, Union, TYPE_CHECKING
+from typing import Any, Callable, ClassVar, Final, List, Optional, Tuple, Union, TYPE_CHECKING
 
 from matplotlib import axes, pyplot
 from tqdm import tqdm
@@ -81,14 +81,14 @@ class TSPPathSolution(SingleObjectiveSolution):
     def cost(self) -> float:
         return self._cost
 
-    def post_optimization(self, *, pool: pool.Pool, pool_size: int, use_tqdm: bool) -> TSPPathSolution:
+    def post_optimization(self, *, pool: pool.Pool, pool_size: int, use_tqdm: bool, logger: Optional[Callable[[str], None]]) -> TSPPathSolution:
         result = self
         iterations: Union[Tuple[SingleObjectiveNeighborhood[TSPPathSolution, Any], ...], tqdm[SingleObjectiveNeighborhood[TSPPathSolution, Any]]] = self.get_neighborhoods()
         if use_tqdm:
             iterations = tqdm(iterations, desc="Post-optimization", ascii=" █", colour="blue")
 
         for neighborhood in iterations:
-            candidate = neighborhood.find_best_candidate(pool=pool, pool_size=pool_size)
+            candidate = neighborhood.find_best_candidate(pool=pool, pool_size=pool_size, logger=logger)
             if candidate is not None:
                 result = min(result, candidate)
 
@@ -109,7 +109,7 @@ class TSPPathSolution(SingleObjectiveSolution):
             SegmentReverse(self, segment_length=6),
         )
 
-    def shuffle(self, *, use_tqdm: bool = True) -> TSPPathSolution:
+    def shuffle(self, *, use_tqdm: bool = True, logger: Optional[Callable[[str], None]]) -> TSPPathSolution:
         def adjacent_distance(index: int) -> float:
             return self.distances[index][self.after[index]] + self.distances[index][self.before[index]]
 

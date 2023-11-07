@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import random
 from multiprocessing import Pool
-from typing import Any, Sequence, Union, TYPE_CHECKING
+from typing import Any, Callable, Optional, Sequence, Union, TYPE_CHECKING
 
 from tqdm import tqdm
 if TYPE_CHECKING:
@@ -26,7 +26,15 @@ class SingleObjectiveSolution(BaseSolution, BaseCostComparison):
         raise NotImplementedError
 
     @classmethod
-    def tabu_search(cls, *, pool_size: int, iterations_count: int, use_tqdm: bool, shuffle_after: int) -> Self:
+    def tabu_search(
+        cls,
+        *,
+        pool_size: int,
+        iterations_count: int,
+        use_tqdm: bool,
+        shuffle_after: int,
+        logger: Optional[Callable[[str], None]] = None,
+    ) -> Self:
         """Run the tabu search algorithm to find the best solution to this single-objective optimization problem.
 
         Parameters
@@ -40,6 +48,8 @@ class SingleObjectiveSolution(BaseSolution, BaseCostComparison):
         shuffle_after:
             After the specified number of non-improving iterations (start counting when hitting the local optimum),
             shuffle the current solution
+        logger:
+            The logging function taking a single str argument
 
         Returns
         -----
@@ -57,8 +67,11 @@ class SingleObjectiveSolution(BaseSolution, BaseCostComparison):
                 if isinstance(iterations, tqdm):
                     iterations.set_description_str(f"Tabu search ({current.cost()}/{result.cost()})")
 
+                if logger is not None:
+                    logger(f"Iteration #{iteration + 1}/{iterations_count}\n")
+
                 neighborhoods = current.get_neighborhoods()
-                best_candidate = random.choice(neighborhoods).find_best_candidate(pool=pool, pool_size=pool_size)
+                best_candidate = random.choice(neighborhoods).find_best_candidate(pool=pool, pool_size=pool_size, logger=logger)
                 if best_candidate is None:
                     break
 
@@ -74,11 +87,11 @@ class SingleObjectiveSolution(BaseSolution, BaseCostComparison):
                     last_improved = iteration
 
                 if iteration - last_improved >= shuffle_after:
-                    current = current.shuffle(use_tqdm=use_tqdm)
+                    current = current.shuffle(use_tqdm=use_tqdm, logger=logger)
                     local_optimal_hit = False
                     last_improved = iteration
 
-            result = result.post_optimization(pool=pool, pool_size=pool_size, use_tqdm=use_tqdm)
+            result = result.post_optimization(pool=pool, pool_size=pool_size, use_tqdm=use_tqdm, logger=logger)
 
             pool.close()
             pool.join()

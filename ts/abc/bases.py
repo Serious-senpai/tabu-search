@@ -5,10 +5,13 @@ from collections import deque
 from multiprocessing import pool
 from typing import (
     Any,
+    Callable,
     ClassVar,
     Deque,
     Dict,
+    Final,
     Generic,
+    Optional,
     Sequence,
     Set,
     Type,
@@ -37,31 +40,42 @@ class BaseSolution:
         """
         raise NotImplementedError
 
-    def shuffle(self, *, use_tqdm: bool) -> Self:
+    def shuffle(self, *, use_tqdm: bool, logger: Optional[Callable[[str], None]]) -> Self:
         """Shuffle the current solution
 
         The default implementation does nothing.
 
         Parameters
         -----
-        use_tqdm: `bool`
+        use_tqdm:
             Whether to display the progress bar
+        logger:
+            The logging function taking a single str argument
         """
         return self
 
-    def post_optimization(self, *, pool: pool.Pool, pool_size: int, use_tqdm: bool) -> Self:
+    def post_optimization(
+        self,
+        *,
+        pool: pool.Pool,
+        pool_size: int,
+        use_tqdm: bool,
+        logger: Optional[Callable[[str], None]],
+    ) -> Self:
         """Perform post-optimization for this solution
 
         The default implementation does nothing.
 
         Parameters
         -----
-        pool: `pool.Pool`
+        pool:
             The process pool to perform post-optimization
-        pool_size: `int`
+        pool_size:
             The process pool size
-        use_tqdm: `bool`
+        use_tqdm:
             Whether to display the progress bar
+        logger:
+            The logging function taking a single str argument
         """
         return self
 
@@ -92,9 +106,8 @@ class BaseNeighborhood(Generic[_ST, _TT]):
         "extras",
     )
     if TYPE_CHECKING:
-        _solution: _ST
-        cls: Type[_ST]
-        extras: Dict[Any, Any]
+        # https://github.com/python/mypy/issues/8982
+        # https://stackoverflow.com/a/75160662
 
         _maxlen: ClassVar[int]
         _tabu_list: ClassVar[Deque[_TT]]  # type: ignore
@@ -102,9 +115,9 @@ class BaseNeighborhood(Generic[_ST, _TT]):
         tabu_set: ClassVar[Set[_TT]]  # type: ignore
 
     def __init__(self, solution: _ST, /) -> None:
-        self._solution = solution
-        self.cls = type(solution)
-        self.extras = {}
+        self._solution: Final[_ST] = solution
+        self.cls: Final[Type[_ST]] = type(solution)
+        self.extras: Final[Dict[Any, Any]] = {}
 
     @final
     def __init_subclass__(cls, *args: Any, **kwargs: Any) -> None:
