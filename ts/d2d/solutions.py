@@ -6,7 +6,7 @@ import re
 from functools import partial
 from math import sqrt
 from os.path import join
-from typing import Any, ClassVar, Final, List, Optional, Sequence, Tuple, Union, TYPE_CHECKING, final, overload
+from typing import Any, Callable, ClassVar, Final, List, Optional, Sequence, Tuple, Union, TYPE_CHECKING, final, overload
 
 from matplotlib import axes, pyplot
 if TYPE_CHECKING:
@@ -132,7 +132,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
     def to_propagate(self, propagate: bool) -> None:
         self._to_propagate = propagate
 
-    def shuffle(self, *, use_tqdm: bool) -> D2DPathSolution:
+    def shuffle(self, *, use_tqdm: bool, logger: Optional[Callable[[str], None]]) -> D2DPathSolution:
         drone_paths = list(list(paths) for paths in self.drone_paths)
         technician_paths = list(self.technician_paths)
 

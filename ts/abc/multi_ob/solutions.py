@@ -4,7 +4,7 @@ import random
 import threading
 from functools import partial
 from multiprocessing import Pool, pool as p
-from typing import Any, Callable, List, Sequence, Set, Union, TYPE_CHECKING
+from typing import Any, Callable, List, Optional, Sequence, Set, Union, TYPE_CHECKING
 
 from matplotlib import axes, pyplot
 from tqdm import tqdm
@@ -51,6 +51,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
         propagation_priority_key: Callable[[Set[Self], Self], float] = zero,
         max_propagation: Union[int, Callable[[Set[Self]], int], None] = None,
         plot_pareto_front: bool = False,
+        logger: Optional[Callable[[str], None]] = None,
     ) -> Set[Self]:
         """Run the tabu search algorithm to find the Pareto front for this multi-objective optimization problem.
 
@@ -71,6 +72,8 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
             propagating solutions at a time
         plot_pareto_front:
             Plot the Pareto front for 2-objective optimization problems only, default to False
+        logger:
+            The logging function taking a single str argument
 
         Returns
         -----
@@ -95,9 +98,12 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
 
         with Pool(pool_size) as pool:
             lock = threading.Lock()
-            for _ in iterations:
+            for iteration in iterations:
                 if isinstance(iterations, tqdm):
                     iterations.set_description_str(f"Tabu search ({len(current)}/{len(results)} solution(s))")
+
+                if logger is not None:
+                    logger(f"Started iteration #{iteration}/{iterations_count}")
 
                 propagate: List[Self] = []
 
@@ -107,7 +113,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
                     for neighborhood in neighborhoods:
                         propagated = False
 
-                        for candidate in neighborhood.find_best_candidates(pool=pool, pool_size=pool_size):
+                        for candidate in neighborhood.find_best_candidates(pool=pool, pool_size=pool_size, logger=logger):
                             if candidate_costs is not None:
                                 candidate_costs.add(candidate.cost())
 
@@ -129,7 +135,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
                     thread_pool.join()
 
                 if len(propagate) == 0:
-                    propagate = [solution.shuffle(use_tqdm=use_tqdm) for solution in current]
+                    propagate = [solution.shuffle(use_tqdm=use_tqdm, logger=logger) for solution in current]
 
                 if max_propagation is not None:
                     max_propagation_value = max_propagation if isinstance(max_propagation, int) else max_propagation(results)
@@ -139,7 +145,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
                 else:
                     current = propagate
 
-            results = set(r.post_optimization(pool=pool, pool_size=pool_size, use_tqdm=use_tqdm) for r in results)
+            results = set(r.post_optimization(pool=pool, pool_size=pool_size, use_tqdm=use_tqdm, logger=logger) for r in results)
 
             pool.close()
             pool.join()

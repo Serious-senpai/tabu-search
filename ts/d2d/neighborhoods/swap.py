@@ -3,7 +3,7 @@ from __future__ import annotations
 import itertools
 import threading
 from multiprocessing import pool as p
-from typing import Dict, Final, Iterable, List, Set, Tuple, TYPE_CHECKING
+from typing import Callable, Dict, Final, Iterable, Optional, List, Set, Tuple, TYPE_CHECKING
 
 from .factory import SolutionFactory
 from .mixins import D2DBaseNeighborhood
@@ -38,7 +38,7 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
         self._first_length = first_length
         self._second_length = second_length
 
-    def find_best_candidates(self, *, pool: p.Pool, pool_size: int) -> Iterable[D2DPathSolution]:
+    def find_best_candidates(self, *, pool: p.Pool, pool_size: int, logger: Optional[Callable[[str], None]]) -> Iterable[D2DPathSolution]:
         solution = self._solution
         results: Set[SolutionFactory] = set()
         swaps_mapping: Dict[SolutionFactory, Tuple[Tuple[int, int], Tuple[int, int]]] = {}

@@ -12,7 +12,6 @@ __all__ = ("D2DBaseNeighborhood",)
 
 _T = TypeVar("_T")
 if TYPE_CHECKING:
-
     class D2DBaseNeighborhood(MultiObjectiveNeighborhood[D2DPathSolution, _T]):
         __slots__ = ()
         def __init__(self, solution: D2DPathSolution, /) -> None: ...
@@ -24,7 +23,7 @@ else:
         __slots__ = ()
 
         def __init__(self, solution: D2DPathSolution, /) -> None:
-            super().__init__(solution)  # type: ignore
+            super().__init__(solution)
             self.extras["problem"] = solution.problem
             self.extras["drone_config_mapping"] = solution.drone_config_mapping
             self.extras["energy_mode"] = solution.energy_mode
