@@ -1,34 +1,33 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Protocol, Type, TYPE_CHECKING
+from typing import TypeVar, TYPE_CHECKING
 
+from ...abc import MultiObjectiveNeighborhood
 if TYPE_CHECKING:
     from ..solutions import D2DPathSolution
 
 
-__all__ = ("D2DNeighborhoodMixin",)
+__all__ = ("D2DBaseNeighborhood",)
 
 
+_T = TypeVar("_T")
 if TYPE_CHECKING:
-    class D2DNeighborhoodProtocol(Protocol):
-        @property
-        def cls(self) -> Type[D2DPathSolution]: ...
-        @property
-        def extras(self) -> Dict[Any, Any]: ...
+    _BaseNeighborhood = MultiObjectiveNeighborhood[D2DPathSolution, _T]
+else:
+    _BaseNeighborhood = MultiObjectiveNeighborhood
 
 
-class D2DNeighborhoodMixin:
+class D2DBaseNeighborhood(_BaseNeighborhood[_T]):
 
     __slots__ = ()
 
-    def __init__(self: D2DNeighborhoodProtocol, solution: D2DPathSolution, /) -> None:
-        # super() should resolve to MultiObjectiveNeighborhood
+    def __init__(self, solution: D2DPathSolution, /) -> None:
         super().__init__(solution)  # type: ignore
         self.extras["problem"] = solution.problem
         self.extras["drone_config_mapping"] = solution.drone_config_mapping
         self.extras["energy_mode"] = solution.energy_mode
 
-    def ensure_imported_data(self: D2DNeighborhoodProtocol) -> None:
+    def ensure_imported_data(self) -> None:
         if self.cls.problem != self.extras["problem"]:
             self.cls.import_problem(
                 self.extras["problem"],

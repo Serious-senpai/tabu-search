@@ -6,9 +6,8 @@ from multiprocessing import pool as p
 from typing import Dict, Final, Iterable, List, Set, Tuple, TYPE_CHECKING
 
 from .factory import SolutionFactory
-from .mixins import D2DNeighborhoodMixin
+from .mixins import D2DBaseNeighborhood
 from ..errors import NeighborhoodException
-from ...abc import MultiObjectiveNeighborhood
 from ...bundle import IPCBundle
 if TYPE_CHECKING:
     from ..solutions import D2DPathSolution
@@ -17,13 +16,7 @@ if TYPE_CHECKING:
 __all__ = ("Swap",)
 
 
-if TYPE_CHECKING:
-    _BaseNeighborhood = MultiObjectiveNeighborhood[D2DPathSolution, Tuple[Tuple[int, int], Tuple[int, int]]]
-else:
-    _BaseNeighborhood = MultiObjectiveNeighborhood
-
-
-class Swap(D2DNeighborhoodMixin, _BaseNeighborhood):
+class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
 
     __slots__ = (
         "_first_length",
