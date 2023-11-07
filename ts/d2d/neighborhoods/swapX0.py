@@ -2,24 +2,16 @@ from __future__ import annotations
 
 import itertools
 from multiprocessing import pool as p
-from typing import Dict, Iterable, List, Set, Tuple, TYPE_CHECKING
+from typing import Dict, Iterable, List, Set, Tuple, TYPE_CHECKING, Optional, Callable, Any
 
 from .factory import SolutionFactory
-from .mixins import D2DNeighborhoodMixin
-from ...abc import MultiObjectiveNeighborhood
+from .mixins import D2DBaseNeighborhood
 from ...bundle import IPCBundle
 if TYPE_CHECKING:
     from ..solutions import D2DPathSolution
 
 
-__all__ = ("Swappoint",)
-if TYPE_CHECKING:
-    _BaseNeighborhood = MultiObjectiveNeighborhood[D2DPathSolution, Tuple[int, int]]
-else:
-    _BaseNeighborhood = MultiObjectiveNeighborhood
-
-
-class Swappoint(D2DNeighborhoodMixin, _BaseNeighborhood):
+class Swappoint(D2DBaseNeighborhood[Tuple[int, int]]):
 
     __slots__ = (
         "length",
@@ -32,7 +24,7 @@ class Swappoint(D2DNeighborhoodMixin, _BaseNeighborhood):
         super().__init__(solution)
         self.length = length
 
-    def find_best_candidates(self, *, pool: p.Pool, pool_size: int) -> Iterable[D2DPathSolution]:
+    def find_best_candidates(self, *, pool: p.Pool, pool_size: int, logger: Optional[Callable[[str], Any]]) -> Iterable[D2DPathSolution]:
         solution = self._solution
         results: Set[SolutionFactory] = set()
         swaps_mapping: Dict[SolutionFactory, Tuple[int, int]] = {}
@@ -153,19 +145,46 @@ class Swappoint(D2DNeighborhoodMixin, _BaseNeighborhood):
 
             for first_path_index, first_path in enumerate(first_paths):
                 for first_point in range(1, len(first_path) - neighborhood.length):
-                    new_path = (0,) + first_path[first_point: first_point + neighborhood.length] + (0,)
-                    if solution.calculate_total_weight(new_path) > second_config.capacity:
+                    _first_path = list(first_path)
+                    _first_path[first_point: first_point + neighborhood.length] = []
+                    _second_path = (0,) + first_path[first_point: first_point + neighborhood.length] + (0,)
+
+                    if solution.calculate_total_weight(_second_path) > second_config.capacity:
                         continue
-                    if solution.calculate_drone_energy_consumption(
-                        new_path,
+
+                    first_arrival_timestamps = solution.calculate_drone_arrival_timestamps(
+                        _first_path,
+                        config_index=solution.drone_config_mapping[first_drone],
+                        offset=solution.drone_timespans[first_path_index - 1] if first_path_index > 0 else 0.0,
+                    )
+                    second_arrival_timestamps = solution.calculate_drone_arrival_timestamps(
+                        _second_path,
                         config_index=solution.drone_config_mapping[second_drone],
-                        arrival_timestamps=solution.calculate_drone_arrival_timestamps(
-                            new_path,
-                            config_index=solution.drone_config_mapping[first_drone],
-                            offset=solution.drone_timespans[second_drone],
-                        ),
+                        offset=solution.drone_timespans[second_drone],
+                    )
+
+                    if solution.calculate_drone_energy_consumption(
+                        _second_path,
+                        config_index=solution.drone_config_mapping[second_drone],
+                        arrival_timestamps=second_arrival_timestamps,
                     ) > second_config.battery:
                         continue
+
+                    _drone_timespans = list(solution.drone_timespans)
+                    _drone_timespans[first_drone] += first_arrival_timestamps[-1] - solution.drone_arrival_timestamps[first_drone][first_path_index][-1]
+                    _drone_timespans[second_drone] += second_arrival_timestamps[-1]
+
+                    _drone_waiting_times = list(list(w) for w in solution.drone_waiting_times)
+                    _drone_waiting_times[first_drone][first_path_index] = solution.calculate_drone_total_waiting_time(
+                        _first_path,
+                        arrival_timestamps=first_arrival_timestamps,
+                    )
+                    _drone_waiting_times[second_drone].append(
+                        solution.calculate_drone_total_waiting_time(
+                            _second_path,
+                            arrival_timestamps=second_arrival_timestamps,
+                        )
+                    )
 
                 for second_path_index, second_path in enumerate(second_paths):
                     for first_point in range(1, len(first_path) - neighborhood.length):
