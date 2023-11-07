@@ -200,8 +200,8 @@ class Swappoint(D2DNeighborhoodMixin, _BaseNeighborhood):
                             _drone_timespans[second_drone] += second_arrival_timestamps[-1] - solution.drone_arrival_timestamps[second_drone][second_path_index][-1]
 
                             _drone_waiting_times = list(list(w) for w in solution.drone_waiting_times)
-                            _drone_waiting_times[first_drone][first_path_index] = solution.calculate_drone_total_waiting_time(p1, config_index=solution.drone_config_mapping[first_drone], arrival_timestamps=first_arrival_timestamps)
-                            _drone_waiting_times[second_drone][second_path_index] = solution.calculate_drone_total_waiting_time(p2, config_index=solution.drone_config_mapping[second_drone], arrival_timestamps=second_arrival_timestamps)
+                            _drone_waiting_times[first_drone][first_path_index] = solution.calculate_drone_total_waiting_time(p1, arrival_timestamps=first_arrival_timestamps)
+                            _drone_waiting_times[second_drone][second_path_index] = solution.calculate_drone_total_waiting_time(p2, arrival_timestamps=second_arrival_timestamps)
                             factory = SolutionFactory(
                                 update_drones=((first_drone, first_path_index, tuple(p1)), (second_drone, second_path_index, tuple(p2))),
                                 technician_timespans=solution.technician_timespans,
