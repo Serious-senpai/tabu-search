@@ -159,7 +159,7 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
                 new_cost = s.cost()
                 lines.append(
                     ",".join(
-                        f"\"{e!r}\"" for e in (
+                        f"\"{e}\"" for e in (
                             threading.current_thread().name,
                             pair,
                             *old_cost,
