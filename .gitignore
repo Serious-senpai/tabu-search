@@ -5,4 +5,5 @@ tsp-summary/
 
 **/.coverage
 **/.coverage.*
+**/*.log.csv
 run.bat

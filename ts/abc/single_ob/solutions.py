@@ -33,7 +33,7 @@ class SingleObjectiveSolution(BaseSolution, BaseCostComparison):
         iterations_count: int,
         use_tqdm: bool,
         shuffle_after: int,
-        logger: Optional[Callable[[str], None]] = None,
+        logger: Optional[Callable[[str], Any]] = None,
     ) -> Self:
         """Run the tabu search algorithm to find the best solution to this single-objective optimization problem.
 

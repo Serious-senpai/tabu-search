@@ -26,6 +26,7 @@ class Namespace(argparse.Namespace):
         profile: bool
         verbose: bool
         dump: Optional[str]
+        log: Optional[str]
         pool_size: int
 
 
@@ -51,6 +52,7 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--profile", action="store_true", help="run in profile mode and exit immediately")
     parser.add_argument("-v", "--verbose", action="store_true", help="whether to display the progress bar and plot the solution")
     parser.add_argument("-d", "--dump", type=str, help="dump the solution to a file")
+    parser.add_argument("-l", "--log", type=str, help="dump the iteration logs to a file")
 
     default_pool_size = os.cpu_count() or 1
     parser.add_argument("--pool-size", default=default_pool_size, type=int, help=f"the size of the process pool (default: {default_pool_size})")
@@ -104,29 +106,37 @@ if __name__ == "__main__":
 
             return result
 
-    if namespace.profile:
-        eval_func = f"""d2d.D2DPathSolution.tabu_search(
-            pool_size={namespace.pool_size},
-            iterations_count={namespace.iterations},
-            use_tqdm={namespace.verbose},
-            propagation_priority_key=propagation_priority_key,
-            max_propagation={namespace.max_propagation},
-            plot_pareto_front={namespace.verbose},
-        )"""
-        cProfile.run(eval_func)
-        exit(0)
+    logfile = None if namespace.log is None else open(namespace.log, "w")
+    try:
+        if namespace.profile:
+            eval_func = f"""d2d.D2DPathSolution.tabu_search(
+                pool_size={namespace.pool_size},
+                iterations_count={namespace.iterations},
+                use_tqdm={namespace.verbose},
+                propagation_priority_key=propagation_priority_key,
+                max_propagation={namespace.max_propagation},
+                plot_pareto_front={namespace.verbose},
+                logger=None if logfile is None else logfile.write,
+            )"""
+            cProfile.run(eval_func)
+            exit(0)
 
-    solutions = sorted(
-        d2d.D2DPathSolution.tabu_search(
-            pool_size=namespace.pool_size,
-            iterations_count=namespace.iterations,
-            use_tqdm=namespace.verbose,
-            propagation_priority_key=propagation_priority_key,
-            max_propagation=namespace.max_propagation,
-            plot_pareto_front=namespace.verbose,
-        ),
-        key=lambda s: s.cost(),
-    )
+        solutions = sorted(
+            d2d.D2DPathSolution.tabu_search(
+                pool_size=namespace.pool_size,
+                iterations_count=namespace.iterations,
+                use_tqdm=namespace.verbose,
+                propagation_priority_key=propagation_priority_key,
+                max_propagation=namespace.max_propagation,
+                plot_pareto_front=namespace.verbose,
+                logger=None if logfile is None else logfile.write,
+            ),
+            key=lambda s: s.cost(),
+        )
+
+    finally:
+        if logfile is not None:
+            logfile.close()
 
     print(f"Found {len(solutions)} " + utils.ngettext(len(solutions) == 1, "solution", "solutions") + ":")
     for index, solution in enumerate(solutions):
