@@ -18,5 +18,5 @@ six==1.16.0
 tomli==2.0.1
 tqdm==4.66.1
 types-Pillow==10.1.0.0
-types-tqdm==4.66.0.3
+types-tqdm==4.66.0.4
 typing_extensions==4.8.0
