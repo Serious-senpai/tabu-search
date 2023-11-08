@@ -27,6 +27,7 @@ else:
             self.extras["problem"] = solution.problem
             self.extras["drone_config_mapping"] = solution.drone_config_mapping
             self.extras["energy_mode"] = solution.energy_mode
+            # self.extras["precalculated_distances"] = solution.distances
 
         def ensure_imported_data(self) -> None:
             if self.cls.problem != self.extras["problem"]:
@@ -34,4 +35,8 @@ else:
                     self.extras["problem"],
                     drone_config_mapping=self.extras["drone_config_mapping"],
                     energy_mode=self.extras["energy_mode"],
+                    # precalculated_distances=self.extras["precalculated_distances"],
                 )
+
+# TODO: Evaluate the trade-off between using precalculated distances (and passing them via IPC) or recalculating
+# them in another process instead.

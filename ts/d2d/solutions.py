@@ -3,7 +3,6 @@ from __future__ import annotations
 import itertools
 import random
 import re
-from functools import partial
 from math import sqrt
 from os.path import join
 from typing import Any, Callable, ClassVar, Final, List, Optional, Sequence, Tuple, Union, TYPE_CHECKING, final, overload
@@ -49,6 +48,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
 
         x: ClassVar[Tuple[float, ...]]
         y: ClassVar[Tuple[float, ...]]
+        distances: ClassVar[Tuple[Tuple[float, ...], ...]]
         demands: ClassVar[Tuple[float, ...]]
         dronable: ClassVar[Tuple[bool, ...]]
         drone_service_time: ClassVar[Tuple[float, ...]]
@@ -261,23 +261,6 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         pyplot.show()
 
     @classmethod
-    def distance(cls, first: int, second: int, /) -> float:
-        """Calculate the distance between 2 waypoints of the current problem
-
-        Parameters
-        -----
-        first:
-            Index of the first waypoint
-        second:
-            Index of the second waypoint
-
-        Returns
-        -----
-        The distance between 2 waypoints
-        """
-        return sqrt((cls.x[first] - cls.x[second]) ** 2 + (cls.y[first] - cls.y[second]) ** 2)
-
-    @classmethod
     def calculate_drone_arrival_timestamps(cls, path: Sequence[int], *, config_index: int, offset: float) -> Tuple[float, ...]:
         """Calculate the arrival timestamps for the given drone path
 
@@ -301,7 +284,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         vertical_time = config.altitude * (1 / config.takeoff_speed + 1 / config.landing_speed)
 
         for index in path[1:]:
-            result.append(result[-1] + cls.drone_service_time[last] + vertical_time + cls.distance(last, index) / config.cruise_speed)
+            result.append(result[-1] + cls.drone_service_time[last] + vertical_time + cls.distances[last][index] / config.cruise_speed)
             last = index
 
         return tuple(result)
@@ -390,7 +373,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
                 current_within_timespan -= 3600.0
                 velocity = config.maximum_velocity * next(coefficients_iter)
 
-            distance = cls.distance(last, index)
+            distance = cls.distances[last][index]
 
             while distance > 0:
                 time_shift = min(distance / velocity, 3600.0 - current_within_timespan)
@@ -548,7 +531,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         result = weight = 0.0
         for path_index, index in enumerate(path[1:], start=1):
             last = path[path_index - 1]
-            cruise_time = cls.distance(last, index) / config.cruise_speed
+            cruise_time = cls.distances[last][index] / config.cruise_speed
             result += (
                 takeoff_time * config.takeoff_power(weight)
                 + cruise_time * config.cruise_power(weight)
@@ -568,7 +551,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         technician_paths_iter = itertools.cycle(technician_paths)
         while len(technician_only) > 0:
             path = next(technician_paths_iter)
-            index = min(technician_only, key=partial(cls.distance, path[-1]))
+            index = min(technician_only, key=cls.distances[path[-1]].__getitem__)
             path.append(index)
             technician_only.remove(index)
 
@@ -588,7 +571,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
             config = cls.get_drone_config(cls.drone_config_mapping[drone])
 
             path = paths[-1]
-            index = min(dronable, key=partial(cls.distance, path[-1]))
+            index = min(dronable, key=cls.distances[path[-1]].__getitem__)
 
             hypothetical_path = path + [index, 0]
             hypothetical_arrival_timestamps = cls.calculate_drone_arrival_timestamps(hypothetical_path, config_index=cls.drone_config_mapping[drone], offset=0.0)
@@ -599,7 +582,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
                 path.append(0)
                 paths.append([0])
 
-                technician_path = min(technician_paths, key=lambda path: cls.distance(index, path[-2]))
+                technician_path = min(technician_paths, key=lambda path: cls.distances[index][path[-2]])
                 technician_path.insert(-1, index)
 
             else:
@@ -639,6 +622,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         *,
         drone_config_mapping: Tuple[int, ...],
         energy_mode: DroneEnergyConsumptionMode,
+        precalculated_distances: Optional[Tuple[Tuple[float, ...], ...]] = None,
     ) -> None:
         if not cls.__config_imported:
             cls.import_config()
@@ -679,6 +663,16 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
 
             cls.drone_config_mapping = drone_config_mapping
             cls.energy_mode = energy_mode
+
+            if precalculated_distances is None:
+                distances = [[0.0] * (cls.customers_count + 1) for _ in range(cls.customers_count + 1)]
+                for first, second in itertools.combinations(range(cls.customers_count + 1), 2):
+                    distances[first][second] = distances[second][first] = sqrt((cls.x[first] - cls.x[second]) ** 2 + (cls.y[first] - cls.y[second]) ** 2)
+
+                cls.distances = tuple(tuple(r) for r in distances)
+
+            else:
+                cls.distances = precalculated_distances
 
         except Exception as e:
             raise ImportException(problem) from e
