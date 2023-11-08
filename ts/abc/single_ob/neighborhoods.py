@@ -15,6 +15,8 @@ _TT = TypeVar("_TT")
 class SingleObjectiveNeighborhood(BaseNeighborhood[_SingleST, _TT]):
     """Base class for neighborhoods of a solution to a single-objective optimization problem"""
 
+    __slots__ = ()
+
     def find_best_candidate(self, *, pool: pool.Pool, pool_size: int, logger: Optional[Callable[[str], Any]]) -> Optional[_SingleST]:
         """Find the best candidate solution within the neighborhood of the current one.
 
