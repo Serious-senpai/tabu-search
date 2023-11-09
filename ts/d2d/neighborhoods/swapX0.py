@@ -290,7 +290,6 @@ class Swappoint(D2DBaseNeighborhood[Tuple[int, int]]):
                             factory.add_to_pareto_set(results)
 
                             pair = (first_path[first_point], second_path[second_location])
-                            swaps_mapping[factory] = (min(pair), max(pair))
 
         return set((r, swaps_mapping[r]) for r in results)
 
@@ -313,7 +312,7 @@ class Swappoint(D2DBaseNeighborhood[Tuple[int, int]]):
                     for location_tech in range(1, len(tech_path) - 1):
                         _first_path_drone = list(first_drone_path)
                         _tech_path = list(tech_path)
-                        _tech_path[location_tech:location_tech] = solution.drone_paths[drone][drone_point:drone_point + neighborhood.length]
+                        _tech_path[location_tech:location_tech] = first_drone_path[drone_point:drone_point + neighborhood.length]
                         _first_path_drone[drone_point:drone_point + neighborhood.length] = []
 
                         tech_arrival_timestamps = solution.calculate_technician_arrival_timestamps(_tech_path)
