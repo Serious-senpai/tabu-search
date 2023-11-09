@@ -15,7 +15,7 @@ from matplotlib import axes, pyplot
 from .config import DroneEnduranceConfig, DroneEnergyConsumptionMode, DroneLinearConfig, DroneNonlinearConfig, TruckConfig
 from .errors import ImportException
 from .mixins import SolutionMetricsMixin
-from .neighborhoods import Swap, Swappoint
+from .neighborhoods import Swap, Insert
 from ..abc import MultiObjectiveNeighborhood, MultiObjectiveSolution
 
 
@@ -158,8 +158,8 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
             Swap(self, first_length=1, second_length=1),
             Swap(self, first_length=2, second_length=1),
             Swap(self, first_length=2, second_length=2),
-            Swappoint(self, length=1),
-            Swappoint(self, length=2),
+            Insert(self, length=1),
+            Insert(self, length=2),
         )
 
     def feasible(self) -> bool:
