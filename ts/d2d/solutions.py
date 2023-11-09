@@ -158,6 +158,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
             Swap(self, first_length=2, second_length=1),
             Swap(self, first_length=2, second_length=2),
             Swappoint(self, length=1),
+            Swappoint(self, length=2),
         )
 
     def feasible(self) -> bool:
