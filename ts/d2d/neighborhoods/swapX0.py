@@ -34,9 +34,9 @@ class Swappoint(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
         bundles: List[IPCBundle[Swappoint, List[Tuple[int, int]]]] = [IPCBundle(self, []) for _ in range(pool_size)]
         bundles_iter = itertools.cycle(bundles)
 
-        for pair in itertools.permutations(range(solution.technicians_count), 2):
+        for _pair in itertools.permutations(range(solution.technicians_count), 2):
             x = next(bundles_iter)
-            x.data.append(pair)  # type: ignore
+            x.data.append(_pair)  # type: ignore
 
         for candidates in pool.map(self.swap_technician_technician, bundles):
             for result, pair in candidates:
