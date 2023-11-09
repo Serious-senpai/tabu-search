@@ -8,7 +8,7 @@ import re
 from math import sqrt
 from multiprocessing import shared_memory
 from os.path import join
-from typing import Any, Callable, ClassVar, Final, List, Literal, Optional, Sequence, Tuple, Union, TYPE_CHECKING, final, overload
+from typing import Any, Callable, ClassVar, Final, List, Literal, Optional, Sequence, Set, Tuple, Union, TYPE_CHECKING, final, overload
 
 from matplotlib import axes, pyplot
 
@@ -161,11 +161,18 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         )
 
     def feasible(self) -> bool:
+        existed: Set[int] = set()
         for drone, drone_paths in enumerate(self.drone_paths):
             config = self.get_drone_config(self.drone_config_mapping[drone])
             for drone_path_index, drone_path in enumerate(drone_paths):
                 if drone_path[0] != 0 or drone_path[-1] != 0:
                     return False
+
+                for index in drone_path[1:-1]:
+                    if index in existed:
+                        return False
+
+                    existed.add(index)
 
                 if self.calculate_total_weight(drone_path) > config.capacity:
                     return False
@@ -181,7 +188,13 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
             if technician_path[0] != 0 or technician_path[-1] != 0:
                 return False
 
-        return True
+            for index in technician_path[1:-1]:
+                if index in existed:
+                    return False
+
+                existed.add(index)
+
+        return len(existed) == self.customers_count
 
     def plot(self) -> None:
         _, ax = pyplot.subplots()
