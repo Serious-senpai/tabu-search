@@ -23,8 +23,6 @@ from typing import (
 if TYPE_CHECKING:
     from typing_extensions import Self
 
-from ..errors import AlreadyInTabu
-
 
 __all__ = ()
 
@@ -132,11 +130,19 @@ class BaseNeighborhood(Generic[_ST, _TT]):
     def add_to_tabu(cls, target: _TT) -> None:
         with cls._tabu_lock:
             if target in cls.tabu_set:
-                raise AlreadyInTabu(target)
+                rotated = 0
+                while cls._tabu_list[0] != target:
+                    cls._tabu_list.rotate(1)
+                    rotated += 1
 
-            cls.tabu_set.add(target)
-            cls._tabu_list.append(target)
-            cls.__remove_from_tabu()
+                cls._tabu_list.popleft()
+                cls._tabu_list.rotate(-rotated)
+                cls._tabu_list.append(target)
+
+            else:
+                cls.tabu_set.add(target)
+                cls._tabu_list.append(target)
+                cls.__remove_from_tabu()
 
     @final
     @classmethod
