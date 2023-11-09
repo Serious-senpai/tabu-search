@@ -151,9 +151,7 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
             if pair in self.tabu_set:
                 s.to_propagate = False
 
-            else:
-                self.add_to_tabu(pair)
-
+            self.add_to_tabu(pair)
             if lines is not None:
                 old_cost = solution.cost()
                 new_cost = s.cost()
