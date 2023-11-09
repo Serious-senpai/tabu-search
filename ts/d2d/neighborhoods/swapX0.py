@@ -52,6 +52,45 @@ class Swappoint(D2DBaseNeighborhood[Tuple[int, int]]):
             else:
                 self.add_to_tabu(pair)
 
+        # swap Drone - Technician
+
+        for pair in itertools.permutations(range(solution.technicians_count), 2):
+            x = next(bundles_iter)
+            x.data.append(pair)  # type: ignore
+
+        for candidates in pool.map(self.swap_drone_technician, bundles):
+            for result, pair in candidates:
+                if result.add_to_pareto_set(results):
+                    swaps_mapping[result] = pair
+
+        for result in results:
+            pair = swaps_mapping[result]
+            s = result.from_solution(solution)
+            if pair in self.tabu_set:
+                s.to_propagate = False
+
+            else:
+                self.add_to_tabu(pair)
+
+        # swap Technician - Drone
+        for pair in itertools.permutations(range(solution.technicians_count), 2):
+            x = next(bundles_iter)
+            x.data.append(pair)  # type: ignore
+
+        for candidates in pool.map(self.swap_technician_drone, bundles):
+            for result, pair in candidates:
+                if result.add_to_pareto_set(results):
+                    swaps_mapping[result] = pair
+
+        for result in results:
+            pair = swaps_mapping[result]
+            s = result.from_solution(solution)
+            if pair in self.tabu_set:
+                s.to_propagate = False
+
+            else:
+                self.add_to_tabu(pair)
+
         # swap Drone - Drone
         for pair in itertools.permutations(range(solution.drones_count), 2):
             x = next(bundles_iter)
@@ -184,7 +223,8 @@ class Swappoint(D2DBaseNeighborhood[Tuple[int, int]]):
                         )
                     )
                     factory = SolutionFactory(
-                        update_drones=((first_drone, first_path_index, tuple(first_path)), tuple(append_drones=(second_drone, tuple(_second_path)))),
+                        append_drones=((second_drone, _second_path),),
+                        update_drones=((first_drone, first_path_index, tuple(first_path)),),
                         technician_timespans=solution.technician_timespans,
                         technician_waiting_times=solution.technician_waiting_times,
                         drone_timespans=tuple(_drone_timespans),
@@ -192,8 +232,7 @@ class Swappoint(D2DBaseNeighborhood[Tuple[int, int]]):
                     )
                     factory.add_to_pareto_set(results)
 
-                    pair = (first_path[first_point], _second_path)
-                    swaps_mapping[factory] = (min(pair), max(pair))
+                    pair = ((first_path[first_point], first_path[first_point + neighborhood.length]), 0)
                     return set((r, swaps_mapping[r]) for r in results)
                 for second_path_index, second_path in enumerate(second_paths):
                     for first_point in range(1, len(first_path) - neighborhood.length):
