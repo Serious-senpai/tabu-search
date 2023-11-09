@@ -15,6 +15,8 @@ _TT = TypeVar("_TT")
 class MultiObjectiveNeighborhood(BaseNeighborhood[_MultiST, _TT]):
     """Base class for neighborhoods of a solution to a multi-objective optimization problem"""
 
+    __slots__ = ()
+
     def find_best_candidates(self, *, pool: pool.Pool, pool_size: int, logger: Optional[Callable[[str], Any]]) -> Iterable[_MultiST]:
         """Find all non-dominant solutions in this neighborhood of the current solution.
 

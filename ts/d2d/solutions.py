@@ -1,16 +1,16 @@
 from __future__ import annotations
 
+import contextlib
 import itertools
+import pickle
 import random
 import re
-from functools import partial
 from math import sqrt
+from multiprocessing import shared_memory
 from os.path import join
-from typing import Any, Callable, ClassVar, Final, List, Optional, Sequence, Tuple, Union, TYPE_CHECKING, final, overload
+from typing import Any, Callable, ClassVar, Final, List, Literal, Optional, Sequence, Tuple, Union, TYPE_CHECKING, final, overload
 
 from matplotlib import axes, pyplot
-if TYPE_CHECKING:
-    from typing_extensions import Self
 
 from .config import DroneEnduranceConfig, DroneEnergyConsumptionMode, DroneLinearConfig, DroneNonlinearConfig, TruckConfig
 from .errors import ImportException
@@ -49,6 +49,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
 
         x: ClassVar[Tuple[float, ...]]
         y: ClassVar[Tuple[float, ...]]
+        distances: ClassVar[Tuple[Tuple[float, ...], ...]]
         demands: ClassVar[Tuple[float, ...]]
         dronable: ClassVar[Tuple[bool, ...]]
         drone_service_time: ClassVar[Tuple[float, ...]]
@@ -152,7 +153,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
             technician_timespans=self.technician_timespans,
         )
 
-    def get_neighborhoods(self) -> Tuple[MultiObjectiveNeighborhood[Self, Any], ...]:
+    def get_neighborhoods(self) -> Tuple[MultiObjectiveNeighborhood[D2DPathSolution, Any], ...]:
         return (
             Swap(self, first_length=1, second_length=1),
             Swap(self, first_length=2, second_length=1),
@@ -263,23 +264,6 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         pyplot.show()
 
     @classmethod
-    def distance(cls, first: int, second: int, /) -> float:
-        """Calculate the distance between 2 waypoints of the current problem
-
-        Parameters
-        -----
-        first:
-            Index of the first waypoint
-        second:
-            Index of the second waypoint
-
-        Returns
-        -----
-        The distance between 2 waypoints
-        """
-        return sqrt((cls.x[first] - cls.x[second]) ** 2 + (cls.y[first] - cls.y[second]) ** 2)
-
-    @classmethod
     def calculate_drone_arrival_timestamps(cls, path: Sequence[int], *, config_index: int, offset: float) -> Tuple[float, ...]:
         """Calculate the arrival timestamps for the given drone path
 
@@ -303,7 +287,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         vertical_time = config.altitude * (1 / config.takeoff_speed + 1 / config.landing_speed)
 
         for index in path[1:]:
-            result.append(result[-1] + cls.drone_service_time[last] + vertical_time + cls.distance(last, index) / config.cruise_speed)
+            result.append(result[-1] + cls.drone_service_time[last] + vertical_time + cls.distances[last][index] / config.cruise_speed)
             last = index
 
         return tuple(result)
@@ -392,7 +376,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
                 current_within_timespan -= 3600.0
                 velocity = config.maximum_velocity * next(coefficients_iter)
 
-            distance = cls.distance(last, index)
+            distance = cls.distances[last][index]
 
             while distance > 0:
                 time_shift = min(distance / velocity, 3600.0 - current_within_timespan)
@@ -550,7 +534,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         result = weight = 0.0
         for path_index, index in enumerate(path[1:], start=1):
             last = path[path_index - 1]
-            cruise_time = cls.distance(last, index) / config.cruise_speed
+            cruise_time = cls.distances[last][index] / config.cruise_speed
             result += (
                 takeoff_time * config.takeoff_power(weight)
                 + cruise_time * config.cruise_power(weight)
@@ -570,7 +554,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         technician_paths_iter = itertools.cycle(technician_paths)
         while len(technician_only) > 0:
             path = next(technician_paths_iter)
-            index = min(technician_only, key=partial(cls.distance, path[-1]))
+            index = min(technician_only, key=cls.distances[path[-1]].__getitem__)
             path.append(index)
             technician_only.remove(index)
 
@@ -590,7 +574,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
             config = cls.get_drone_config(cls.drone_config_mapping[drone])
 
             path = paths[-1]
-            index = min(dronable, key=partial(cls.distance, path[-1]))
+            index = min(dronable, key=cls.distances[path[-1]].__getitem__)
 
             hypothetical_path = path + [index, 0]
             hypothetical_arrival_timestamps = cls.calculate_drone_arrival_timestamps(hypothetical_path, config_index=cls.drone_config_mapping[drone], offset=0.0)
@@ -601,7 +585,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
                 path.append(0)
                 paths.append([0])
 
-                technician_path = min(technician_paths, key=lambda path: cls.distance(index, path[-2]))
+                technician_path = min(technician_paths, key=lambda path: cls.distances[index][path[-2]])
                 technician_path.insert(-1, index)
 
             else:
@@ -633,6 +617,10 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         cls.drone_linear_config = DroneLinearConfig.import_data()
         cls.drone_nonlinear_config = DroneNonlinearConfig.import_data()
         cls.drone_endurance_config = DroneEnduranceConfig.import_data()
+
+    @classmethod
+    def share_distances(cls) -> _SharedDistancesManager:
+        return _SharedDistancesManager()
 
     @classmethod
     def import_problem(
@@ -682,8 +670,37 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
             cls.drone_config_mapping = drone_config_mapping
             cls.energy_mode = energy_mode
 
+            try:
+                memory = shared_memory.SharedMemory(name=problem, create=False)
+                cls.distances = pickle.loads(memory.buf)
+
+            except FileNotFoundError:
+                distances = [[0.0] * (cls.customers_count + 1) for _ in range(cls.customers_count + 1)]
+                for first, second in itertools.combinations(range(cls.customers_count + 1), 2):
+                    distances[first][second] = distances[second][first] = sqrt((cls.x[first] - cls.x[second]) ** 2 + (cls.y[first] - cls.y[second]) ** 2)
+
+                cls.distances = tuple(tuple(r) for r in distances)
+
         except Exception as e:
             raise ImportException(problem) from e
 
     def __hash__(self) -> int:
         return hash((self.drone_paths, self.technician_paths))
+
+
+class _SharedDistancesManager(contextlib.AbstractContextManager):
+
+    __slots__ = (
+        "memory",
+    )
+    if TYPE_CHECKING:
+        memory: Final[shared_memory.SharedMemory]
+
+    def __init__(self) -> None:
+        data = pickle.dumps(D2DPathSolution.distances)
+        self.memory = shared_memory.SharedMemory(name=D2DPathSolution.problem, create=True, size=len(data))
+        self.memory.buf[:] = data
+
+    def __exit__(self, *args: Any) -> Literal[False]:
+        self.memory.unlink()
+        return False
