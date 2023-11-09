@@ -132,11 +132,12 @@ class BaseNeighborhood(Generic[_ST, _TT]):
             if target in cls.tabu_set:
                 rotated = 0
                 while cls._tabu_list[0] != target:
-                    cls._tabu_list.rotate(1)
+                    cls._tabu_list.rotate(-1)
                     rotated += 1
 
                 cls._tabu_list.popleft()
-                cls._tabu_list.rotate(-rotated)
+                cls._tabu_list.rotate(rotated)
+
                 cls._tabu_list.append(target)
 
             else:
