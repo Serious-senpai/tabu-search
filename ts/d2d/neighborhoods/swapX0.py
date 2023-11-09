@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from ..solutions import D2DPathSolution
 
 
-class Swappoint(D2DBaseNeighborhood[Tuple[int, int]]):
+class Swappoint(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
 
     __slots__ = (
         "length",
@@ -27,7 +27,7 @@ class Swappoint(D2DBaseNeighborhood[Tuple[int, int]]):
     def find_best_candidates(self, *, pool: p.Pool, pool_size: int, logger: Optional[Callable[[str], Any]]) -> Iterable[D2DPathSolution]:
         solution = self._solution
         results: Set[SolutionFactory] = set()
-        swaps_mapping: Dict[SolutionFactory, Tuple[int, int]] = {}
+        swaps_mapping: Dict[SolutionFactory, Tuple[Tuple[int, int], int]] = {}
 
         # swap Technician - Technician
 
@@ -52,8 +52,6 @@ class Swappoint(D2DBaseNeighborhood[Tuple[int, int]]):
             else:
                 self.add_to_tabu(pair)
 
-            yield s
-
         results.clear()
 
         # swap Drone - Technician
@@ -76,10 +74,6 @@ class Swappoint(D2DBaseNeighborhood[Tuple[int, int]]):
             else:
                 self.add_to_tabu(pair)
 
-            yield s
-
-        results.clear()
-
         # swap Technician - Drone
         for pair in itertools.permutations(range(solution.technicians_count), 2):
             x = next(bundles_iter)
@@ -98,10 +92,6 @@ class Swappoint(D2DBaseNeighborhood[Tuple[int, int]]):
 
             else:
                 self.add_to_tabu(pair)
-
-            yield s
-
-        results.clear()
 
         # swap Drone - Drone
         for pair in itertools.permutations(range(solution.drones_count), 2):
@@ -125,13 +115,13 @@ class Swappoint(D2DBaseNeighborhood[Tuple[int, int]]):
             yield s
 
     @staticmethod
-    def swap_technician_technician(bundle: IPCBundle[Swappoint, List[Tuple[int, int]]]) -> Set[Tuple[SolutionFactory, Tuple[int, int]]]:
+    def swap_technician_technician(bundle: IPCBundle[Swappoint, List[Tuple[int, int]]]) -> Set[Tuple[SolutionFactory, Tuple[Tuple[int, int], int]]]:
         neighborhood = bundle.neighborhood
         neighborhood.ensure_imported_data()
 
         solution = neighborhood._solution
         results: Set[SolutionFactory] = set()
-        swaps_mapping: Dict[SolutionFactory, Tuple[int, int]] = {}
+        swaps_mapping: Dict[SolutionFactory, Tuple[Tuple[int, int], int]] = {}
 
         for i, j in bundle.data:
             i_path = solution.technician_paths[i]
@@ -172,19 +162,18 @@ class Swappoint(D2DBaseNeighborhood[Tuple[int, int]]):
                     )
 
                     pair = (i_path[point_i], j_path[location_j])
-                    swaps_mapping[factory] = (min(pair), max(pair))
                     factory.add_to_pareto_set(results)
 
         return set((r, swaps_mapping[r]) for r in results)
 
     @staticmethod
-    def swap_drone_drone(bundle: IPCBundle[Swappoint, List[Tuple[int, int]]]) -> Set[Tuple[SolutionFactory, Tuple[int, int]]]:
+    def swap_drone_drone(bundle: IPCBundle[Swappoint, List[Tuple[int, int]]]) -> Set[Tuple[SolutionFactory, Tuple[Tuple[int, int], int]]]:
         neighborhood = bundle.neighborhood
         neighborhood.ensure_imported_data()
 
         solution = neighborhood._solution
         results: Set[SolutionFactory] = set()
-        swaps_mapping: Dict[SolutionFactory, Tuple[int, int]] = {}
+        swaps_mapping: Dict[SolutionFactory, Tuple[Tuple[int, int], int]] = {}
 
         for first_drone, second_drone in bundle.data:
             first_paths = solution.drone_paths[first_drone]
@@ -294,14 +283,14 @@ class Swappoint(D2DBaseNeighborhood[Tuple[int, int]]):
         return set((r, swaps_mapping[r]) for r in results)
 
     @staticmethod
-    def swap_drone_technician(bundle: IPCBundle[Swappoint, List[Tuple[int, int]]]) -> Set[Tuple[SolutionFactory, Tuple[int, int]]]:
+    def swap_drone_technician(bundle: IPCBundle[Swappoint, List[Tuple[int, int]]]) -> Set[Tuple[SolutionFactory, Tuple[Tuple[int, int], int]]]:
         neighborhood = bundle.neighborhood
         neighborhood.ensure_imported_data()
 
         solution = neighborhood._solution
 
         results: Set[SolutionFactory] = set()
-        swaps_mapping: Dict[SolutionFactory, Tuple[int, int]] = {}
+        swaps_mapping: Dict[SolutionFactory, Tuple[Tuple[int, int], int]] = {}
 
         for technician, drone in bundle.data:
             tech_path = solution.technician_paths[technician]
@@ -345,19 +334,18 @@ class Swappoint(D2DBaseNeighborhood[Tuple[int, int]]):
                         factory.add_to_pareto_set(results)
 
                         pair = (first_drone_path[drone_point], tech_path[location_tech])
-                        swaps_mapping[factory] = (min(pair), max(pair))
 
         return set((r, swaps_mapping[r]) for r in results)
 
     @staticmethod
-    def swap_technician_drone(bundle: IPCBundle[Swappoint, List[Tuple[int, int]]]) -> Set[Tuple[SolutionFactory, Tuple[int, int]]]:
+    def swap_technician_drone(bundle: IPCBundle[Swappoint, List[Tuple[int, int]]]) -> Set[Tuple[SolutionFactory, Tuple[Tuple[int, int], int]]]:
         neighborhood = bundle.neighborhood
         neighborhood.ensure_imported_data()
 
         solution = neighborhood._solution
 
         results: Set[SolutionFactory] = set()
-        swaps_mapping: Dict[SolutionFactory, Tuple[int, int]] = {}
+        swaps_mapping: Dict[SolutionFactory, Tuple[Tuple[int, int], int]] = {}
 
         for technician, drone in bundle.data:
             tech_path = solution.technician_paths[technician]
@@ -407,6 +395,4 @@ class Swappoint(D2DBaseNeighborhood[Tuple[int, int]]):
                         factory.add_to_pareto_set(results)
 
                         pair = (first_drone_path[tech_point], tech_path[drone_location])
-                        swaps_mapping[factory] = (min(pair), max(pair))
-
         return set((r, swaps_mapping[r]) for r in results)
