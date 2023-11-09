@@ -11,8 +11,6 @@ from os.path import join
 from typing import Any, Callable, ClassVar, Final, List, Literal, Optional, Sequence, Tuple, Union, TYPE_CHECKING, final, overload
 
 from matplotlib import axes, pyplot
-if TYPE_CHECKING:
-    from typing_extensions import Self
 
 from .config import DroneEnduranceConfig, DroneEnergyConsumptionMode, DroneLinearConfig, DroneNonlinearConfig, TruckConfig
 from .errors import ImportException
@@ -155,7 +153,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
             technician_timespans=self.technician_timespans,
         )
 
-    def get_neighborhoods(self) -> Tuple[MultiObjectiveNeighborhood[Self, Any], ...]:
+    def get_neighborhoods(self) -> Tuple[MultiObjectiveNeighborhood[D2DPathSolution, Any], ...]:
         return (
             Swap(self, first_length=1, second_length=1),
             Swap(self, first_length=2, second_length=1),
