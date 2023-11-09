@@ -434,7 +434,7 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
 
                 # Insert into an existing drone path
                 for drone_path_index, drone_path in enumerate(drone_paths):
-                    for drone_location in range(1, len(drone_paths) - 1):
+                    for drone_location in range(1, len(drone_path) - 1):
                         _tech_path = list(tech_path)
                         _drone_path = list(drone_path)
 
