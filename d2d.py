@@ -74,83 +74,84 @@ if __name__ == "__main__":
         drone_config_mapping=tuple(namespace.drone_config_mapping),
         energy_mode=energy_mode,
     )
-    d2d.Swap.reset_tabu(maxlen=namespace.tabu_size)
+    with d2d.D2DPathSolution.share_distances():
+        d2d.Swap.reset_tabu(maxlen=namespace.tabu_size)
 
-    if namespace.max_distance and namespace.min_distance:
-        message = "--max-distance and --min-distance are mutually exclusive"
-        raise ValueError(message)
+        if namespace.max_distance and namespace.min_distance:
+            message = "--max-distance and --min-distance are mutually exclusive"
+            raise ValueError(message)
 
-    propagation_priority_key: Callable[[Set[d2d.D2DPathSolution], d2d.D2DPathSolution], float] = utils.zero
-    propagation_priority: Optional[str] = None
-    if namespace.max_distance:
-        propagation_priority = "max-distance"
+        propagation_priority_key: Callable[[Set[d2d.D2DPathSolution], d2d.D2DPathSolution], float] = utils.zero
+        propagation_priority: Optional[str] = None
+        if namespace.max_distance:
+            propagation_priority = "max-distance"
 
-        def propagation_priority_key(pareto_set: Set[d2d.D2DPathSolution], candidate: d2d.D2DPathSolution, /) -> float:
-            cost = candidate.cost()
-            result = 0.0
-            for s in pareto_set:
-                s_cost = s.cost()
-                result += abs(s_cost[0] - cost[0]) + abs(s_cost[1] - cost[1])
+            def propagation_priority_key(pareto_set: Set[d2d.D2DPathSolution], candidate: d2d.D2DPathSolution, /) -> float:
+                cost = candidate.cost()
+                result = 0.0
+                for s in pareto_set:
+                    s_cost = s.cost()
+                    result += abs(s_cost[0] - cost[0]) + abs(s_cost[1] - cost[1])
 
-            return -result
+                return -result
 
-    if namespace.min_distance:
-        propagation_priority = "min-distance"
+        if namespace.min_distance:
+            propagation_priority = "min-distance"
 
-        def propagation_priority_key(pareto_set: Set[d2d.D2DPathSolution], candidate: d2d.D2DPathSolution, /) -> float:
-            cost = candidate.cost()
-            result = 0.0
-            for s in pareto_set:
-                s_cost = s.cost()
-                result += abs(s_cost[0] - cost[0]) + abs(s_cost[1] - cost[1])
+            def propagation_priority_key(pareto_set: Set[d2d.D2DPathSolution], candidate: d2d.D2DPathSolution, /) -> float:
+                cost = candidate.cost()
+                result = 0.0
+                for s in pareto_set:
+                    s_cost = s.cost()
+                    result += abs(s_cost[0] - cost[0]) + abs(s_cost[1] - cost[1])
 
-            return result
+                return result
 
-    logfile = None if namespace.log is None else open(namespace.log, "w")
-    try:
-        if namespace.profile:
-            eval_func = f"""d2d.D2DPathSolution.tabu_search(
-                pool_size={namespace.pool_size},
-                iterations_count={namespace.iterations},
-                use_tqdm={namespace.verbose},
-                propagation_priority_key=propagation_priority_key,
-                max_propagation={namespace.max_propagation},
-                plot_pareto_front={namespace.verbose},
-                logger=None if logfile is None else logfile.write,
-            )"""
-            cProfile.run(eval_func)
-            exit(0)
+        logfile = None if namespace.log is None else open(namespace.log, "w")
+        try:
+            if namespace.profile:
+                eval_func = f"""d2d.D2DPathSolution.tabu_search(
+                    pool_size={namespace.pool_size},
+                    iterations_count={namespace.iterations},
+                    use_tqdm={namespace.verbose},
+                    propagation_priority_key=propagation_priority_key,
+                    max_propagation={namespace.max_propagation},
+                    plot_pareto_front={namespace.verbose},
+                    logger=None if logfile is None else logfile.write,
+                )"""
+                cProfile.run(eval_func)
+                exit(0)
 
-        solutions = sorted(
-            d2d.D2DPathSolution.tabu_search(
-                pool_size=namespace.pool_size,
-                iterations_count=namespace.iterations,
-                use_tqdm=namespace.verbose,
-                propagation_priority_key=propagation_priority_key,
-                max_propagation=namespace.max_propagation,
-                plot_pareto_front=namespace.verbose,
-                logger=None if logfile is None else logfile.write,
-            ),
-            key=lambda s: s.cost(),
-        )
+            solutions = sorted(
+                d2d.D2DPathSolution.tabu_search(
+                    pool_size=namespace.pool_size,
+                    iterations_count=namespace.iterations,
+                    use_tqdm=namespace.verbose,
+                    propagation_priority_key=propagation_priority_key,
+                    max_propagation=namespace.max_propagation,
+                    plot_pareto_front=namespace.verbose,
+                    logger=None if logfile is None else logfile.write,
+                ),
+                key=lambda s: s.cost(),
+            )
 
-    finally:
-        if logfile is not None:
-            logfile.close()
+        finally:
+            if logfile is not None:
+                logfile.close()
 
-    print(f"Found {len(solutions)} " + utils.ngettext(len(solutions) == 1, "solution", "solutions") + ":")
-    for index, solution in enumerate(solutions):
-        print(f"SOLUTION #{index + 1}: cost = {solution.cost()}")
-        print("\n".join(f"Drone #{drone_index + 1}: {paths}" for drone_index, paths in enumerate(solution.drone_paths)))
-        print("\n".join(f"Technician #{technician_index + 1}: {path}" for technician_index, path in enumerate(solution.technician_paths)))
+        print(f"Found {len(solutions)} " + utils.ngettext(len(solutions) == 1, "solution", "solutions") + ":")
+        for index, solution in enumerate(solutions):
+            print(f"SOLUTION #{index + 1}: cost = {solution.cost()}")
+            print("\n".join(f"Drone #{drone_index + 1}: {paths}" for drone_index, paths in enumerate(solution.drone_paths)))
+            print("\n".join(f"Technician #{technician_index + 1}: {path}" for technician_index, path in enumerate(solution.technician_paths)))
 
-        assert solution.feasible()
+            assert solution.feasible()
 
-        check = d2d.D2DPathSolution(
-            drone_paths=solution.drone_paths,
-            technician_paths=solution.technician_paths,
-        )
-        assert check.cost() == solution.cost()
+            check = d2d.D2DPathSolution(
+                drone_paths=solution.drone_paths,
+                technician_paths=solution.technician_paths,
+            )
+            assert check.cost() == solution.cost()
 
     if namespace.dump is not None:
         with open(namespace.dump, "w") as f:
