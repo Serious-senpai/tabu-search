@@ -206,7 +206,7 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                         _second_path = (0,) + first_path[first_point:first_point + neighborhood.length] + (0,)
 
                         if solution.calculate_total_weight(_second_path) > second_config.capacity:
-                            return
+                            continue
 
                         first_arrival_timestamps = solution.calculate_drone_arrival_timestamps(
                             _first_path,
@@ -224,7 +224,7 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                             config_index=solution.drone_config_mapping[second_drone],
                             arrival_timestamps=second_arrival_timestamps,
                         ) > second_config.battery:
-                            return
+                            continue
 
                         _drone_timespans = list(solution.drone_timespans)
                         _drone_timespans[first_drone] += first_arrival_timestamps[-1] - solution.drone_arrival_timestamps[first_drone][first_path_index][-1]
@@ -244,7 +244,7 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
 
                         factory = SolutionFactory(
                             append_drones=((second_drone, _second_path),),
-                            update_drones=((first_drone, first_path_index, tuple(first_path)),),
+                            update_drones=((first_drone, first_path_index, tuple(_first_path)),),
                             technician_timespans=solution.technician_timespans,
                             technician_waiting_times=solution.technician_waiting_times,
                             drone_timespans=tuple(_drone_timespans),
