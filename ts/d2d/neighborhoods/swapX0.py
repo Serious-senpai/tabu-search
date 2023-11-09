@@ -52,6 +52,10 @@ class Swappoint(D2DBaseNeighborhood[Tuple[int, int]]):
             else:
                 self.add_to_tabu(pair)
 
+            yield s
+
+        results.clear()
+
         # swap Drone - Technician
 
         for pair in itertools.permutations(range(solution.technicians_count), 2):
@@ -72,6 +76,10 @@ class Swappoint(D2DBaseNeighborhood[Tuple[int, int]]):
             else:
                 self.add_to_tabu(pair)
 
+            yield s
+
+        results.clear()
+
         # swap Technician - Drone
         for pair in itertools.permutations(range(solution.technicians_count), 2):
             x = next(bundles_iter)
@@ -90,6 +98,10 @@ class Swappoint(D2DBaseNeighborhood[Tuple[int, int]]):
 
             else:
                 self.add_to_tabu(pair)
+
+            yield s
+
+        results.clear()
 
         # swap Drone - Drone
         for pair in itertools.permutations(range(solution.drones_count), 2):
@@ -233,7 +245,6 @@ class Swappoint(D2DBaseNeighborhood[Tuple[int, int]]):
                     factory.add_to_pareto_set(results)
 
                     pair = ((first_path[first_point], first_path[first_point + neighborhood.length]), 0)
-                    return set((r, swaps_mapping[r]) for r in results)
                 for second_path_index, second_path in enumerate(second_paths):
                     for first_point in range(1, len(first_path) - neighborhood.length):
                         for second_location in range(1, len(second_path) - 1):
@@ -302,10 +313,10 @@ class Swappoint(D2DBaseNeighborhood[Tuple[int, int]]):
                     for location_tech in range(1, len(tech_path) - 1):
                         _first_path_drone = list(first_drone_path)
                         _tech_path = list(tech_path)
-                        _tech_path[location_tech:location_tech] = solution.technician_paths[technician][drone_point:drone_point + neighborhood.length]
+                        _tech_path[location_tech:location_tech] = solution.drone_paths[drone][drone_point:drone_point + neighborhood.length]
                         _first_path_drone[drone_point:drone_point + neighborhood.length] = []
 
-                        tech_arrival_timestamps = solution.calculate_technician_arrival_timestamps(tech_path)
+                        tech_arrival_timestamps = solution.calculate_technician_arrival_timestamps(_tech_path)
                         first_drone_arrival_timestamps = solution.calculate_drone_arrival_timestamps(
                             _first_path_drone,
                             config_index=solution.drone_config_mapping[drone],
@@ -325,7 +336,7 @@ class Swappoint(D2DBaseNeighborhood[Tuple[int, int]]):
                             arrival_timestamps=first_drone_arrival_timestamps,
                         )
                         factory = SolutionFactory(
-                            update_technicians=((technician, tuple(tech_path)),),
+                            update_technicians=((technician, tuple(_tech_path)),),
                             update_drones=((drone, first_drone_path_index, tuple(first_drone_path)),),
                             technician_timespans=tuple(_technician_timespans),
                             technician_waiting_times=tuple(_technician_total_waiting_times),
