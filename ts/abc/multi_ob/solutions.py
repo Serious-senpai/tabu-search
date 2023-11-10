@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 from .costs import BaseMulticostComparison
 from ..bases import BaseSolution
-from ...utils import zero
+from ...utils import ngettext, zero
 if TYPE_CHECKING:
     from .neighborhoods import MultiObjectiveNeighborhood
 
@@ -98,18 +98,22 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
 
         with Pool(pool_size) as pool:
             lock = threading.Lock()
+            last_improved = 0
             for iteration in iterations:
                 if isinstance(iterations, tqdm):
-                    iterations.set_description_str(f"Tabu search ({len(current)}/{len(results)} solution(s))")
+                    solution_display = ngettext(len(results) == 1, "solution", "solutions")
+                    iterations.set_description_str(f"Tabu search ({len(current)}/{len(results)} {solution_display})")
 
                 if logger is not None:
                     logger(f"Iteration #{iteration + 1}/{iterations_count}\n")
 
                 propagate: List[Self] = []
 
-                def process_solution(solution: Self) -> None:
+                def process_solution(solution: Self) -> bool:
                     neighborhoods = list(solution.get_neighborhoods())
                     random.shuffle(neighborhoods)
+
+                    improved = False
                     for neighborhood in neighborhoods:
                         propagated = False
 
@@ -118,7 +122,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
                                 candidate_costs.add(candidate.cost())
 
                             with lock:
-                                candidate.add_to_pareto_set(results)
+                                improved = improved or candidate.add_to_pareto_set(results)
 
                             if not candidate.to_propagate:
                                 continue
@@ -129,8 +133,12 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
                         if propagated:
                             break
 
+                    return improved
+
                 with p.ThreadPool(min(pool_size, len(current))) as thread_pool:
-                    thread_pool.map(process_solution, current)
+                    if any(thread_pool.map(process_solution, current)):
+                        last_improved = iteration
+
                     thread_pool.close()
                     thread_pool.join()
 
@@ -144,6 +152,9 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
 
                 else:
                     current = propagate
+
+                if logger is not None:
+                    logger(f"Last improvement: #{last_improved + 1}/{iterations_count}\n")
 
             results = set(r.post_optimization(pool=pool, pool_size=pool_size, use_tqdm=use_tqdm, logger=logger) for r in results)
 
