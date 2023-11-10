@@ -70,6 +70,7 @@ jobs:
         path: |
           output-**.json
           .coverage.**
+        retention-days: 1
 
   d2d-test:
     name: Solve D2D
@@ -141,6 +142,7 @@ jobs:
           output-*.json
           log-*.log.csv
           .coverage.*
+        retention-days: 1
 
   summary:
     name: Summarize solutions
