@@ -88,7 +88,6 @@ jobs:
         propagation_priority: ["", "--min-distance", "--max-distance"]
         max_propagation: [5]
         pool_size: [8]
-        drone_config_mapping: ["1 1 1 1", "3 3 3 3"]
         include:
         - problem: "100.10.1"
           iterations: 250
@@ -127,8 +126,7 @@ jobs:
         --pool-size ${{ matrix.pool_size }} \
         ${{ matrix.verbose }} \
         --dump output-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}.json \
-        --log log-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}.log.csv \
-        -c ${{ matrix.drone_config_mapping }}
+        --log log-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}.log.csv
 
     - name: Combine coverage reports
       run: |
