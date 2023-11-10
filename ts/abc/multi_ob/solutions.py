@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+import time
 import threading
 from functools import partial
 from multiprocessing import Pool, pool as p
@@ -99,13 +100,14 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
         with Pool(pool_size) as pool:
             lock = threading.Lock()
             last_improved = 0
+            start = time.perf_counter()
             for iteration in iterations:
                 if isinstance(iterations, tqdm):
                     solution_display = ngettext(len(results) == 1, "solution", "solutions")
                     iterations.set_description_str(f"Tabu search ({len(current)}/{len(results)} {solution_display})")
 
                 if logger is not None:
-                    logger(f"Iteration #{iteration + 1}/{iterations_count}\n")
+                    logger(f"Iteration #{iteration + 1}/{iterations_count},Solutions count,{len(results)},Timer (s),{time.perf_counter() - start:.4f}\n")
 
                 propagate: List[Self] = []
 
