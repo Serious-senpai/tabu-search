@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 
 from .costs import BaseCostComparison
 from ..bases import BaseSolution
+from ...utils import synchronized
 if TYPE_CHECKING:
     from .neighborhoods import SingleObjectiveNeighborhood
 
@@ -59,6 +60,9 @@ class SingleObjectiveSolution(BaseSolution, BaseCostComparison):
         iterations: Union[range, tqdm[int]] = range(iterations_count)
         if use_tqdm:
             iterations = tqdm(iterations, ascii=" █")
+
+        if logger is not None:
+            logger = synchronized(logger)
 
         with Pool(pool_size) as pool:
             last_improved = 0

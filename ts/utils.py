@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import platform
 import os
+import threading
 import sys
-from typing import Any, Literal
+from typing import Any, Callable, Literal, ParamSpec, TypeVar
 
 
 __all__ = (
@@ -10,6 +13,7 @@ __all__ = (
     "zero",
     "ngettext",
     "display_platform",
+    "synchronized",
 )
 
 
@@ -38,3 +42,17 @@ def display_platform() -> None:
     display += "-" * 30
 
     print(display)
+
+
+_P = ParamSpec("_P")
+_T = TypeVar("_T")
+
+
+def synchronized(func: Callable[_P, _T], /) -> Callable[_P, _T]:
+    lock = threading.Lock()
+
+    def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _T:
+        with lock:
+            return func(*args, **kwargs)
+
+    return wrapper
