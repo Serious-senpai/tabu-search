@@ -152,7 +152,7 @@ if __name__ == "__main__":
                 drone_paths=solution.drone_paths,
                 technician_paths=solution.technician_paths,
             )
-            if check.cost() != solution.cost():
+            if not utils.isclose(check.cost(), solution.cost()):
                 message = f"Incorrect solution cost: Expected {check.cost()}, got {solution.cost()}"
                 raise ValueError(message)
 
