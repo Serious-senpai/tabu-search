@@ -340,7 +340,7 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                         _drone_timespans[drone] += drone_arrival_timestamps[-1] - solution.drone_arrival_timestamps[drone][drone_path_index][-1]
 
                         _technician_total_waiting_times = list(solution.technician_waiting_times)
-                        _technician_total_waiting_times[technician] = solution.calculate_drone_total_waiting_time(_tech_path, arrival_timestamps=tech_arrival_timestamps)
+                        _technician_total_waiting_times[technician] = solution.calculate_technician_total_waiting_time(_tech_path, arrival_timestamps=tech_arrival_timestamps)
 
                         _drone_total_waiting_times = list(list(w) for w in solution.drone_waiting_times)
                         _drone_total_waiting_times[drone][drone_path_index] = solution.calculate_drone_total_waiting_time(
@@ -409,7 +409,7 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                     _drone_timespans[drone] += drone_arrival_timestamps[-1] - drone_arrival_timestamps[0]
 
                     _technician_total_waiting_times = list(solution.technician_waiting_times)
-                    _technician_total_waiting_times[technician] = solution.calculate_drone_total_waiting_time(_tech_path, arrival_timestamps=tech_arrival_timestamps)
+                    _technician_total_waiting_times[technician] = solution.calculate_technician_total_waiting_time(_tech_path, arrival_timestamps=tech_arrival_timestamps)
 
                     _drone_total_waiting_times = list(list(w) for w in solution.drone_waiting_times)
                     _drone_total_waiting_times[drone].append(
@@ -461,7 +461,7 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                         _drone_timespans[drone] += drone_arrival_timestamps[-1] - solution.drone_arrival_timestamps[drone][drone_path_index][-1]
 
                         _technician_total_waiting_times = list(solution.technician_waiting_times)
-                        _technician_total_waiting_times[technician] = solution.calculate_drone_total_waiting_time(_tech_path, arrival_timestamps=tech_arrival_timestamps)
+                        _technician_total_waiting_times[technician] = solution.calculate_technician_total_waiting_time(_tech_path, arrival_timestamps=tech_arrival_timestamps)
 
                         _drone_total_waiting_times = list(list(w) for w in solution.drone_waiting_times)
                         _drone_total_waiting_times[drone][drone_path_index] = solution.calculate_drone_total_waiting_time(
