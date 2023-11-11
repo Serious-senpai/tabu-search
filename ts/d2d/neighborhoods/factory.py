@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Sequence, Tuple, TYPE_CHECKING
+from typing import List, Sequence, Tuple, TYPE_CHECKING
 
 from ..mixins import SolutionMetricsMixin
 if TYPE_CHECKING:
@@ -49,14 +49,33 @@ class SolutionFactory(SolutionMetricsMixin):
         if len(self.__append_drones) + len(self.__update_drones) > 0:
             _drone_paths = list(list(paths) for paths in __s.drone_paths)
             for drone, new_path in self.__append_drones:
-                _drone_paths[drone].append(new_path)
+                if new_path != (0, 0):
+                    _drone_paths[drone].append(new_path)
 
+            to_remove: List[Tuple[int, int]] = []
             for drone, drone_path_index, new_path in self.__update_drones:
                 _drone_paths[drone][drone_path_index] = new_path
+                if new_path == (0, 0):
+                    to_remove.append((drone_path_index, drone))
+
+            if len(to_remove) > 0:
+                _drone_waiting_times = list(list(p) for p in self.drone_waiting_times)
+
+                to_remove.sort(reverse=True)
+                for drone_path_index, drone in to_remove:
+                    _drone_paths[drone].pop(drone_path_index)
+                    _drone_waiting_times[drone].pop(drone_path_index)
+
+                drone_waiting_times = tuple(tuple(p) for p in _drone_waiting_times)
+
+            else:
+                drone_waiting_times = self.drone_waiting_times
 
             drone_paths = tuple(tuple(paths) for paths in _drone_paths)
+            assert len(drone_paths) == len(drone_waiting_times)
 
         else:
+            drone_waiting_times = self.drone_waiting_times
             drone_paths = __s.drone_paths
 
         if len(self.__update_technicians) > 0:
@@ -73,6 +92,10 @@ class SolutionFactory(SolutionMetricsMixin):
         return cls(
             drone_paths=drone_paths,
             technician_paths=technician_paths,
+            drone_timespans=self.drone_timespans,
+            drone_waiting_times=drone_waiting_times,
+            technician_timespans=self.technician_timespans,
+            technician_waiting_times=self.technician_waiting_times,
         )
 
     def __hash__(self) -> int:

@@ -300,7 +300,12 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         vertical_time = config.altitude * (1 / config.takeoff_speed + 1 / config.landing_speed)
 
         for index in path[1:]:
-            result.append(result[-1] + cls.drone_service_time[last] + vertical_time + cls.distances[last][index] / config.cruise_speed)
+            if index == last:
+                shift = 0.0
+            else:
+                shift = cls.drone_service_time[last] + vertical_time + cls.distances[last][index] / config.cruise_speed
+
+            result.append(result[-1] + shift)
             last = index
 
         return tuple(result)
