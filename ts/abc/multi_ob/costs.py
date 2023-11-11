@@ -5,6 +5,8 @@ from typing import Set, Tuple, TYPE_CHECKING, final
 if TYPE_CHECKING:
     from typing_extensions import Self
 
+from ...utils import isclose
+
 
 __all__ = ("BaseMulticostComparison",)
 
@@ -23,7 +25,18 @@ class BaseMulticostComparison:
     @final
     def dominate(self, other: Self) -> bool:
         """Whether this object dominates another one"""
-        return all(f <= s for f, s in zip(self.cost(), other.cost())) and any(f < s for f, s in zip(self.cost(), other.cost()))
+        result = False
+        for f, s in zip(self.cost(), other.cost()):
+            if isclose(f, s):
+                continue
+
+            if f > s:
+                return False
+
+            if f < s:
+                result = True
+
+        return result
 
     @final
     def add_to_pareto_set(self, __s: Set[Self], /) -> bool:
