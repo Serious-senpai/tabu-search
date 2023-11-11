@@ -23,7 +23,7 @@ class BaseMulticostComparison:
     @final
     def dominate(self, other: Self) -> bool:
         """Whether this object dominates another one"""
-        return all(f <= s for f, s in zip(self.cost(), other.cost()))
+        return all(f <= s for f, s in zip(self.cost(), other.cost())) and any(f < s for f, s in zip(self.cost(), other.cost()))
 
     @final
     def add_to_pareto_set(self, __s: Set[Self], /) -> bool:
