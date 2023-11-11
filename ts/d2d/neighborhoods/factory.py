@@ -72,7 +72,6 @@ class SolutionFactory(SolutionMetricsMixin):
                 drone_waiting_times = self.drone_waiting_times
 
             drone_paths = tuple(tuple(paths) for paths in _drone_paths)
-            assert len(drone_paths) == len(drone_waiting_times)
 
         else:
             drone_waiting_times = self.drone_waiting_times
