@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import platform
+import math
 import os
 import threading
 import sys
-from typing import Any, Callable, Literal, ParamSpec, TypeVar
+from typing import Any, Callable, Literal, ParamSpec, Sequence, TypeVar, TYPE_CHECKING, overload
 
 
 __all__ = (
@@ -14,6 +15,7 @@ __all__ = (
     "ngettext",
     "display_platform",
     "synchronized",
+    "isclose",
 )
 
 
@@ -44,8 +46,9 @@ def display_platform() -> None:
     print(display)
 
 
-_P = ParamSpec("_P")
-_T = TypeVar("_T")
+if TYPE_CHECKING:
+    _P = ParamSpec("_P")
+    _T = TypeVar("_T")
 
 
 def synchronized(func: Callable[_P, _T], /) -> Callable[_P, _T]:
@@ -56,3 +59,58 @@ def synchronized(func: Callable[_P, _T], /) -> Callable[_P, _T]:
             return func(*args, **kwargs)
 
     return wrapper
+
+
+@overload
+def isclose(
+    first: float,
+    second: float,
+    /,
+) -> bool: ...
+
+
+@overload
+def isclose(
+    first: Sequence[float],
+    second: Sequence[float],
+    /,
+) -> bool: ...
+
+
+@overload
+def isclose(
+    first: Sequence[Sequence[float]],
+    second: Sequence[Sequence[float]],
+    /,
+) -> bool: ...
+
+
+@overload
+def isclose(
+    first: Sequence[Sequence[Sequence[float]]],
+    second: Sequence[Sequence[Sequence[float]]],
+    /,
+) -> bool: ...
+
+
+@overload
+def isclose(
+    first: Sequence[Sequence[Sequence[Sequence[float]]]],
+    second: Sequence[Sequence[Sequence[Sequence[float]]]],
+    /,
+) -> bool: ...
+
+
+@overload
+def isclose(
+    first: Sequence[Sequence[Sequence[Sequence[Sequence[float]]]]],
+    second: Sequence[Sequence[Sequence[Sequence[Sequence[float]]]]],
+    /,
+) -> bool: ...
+
+
+def isclose(first: Any, second: Any, /) -> bool:
+    try:
+        return all(isclose(f, s) for f, s in zip(first, second))
+    except TypeError:
+        return math.isclose(first, second, rel_tol=0.001, abs_tol=0.001)

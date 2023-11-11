@@ -178,7 +178,7 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                     )
 
                     if factory.add_to_pareto_set(results):
-                        swaps_mapping[factory] = ((i_path[point_i], i_path[point_i + neighborhood.length - 1]), pj[location_j])
+                        swaps_mapping[factory] = ((i_path[point_i], i_path[point_i + neighborhood.length - 1]), j_path[location_j])
 
         return set((r, swaps_mapping[r]) for r in results)
 
@@ -228,7 +228,7 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
 
                         _drone_timespans = list(solution.drone_timespans)
                         _drone_timespans[first_drone] += first_arrival_timestamps[-1] - solution.drone_arrival_timestamps[first_drone][first_path_index][-1]
-                        _drone_timespans[second_drone] += second_arrival_timestamps[-1]
+                        _drone_timespans[second_drone] += second_arrival_timestamps[-1] - second_arrival_timestamps[0]
 
                         _drone_waiting_times = list(list(w) for w in solution.drone_waiting_times)
                         _drone_waiting_times[first_drone][first_path_index] = solution.calculate_drone_total_waiting_time(
@@ -248,7 +248,7 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                             technician_timespans=solution.technician_timespans,
                             technician_waiting_times=solution.technician_waiting_times,
                             drone_timespans=tuple(_drone_timespans),
-                            drone_waiting_times=tuple(tuple(w) for w in solution.drone_waiting_times),
+                            drone_waiting_times=tuple(tuple(w) for w in _drone_waiting_times),
                         )
                         if factory.add_to_pareto_set(results):
                             swaps_mapping[factory] = ((first_path[first_point], first_path[first_point + neighborhood.length - 1]), 0)
@@ -293,12 +293,13 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                             _drone_waiting_times = list(list(w) for w in solution.drone_waiting_times)
                             _drone_waiting_times[first_drone][first_path_index] = solution.calculate_drone_total_waiting_time(p1, arrival_timestamps=first_arrival_timestamps)
                             _drone_waiting_times[second_drone][second_path_index] = solution.calculate_drone_total_waiting_time(p2, arrival_timestamps=second_arrival_timestamps)
+
                             factory = SolutionFactory(
                                 update_drones=((first_drone, first_path_index, tuple(p1)), (second_drone, second_path_index, tuple(p2))),
                                 technician_timespans=solution.technician_timespans,
                                 technician_waiting_times=solution.technician_waiting_times,
                                 drone_timespans=tuple(_drone_timespans),
-                                drone_waiting_times=tuple(tuple(w) for w in solution.drone_waiting_times),
+                                drone_waiting_times=tuple(tuple(w) for w in _drone_waiting_times),
                             )
                             if factory.add_to_pareto_set(results):
                                 swaps_mapping[factory] = ((first_path[first_point], first_path[first_point + neighborhood.length - 1]), second_path[second_location])
@@ -339,7 +340,7 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                         _drone_timespans[drone] += drone_arrival_timestamps[-1] - solution.drone_arrival_timestamps[drone][drone_path_index][-1]
 
                         _technician_total_waiting_times = list(solution.technician_waiting_times)
-                        _technician_total_waiting_times[technician] = solution.calculate_drone_total_waiting_time(_tech_path, arrival_timestamps=tech_arrival_timestamps)
+                        _technician_total_waiting_times[technician] = solution.calculate_technician_total_waiting_time(_tech_path, arrival_timestamps=tech_arrival_timestamps)
 
                         _drone_total_waiting_times = list(list(w) for w in solution.drone_waiting_times)
                         _drone_total_waiting_times[drone][drone_path_index] = solution.calculate_drone_total_waiting_time(
@@ -405,10 +406,10 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                     _technician_timespans[technician] = tech_arrival_timestamps[-1]
 
                     _drone_timespans = list(solution.drone_timespans)
-                    _drone_timespans[drone] += drone_arrival_timestamps[-1]
+                    _drone_timespans[drone] += drone_arrival_timestamps[-1] - drone_arrival_timestamps[0]
 
                     _technician_total_waiting_times = list(solution.technician_waiting_times)
-                    _technician_total_waiting_times[technician] = solution.calculate_drone_total_waiting_time(_tech_path, arrival_timestamps=tech_arrival_timestamps)
+                    _technician_total_waiting_times[technician] = solution.calculate_technician_total_waiting_time(_tech_path, arrival_timestamps=tech_arrival_timestamps)
 
                     _drone_total_waiting_times = list(list(w) for w in solution.drone_waiting_times)
                     _drone_total_waiting_times[drone].append(
@@ -460,7 +461,7 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                         _drone_timespans[drone] += drone_arrival_timestamps[-1] - solution.drone_arrival_timestamps[drone][drone_path_index][-1]
 
                         _technician_total_waiting_times = list(solution.technician_waiting_times)
-                        _technician_total_waiting_times[technician] = solution.calculate_drone_total_waiting_time(_tech_path, arrival_timestamps=tech_arrival_timestamps)
+                        _technician_total_waiting_times[technician] = solution.calculate_technician_total_waiting_time(_tech_path, arrival_timestamps=tech_arrival_timestamps)
 
                         _drone_total_waiting_times = list(list(w) for w in solution.drone_waiting_times)
                         _drone_total_waiting_times[drone][drone_path_index] = solution.calculate_drone_total_waiting_time(
