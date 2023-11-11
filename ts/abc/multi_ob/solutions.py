@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 from .costs import BaseMulticostComparison
 from ..bases import BaseSolution
-from ...utils import ngettext, zero
+from ...utils import ngettext, synchronized, zero
 if TYPE_CHECKING:
     from .neighborhoods import MultiObjectiveNeighborhood
 
@@ -90,6 +90,9 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
         iterations: Union[range, tqdm[int]] = range(iterations_count)
         if use_tqdm:
             iterations = tqdm(iterations, ascii=" █")
+
+        if logger is not None:
+            logger = synchronized(logger)
 
         current = [initial]
         candidate_costs = {initial.cost()} if plot_pareto_front else None
