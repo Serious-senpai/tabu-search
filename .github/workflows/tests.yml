@@ -178,6 +178,7 @@ jobs:
 
     - name: Summarize solutions
       run: |
+        export PYTHONPATH=$GITHUB_WORKSPACE
         python scripts/tsp-summary.py
         python scripts/d2d-summary.py
 
@@ -202,5 +203,6 @@ jobs:
       env:
         HARUKA_TOKEN: ${{ secrets.HARUKA_TOKEN }}
       run: |
+        export PYTHONPATH=$GITHUB_WORKSPACE
         find (tsp-summary/ d2d-summary/ -name "*.csv"; echo coverage-html/) | tar -cf summary.tar -T -
         python scripts/upload.py summary.tar tabu-search-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}.tar
