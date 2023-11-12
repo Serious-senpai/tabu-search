@@ -203,4 +203,4 @@ jobs:
         HARUKA_TOKEN: ${{ secrets.HARUKA_TOKEN }}
       run: |
         find (tsp-summary/ d2d-summary/ -name "*.csv"; echo coverage-html/) | tar -cf summary.tar -T -
-        python scripts/upload.py summary.tar
+        python scripts/upload.py summary.tar tabu-search-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}.tar
