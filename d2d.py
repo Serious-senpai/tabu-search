@@ -140,6 +140,7 @@ if __name__ == "__main__":
                 logfile.close()
 
         print(f"Found {len(solutions)} " + utils.ngettext(len(solutions) == 1, "solution", "solutions") + ":")
+        errors: List[str] = []
         for index, solution in enumerate(solutions):
             print(f"SOLUTION #{index + 1}: cost = {solution.cost()}")
             print("\n".join(f"Drone #{drone_index + 1}: {paths}" for drone_index, paths in enumerate(solution.drone_paths)))
@@ -153,9 +154,9 @@ if __name__ == "__main__":
                 technician_paths=solution.technician_paths,
             )
 
-            errors: List[str] = []
+            errors_messages: List[str] = []
             if not utils.isclose(check.cost(), solution.cost()):
-                errors.append(f"Incorrect solution cost: Expected {check.cost()}, got {solution.cost()}")
+                errors_messages.append(f"Incorrect solution cost: Expected {check.cost()}, got {solution.cost()}")
 
             for attr in (
                 "drone_timespans",
@@ -166,10 +167,14 @@ if __name__ == "__main__":
                 check_attr = getattr(check, attr)
                 solution_attr = getattr(solution, attr)
                 if not utils.isclose(check_attr, solution_attr):
-                    errors.append(f"Incorrect {attr}: Expected {check_attr}, got {solution_attr}")
+                    errors_messages.append(f"Incorrect {attr}: Expected {check_attr}, got {solution_attr}")
 
-            if len(errors) > 0:
-                raise ValueError("\n".join(errors))
+            if len(errors_messages) > 0:
+                errors.append(f"At solution #{index + 1}:")
+                errors.extend(errors_messages)
+
+        if len(errors) > 0:
+            raise ValueError(f"Some calculations were incorrect:\n" + "\n".join(errors))
 
     if namespace.dump is not None:
         with open(namespace.dump, "w") as f:
