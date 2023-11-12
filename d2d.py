@@ -152,9 +152,25 @@ if __name__ == "__main__":
                 drone_paths=solution.drone_paths,
                 technician_paths=solution.technician_paths,
             )
+
+            errors: List[str] = []
             if not utils.isclose(check.cost(), solution.cost()):
-                message = f"Incorrect solution cost: Expected {check.cost()}, got {solution.cost()}"
-                raise ValueError(message)
+                errors.append(f"Incorrect solution cost: Expected {check.cost()}, got {solution.cost()}")
+
+            if not utils.isclose(check.drone_timespans, solution.drone_timespans):
+                errors.append(f"Incorrect drone timespans: Expected {check.drone_timespans}, got {solution.drone_timespans}")
+
+            if not utils.isclose(check.technician_timespans, solution.technician_timespans):
+                errors.append(f"Incorrect technician timespans: Expected {check.technician_timespans}, got {solution.technician_timespans}")
+
+            if not utils.isclose(check.drone_waiting_times, solution.drone_waiting_times):
+                errors.append(f"Incorrect drone waiting times: Expected {check.drone_waiting_times}, got {solution.drone_waiting_times}")
+
+            if not utils.isclose(check.technician_waiting_times, solution.technician_waiting_times):
+                errors.append(f"Incorrect technician waiting times: Expected {check.technician_waiting_times}, got {solution.technician_waiting_times}")
+
+            if len(errors) > 0:
+                raise ValueError("\n".join(errors))
 
     if namespace.dump is not None:
         with open(namespace.dump, "w") as f:
