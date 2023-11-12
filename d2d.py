@@ -4,7 +4,7 @@ import argparse
 import cProfile
 import json
 import os
-from typing import Any, Callable, Dict, List, Literal, Optional, Set, TYPE_CHECKING
+from typing import Any, Callable, Dict, List, Literal, Optional, Set, Tuple, TYPE_CHECKING
 
 from ts import d2d, utils
 
@@ -22,7 +22,7 @@ class Namespace(argparse.Namespace):
         energy_mode: Literal["linear", "non-linear"]
         max_distance: bool
         min_distance: bool
-        max_propagation: Optional[int]
+        max_propagation: int
         profile: bool
         verbose: bool
         dump: Optional[str]
@@ -37,6 +37,24 @@ def to_json(solution: d2d.D2DPathSolution) -> Dict[str, Any]:
         "drone_paths": solution.drone_paths,
         "technician_paths": solution.technician_paths,
     }
+
+
+def _max_distance_key(pareto_costs: Set[Tuple[float, ...]], candidate: d2d.D2DPathSolution, /) -> float:
+    cost = candidate.cost()
+    result = 0.0
+    for s in pareto_costs:
+        result += abs(s[0] - cost[0]) + abs(s[1] - cost[1])
+
+    return -result
+
+
+def _min_distance_key(pareto_costs: Set[Tuple[float, ...]], candidate: d2d.D2DPathSolution, /) -> float:
+    cost = candidate.cost()
+    result = 0.0
+    for s in pareto_costs:
+        result += abs(s[0] - cost[0]) + abs(s[1] - cost[1])
+
+    return result
 
 
 if __name__ == "__main__":
@@ -81,31 +99,15 @@ if __name__ == "__main__":
             message = "--max-distance and --min-distance are mutually exclusive"
             raise ValueError(message)
 
-        propagation_priority_key: Callable[[Set[d2d.D2DPathSolution], d2d.D2DPathSolution], float] = utils.zero
         propagation_priority: Optional[str] = None
+        propagation_priority_key: Optional[Callable[[Set[Tuple[float, ...]], d2d.D2DPathSolution], float]] = None
         if namespace.max_distance:
             propagation_priority = "max-distance"
-
-            def propagation_priority_key(pareto_set: Set[d2d.D2DPathSolution], candidate: d2d.D2DPathSolution, /) -> float:
-                cost = candidate.cost()
-                result = 0.0
-                for s in pareto_set:
-                    s_cost = s.cost()
-                    result += abs(s_cost[0] - cost[0]) + abs(s_cost[1] - cost[1])
-
-                return -result
+            propagation_priority_key = _max_distance_key
 
         if namespace.min_distance:
             propagation_priority = "min-distance"
-
-            def propagation_priority_key(pareto_set: Set[d2d.D2DPathSolution], candidate: d2d.D2DPathSolution, /) -> float:
-                cost = candidate.cost()
-                result = 0.0
-                for s in pareto_set:
-                    s_cost = s.cost()
-                    result += abs(s_cost[0] - cost[0]) + abs(s_cost[1] - cost[1])
-
-                return result
+            propagation_priority_key = _min_distance_key
 
         logfile = None if namespace.log is None else open(namespace.log, "w")
         try:

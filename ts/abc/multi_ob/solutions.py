@@ -5,7 +5,7 @@ import time
 import threading
 from functools import partial
 from multiprocessing import Pool, pool as p
-from typing import Any, Callable, List, Optional, Sequence, Set, Union, TYPE_CHECKING
+from typing import Any, Callable, List, Optional, Sequence, Set, Tuple, Union, TYPE_CHECKING
 
 from matplotlib import axes, pyplot
 from tqdm import tqdm
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 from .costs import BaseMulticostComparison
 from ..bases import BaseSolution
-from ...utils import ngettext, synchronized, zero
+from ...utils import ngettext, synchronized
 if TYPE_CHECKING:
     from .neighborhoods import MultiObjectiveNeighborhood
 
@@ -49,8 +49,8 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
         pool_size: int,
         iterations_count: int,
         use_tqdm: bool,
-        propagation_priority_key: Callable[[Set[Self], Self], float] = zero,
-        max_propagation: Union[int, Callable[[Set[Self]], int], None] = None,
+        propagation_priority_key: Optional[Callable[[Set[Tuple[float, ...]], Self], float]] = None,
+        max_propagation: int,
         plot_pareto_front: bool = False,
         logger: Optional[Callable[[str], Any]] = None,
     ) -> Set[Self]:
@@ -65,9 +65,8 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
         use_tqdm:
             Whether to display the progress bar
         propagation_priority_key:
-            A function taking 2 arguments: The first one is the currently considered Pareto front, the second one is the solution S.
-            The less the returned value, the more likely the solution S is added to the search tree. The provided function mustn't
-            change the Pareto front by any means
+            A function taking 2 arguments: The first one is the set of costs of current Pareto-optimal solutions, the second one is
+            the solution S. The less the returned value, the more likely the solution S will be added to the propagation tree.
         max_propagation:
             An integer or a function that takes the current Pareto front as a single parameter and return the maximum number of
             propagating solutions at a time
@@ -148,13 +147,10 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
                 if len(propagate) == 0:
                     propagate = [solution.shuffle(use_tqdm=use_tqdm, logger=logger) for solution in current]
 
-                if max_propagation is not None:
-                    max_propagation_value = max_propagation if isinstance(max_propagation, int) else max_propagation(results)
-                    propagate.sort(key=partial(propagation_priority_key, results))
-                    current = propagate[:max_propagation_value]
+                if propagation_priority_key is not None:
+                    propagate.sort(key=partial(propagation_priority_key, set(s.cost() for s in results)))
 
-                else:
-                    current = propagate
+                current = propagate[:max_propagation]
 
                 if logger is not None:
                     logger(f"Last improvement: #{last_improved + 1}/{iterations_count}\n")
@@ -172,13 +168,15 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
                 [cost[0] for cost in candidate_costs],
                 [cost[1] for cost in candidate_costs],
                 c="gray",
-                label=f"Found solutions ({len(candidate_costs)})",
+                label=f"Distinct costs found ({len(candidate_costs)})",
             )
+
+            result_costs = set(result.cost() for result in results)
             ax.scatter(
-                [result.cost()[0] for result in results],
-                [result.cost()[1] for result in results],
+                [cost[0] for cost in result_costs],
+                [cost[1] for cost in result_costs],
                 c="red",
-                label=f"Pareto front ({len(results)})",
+                label=f"Pareto front, distinct costs ({len(result_costs)})",
             )
 
             ax.grid(True)
