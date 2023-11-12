@@ -173,9 +173,6 @@ if __name__ == "__main__":
                 errors.append(f"At solution #{index + 1}:")
                 errors.extend(errors_messages)
 
-        if len(errors) > 0:
-            raise ValueError(f"Some calculations were incorrect:\n" + "\n".join(errors))
-
     if namespace.dump is not None:
         with open(namespace.dump, "w") as f:
             data = {
@@ -189,3 +186,6 @@ if __name__ == "__main__":
             json.dump(data, f)
 
         print(f"Saved solution to {namespace.dump!r}")
+
+    if len(errors) > 0:
+        raise ValueError(f"Some calculations were incorrect:\n" + "\n".join(errors))

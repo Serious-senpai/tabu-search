@@ -130,12 +130,14 @@ jobs:
         --log log-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}.log.csv
 
     - name: Combine coverage reports
+      if: always()
       run: |
         coverage combine
         mv .coverage .coverage.${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}
 
     - name: Upload solution
       uses: actions/upload-artifact@v3
+      if: always()
       with:
         name: d2d-summary
         path: |
