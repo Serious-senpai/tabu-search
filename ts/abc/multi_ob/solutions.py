@@ -123,17 +123,15 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
                         propagated = False
 
                         for candidate in neighborhood.find_best_candidates(pool=pool, pool_size=pool_size, logger=logger):
-                            if candidate_costs is not None:
-                                candidate_costs.add(candidate.cost())
-
                             with lock:
+                                if candidate_costs is not None:
+                                    candidate_costs.add(candidate.cost())
+
                                 improved = improved or candidate.add_to_pareto_set(results)
 
-                            if not candidate.to_propagate:
-                                continue
-
-                            propagated = True
-                            propagate.append(candidate)
+                                if candidate.to_propagate:
+                                    propagated = True
+                                    propagate.append(candidate)
 
                         if propagated:
                             break

@@ -157,17 +157,16 @@ if __name__ == "__main__":
             if not utils.isclose(check.cost(), solution.cost()):
                 errors.append(f"Incorrect solution cost: Expected {check.cost()}, got {solution.cost()}")
 
-            if not utils.isclose(check.drone_timespans, solution.drone_timespans):
-                errors.append(f"Incorrect drone timespans: Expected {check.drone_timespans}, got {solution.drone_timespans}")
-
-            if not utils.isclose(check.technician_timespans, solution.technician_timespans):
-                errors.append(f"Incorrect technician timespans: Expected {check.technician_timespans}, got {solution.technician_timespans}")
-
-            if not utils.isclose(check.drone_waiting_times, solution.drone_waiting_times):
-                errors.append(f"Incorrect drone waiting times: Expected {check.drone_waiting_times}, got {solution.drone_waiting_times}")
-
-            if not utils.isclose(check.technician_waiting_times, solution.technician_waiting_times):
-                errors.append(f"Incorrect technician waiting times: Expected {check.technician_waiting_times}, got {solution.technician_waiting_times}")
+            for attr in (
+                "drone_timespans",
+                "technician_timespans",
+                "drone_waiting_times",
+                "technician_waiting_times",
+            ):
+                check_attr = getattr(check, attr)
+                solution_attr = getattr(solution, attr)
+                if not utils.isclose(check_attr, solution_attr):
+                    errors.append(f"Incorrect {attr}: Expected {check_attr}, got {solution_attr}")
 
             if len(errors) > 0:
                 raise ValueError("\n".join(errors))
