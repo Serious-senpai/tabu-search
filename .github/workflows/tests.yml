@@ -178,8 +178,9 @@ jobs:
 
     - name: Summarize solutions
       run: |
-        python tsp-summary.py
-        python d2d-summary.py
+        export PYTHONPATH=$GITHUB_WORKSPACE
+        python scripts/tsp-summary.py
+        python scripts/d2d-summary.py
 
     - name: Combine coverage results
       run: |
@@ -189,7 +190,7 @@ jobs:
     - name: Report coverage results
       run: coverage report
 
-    - name: Upload summary
+    - name: Upload summary as artifacts
       uses: actions/upload-artifact@v3
       with:
         name: summary

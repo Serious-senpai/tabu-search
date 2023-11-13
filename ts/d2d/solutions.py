@@ -361,13 +361,13 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
             arrival_timestamps = cls.calculate_drone_arrival_timestamps(path, config_index=config_index, offset=offset)
 
         result = 0.0
-        for path_index, index in enumerate(path):
+        for path_index, index in enumerate(path[1:-1], start=1):
             result += arrival_timestamps[-1] - arrival_timestamps[path_index] - cls.drone_service_time[index]
 
         return result
 
     @classmethod
-    def calculate_technician_arrival_timestamps(cls, path: Sequence[int]) -> Tuple[float, ...]:
+    def calculate_technician_arrival_timestamps(cls, path: Sequence[int], /) -> Tuple[float, ...]:
         """Calculate the arrival timestamps for the given technician path
 
         Parameters
@@ -431,13 +431,13 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
             arrival_timestamps = cls.calculate_technician_arrival_timestamps(path)
 
         result = 0.0
-        for path_index, index in enumerate(path):
+        for path_index, index in enumerate(path[1:-1], start=1):
             result += arrival_timestamps[-1] - arrival_timestamps[path_index] - cls.technician_service_time[index]
 
         return result
 
     @classmethod
-    def calculate_total_weight(cls, path: Sequence[int]) -> float:
+    def calculate_total_weight(cls, path: Sequence[int], /) -> float:
         """Calculate the total weight of all waypoints along the given path"""
         return sum(cls.demands[index] for index in path)
 
@@ -708,7 +708,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, D2DPathSolution):
             return self.drone_paths == other.drone_paths and self.technician_paths == other.technician_paths
-        
+
         return NotImplemented
 
 

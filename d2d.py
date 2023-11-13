@@ -152,9 +152,24 @@ if __name__ == "__main__":
                 drone_paths=solution.drone_paths,
                 technician_paths=solution.technician_paths,
             )
+
+            errors: List[str] = []
             if not utils.isclose(check.cost(), solution.cost()):
-                message = f"Incorrect solution cost: Expected {check.cost()}, got {solution.cost()}"
-                raise ValueError(message)
+                errors.append(f"Incorrect solution cost: Expected {check.cost()}, got {solution.cost()}")
+
+            for attr in (
+                "drone_timespans",
+                "technician_timespans",
+                "drone_waiting_times",
+                "technician_waiting_times",
+            ):
+                check_attr = getattr(check, attr)
+                solution_attr = getattr(solution, attr)
+                if not utils.isclose(check_attr, solution_attr):
+                    errors.append(f"Incorrect {attr}: Expected {check_attr}, got {solution_attr}")
+
+            if len(errors) > 0:
+                raise ValueError("\n".join(errors))
 
     if namespace.dump is not None:
         with open(namespace.dump, "w") as f:
