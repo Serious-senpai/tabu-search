@@ -176,6 +176,10 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
             pool.close()
             pool.join()
 
+        if len(set(results)) != len(results):
+            message = f"Check {results.__class__.__name__}.__len__"
+            raise RuntimeError(message)
+
         if pareto_costs is not None:
             assert pareto_costs == set(s.cost() for s in results)
 

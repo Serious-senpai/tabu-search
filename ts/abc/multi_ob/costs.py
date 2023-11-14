@@ -119,20 +119,5 @@ class ParetoSet(Generic[_ST]):
     def __len__(self) -> int:
         return self.__length
 
-    def __iter__(self) -> __ParetoSetIterator[_ST]:
-        return __ParetoSetIterator(self)
-
-
-class __ParetoSetIterator(Generic[_ST]):
-
-    __slots__ = (
-        "__pareto_set_iter",
-    )
-    if TYPE_CHECKING:
-        __pareto_set_iter: Iterator[_ST]
-
-    def __init__(self, __s: ParetoSet[_ST], /) -> None:
-        self.__pareto_set_iter = itertools.chain(*__s.__cost_to_solutions.values())
-
-    def __next__(self) -> _ST:
-        return next(self.__pareto_set_iter)
+    def __iter__(self) -> Iterator[_ST]:
+        return itertools.chain(*self.__cost_to_solutions.values())
