@@ -49,7 +49,7 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
             for s in collected:
                 for result, pair in s:
                     with lock:
-                        if result.add_to_pareto_set(results):
+                        if result.add_to_pareto_set(results)[0]:
                             swaps_mapping[result] = pair
 
         def drone_drone_swap() -> p.MapResult[Set[Tuple[SolutionFactory, Tuple[int, int]]]]:
@@ -252,7 +252,7 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
                     technician_waiting_times=solution.technician_waiting_times,
                 )
 
-                if factory.add_to_pareto_set(results):
+                if factory.add_to_pareto_set(results)[0]:
                     swaps_mapping[factory] = (
                         (first_path[first_start], first_path[first_start + first_length - 1]),
                         (second_path[second_start], second_path[second_start + second_length - 1]),
@@ -307,7 +307,7 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
                     technician_waiting_times=tuple(_technician_total_waiting_times),
                 )
 
-                if factory.add_to_pareto_set(results):
+                if factory.add_to_pareto_set(results)[0]:
                     swaps_mapping[factory] = (
                         (first_path[first_start], first_path[first_start + first_length - 1]),
                         (second_path[second_start], second_path[second_start + second_length - 1]),
@@ -374,7 +374,7 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
                             technician_waiting_times=tuple(_technician_waiting_times),
                         )
 
-                        if factory.add_to_pareto_set(results):
+                        if factory.add_to_pareto_set(results)[0]:
                             swaps_mapping[factory] = (
                                 (technician_path[technician_start], technician_path[technician_start + technician_length - 1]),
                                 (drone_path[drone_start], drone_path[drone_start + drone_length - 1]),
@@ -443,7 +443,7 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
                         technician_waiting_times=solution.technician_waiting_times,
                     )
 
-                    if factory.add_to_pareto_set(results):
+                    if factory.add_to_pareto_set(results)[0]:
                         swaps_mapping[factory] = (
                             (path[first_index], path[first_index + first_length - 1]),
                             (path[second_index], path[second_index + second_length - 1]),
@@ -490,7 +490,7 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
                         technician_waiting_times=tuple(_technician_waiting_times),
                     )
 
-                    if factory.add_to_pareto_set(results):
+                    if factory.add_to_pareto_set(results)[0]:
                         swaps_mapping[factory] = (
                             (path[first_index], path[first_index + first_length - 1]),
                             (path[second_index], path[second_index + second_length - 1]),
