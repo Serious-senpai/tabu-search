@@ -127,6 +127,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
 
     @property
     def to_propagate(self) -> bool:
+        """Set this to `False` if this solution is a result of a tabu-ed operation."""
         return self._to_propagate
 
     @to_propagate.setter

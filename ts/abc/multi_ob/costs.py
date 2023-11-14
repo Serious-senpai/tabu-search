@@ -12,6 +12,7 @@ __all__ = ("BaseMulticostComparison",)
 
 
 class BaseMulticostComparison:
+    """Base class for objects holding a vector as their costs"""
 
     __slots__ = ()
 

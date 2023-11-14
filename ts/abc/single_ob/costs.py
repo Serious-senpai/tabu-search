@@ -9,6 +9,7 @@ __all__ = ("BaseCostComparison",)
 
 @total_ordering
 class BaseCostComparison:
+    """Base class for objects holding a real-valued number as their costs"""
 
     __slots__ = ()
 

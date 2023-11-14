@@ -4,7 +4,7 @@ import argparse
 import cProfile
 import json
 import os
-from typing import Any, Callable, Dict, List, Literal, Optional, Set, TYPE_CHECKING
+from typing import Any, Callable, Dict, List, Literal, Optional, Set, Tuple, TYPE_CHECKING
 
 from ts import d2d, utils
 
@@ -22,7 +22,7 @@ class Namespace(argparse.Namespace):
         energy_mode: Literal["linear", "non-linear"]
         max_distance: bool
         min_distance: bool
-        max_propagation: Optional[int]
+        max_propagation: int
         profile: bool
         verbose: bool
         dump: Optional[str]
@@ -37,6 +37,24 @@ def to_json(solution: d2d.D2DPathSolution) -> Dict[str, Any]:
         "drone_paths": solution.drone_paths,
         "technician_paths": solution.technician_paths,
     }
+
+
+def _max_distance_key(pareto_costs: Set[Tuple[float, ...]], candidate: d2d.D2DPathSolution, /) -> float:
+    cost = candidate.cost()
+    result = 0.0
+    for s in pareto_costs:
+        result += abs(s[0] - cost[0]) + abs(s[1] - cost[1])
+
+    return -result
+
+
+def _min_distance_key(pareto_costs: Set[Tuple[float, ...]], candidate: d2d.D2DPathSolution, /) -> float:
+    cost = candidate.cost()
+    result = 0.0
+    for s in pareto_costs:
+        result += abs(s[0] - cost[0]) + abs(s[1] - cost[1])
+
+    return result
 
 
 if __name__ == "__main__":
@@ -81,31 +99,15 @@ if __name__ == "__main__":
             message = "--max-distance and --min-distance are mutually exclusive"
             raise ValueError(message)
 
-        propagation_priority_key: Callable[[Set[d2d.D2DPathSolution], d2d.D2DPathSolution], float] = utils.zero
         propagation_priority: Optional[str] = None
+        propagation_priority_key: Optional[Callable[[Set[Tuple[float, ...]], d2d.D2DPathSolution], float]] = None
         if namespace.max_distance:
             propagation_priority = "max-distance"
-
-            def propagation_priority_key(pareto_set: Set[d2d.D2DPathSolution], candidate: d2d.D2DPathSolution, /) -> float:
-                cost = candidate.cost()
-                result = 0.0
-                for s in pareto_set:
-                    s_cost = s.cost()
-                    result += abs(s_cost[0] - cost[0]) + abs(s_cost[1] - cost[1])
-
-                return -result
+            propagation_priority_key = _max_distance_key
 
         if namespace.min_distance:
             propagation_priority = "min-distance"
-
-            def propagation_priority_key(pareto_set: Set[d2d.D2DPathSolution], candidate: d2d.D2DPathSolution, /) -> float:
-                cost = candidate.cost()
-                result = 0.0
-                for s in pareto_set:
-                    s_cost = s.cost()
-                    result += abs(s_cost[0] - cost[0]) + abs(s_cost[1] - cost[1])
-
-                return result
+            propagation_priority_key = _min_distance_key
 
         logfile = None if namespace.log is None else open(namespace.log, "w")
         try:
@@ -140,6 +142,7 @@ if __name__ == "__main__":
                 logfile.close()
 
         print(f"Found {len(solutions)} " + utils.ngettext(len(solutions) == 1, "solution", "solutions") + ":")
+        errors: List[str] = []
         for index, solution in enumerate(solutions):
             print(f"SOLUTION #{index + 1}: cost = {solution.cost()}")
             print("\n".join(f"Drone #{drone_index + 1}: {paths}" for drone_index, paths in enumerate(solution.drone_paths)))
@@ -153,9 +156,9 @@ if __name__ == "__main__":
                 technician_paths=solution.technician_paths,
             )
 
-            errors: List[str] = []
+            errors_messages: List[str] = []
             if not utils.isclose(check.cost(), solution.cost()):
-                errors.append(f"Incorrect solution cost: Expected {check.cost()}, got {solution.cost()}")
+                errors_messages.append(f"Incorrect solution cost: Expected {check.cost()}, got {solution.cost()}")
 
             for attr in (
                 "drone_timespans",
@@ -166,10 +169,11 @@ if __name__ == "__main__":
                 check_attr = getattr(check, attr)
                 solution_attr = getattr(solution, attr)
                 if not utils.isclose(check_attr, solution_attr):
-                    errors.append(f"Incorrect {attr}: Expected {check_attr}, got {solution_attr}")
+                    errors_messages.append(f"Incorrect {attr}: Expected {check_attr}, got {solution_attr}")
 
-            if len(errors) > 0:
-                raise ValueError("\n".join(errors))
+            if len(errors_messages) > 0:
+                errors.append(f"At solution #{index + 1}:")
+                errors.extend(errors_messages)
 
     if namespace.dump is not None:
         with open(namespace.dump, "w") as f:
@@ -184,3 +188,6 @@ if __name__ == "__main__":
             json.dump(data, f)
 
         print(f"Saved solution to {namespace.dump!r}")
+
+    if len(errors) > 0:
+        raise ValueError(f"Some calculations were incorrect:\n" + "\n".join(errors))
