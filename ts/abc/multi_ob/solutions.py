@@ -12,7 +12,7 @@ from tqdm import tqdm
 if TYPE_CHECKING:
     from typing_extensions import Self
 
-from .costs import BaseMulticostComparison
+from .costs import BaseMulticostComparison, ParetoSet
 from ..bases import BaseSolution
 from ...utils import ngettext, synchronized
 if TYPE_CHECKING:
@@ -85,7 +85,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
         - https://en.wikipedia.org/wiki/Pareto_front
         """
         initial = cls.initial()
-        results = {initial}
+        results = ParetoSet([initial])
         iterations: Union[range, tqdm[int]] = range(iterations_count)
         if use_tqdm:
             iterations = tqdm(iterations, ascii=" █")
@@ -95,6 +95,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
 
         current = [initial]
         candidate_costs = {initial.cost()} if plot_pareto_front else None
+        pareto_costs = {initial.cost()} if propagation_priority_key is not None else None
         if len(initial.cost()) != 2:
             message = f"Cannot plot the Pareto front when the number of objectives is not 2"
             raise ValueError(message)
@@ -126,7 +127,23 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
                                 if candidate_costs is not None:
                                     candidate_costs.add(candidate.cost())
 
-                                improved = improved or candidate.add_to_pareto_set(results)
+                                s = time.perf_counter()
+                                is_optimal, dominated = candidate.add_to_pareto_set(results)
+                                if is_optimal:
+                                    improved = True
+                                    if pareto_costs is not None:
+                                        pareto_costs.add(candidate.cost())
+
+                                print(f"Iteration #{iteration + 1} ({len(results)} sol(s)): Add to Pareto set took {time.perf_counter() - s:.4f}s")
+
+                                if pareto_costs is not None:
+                                    s = time.perf_counter()
+                                    for solution in dominated:
+                                        try:
+                                            pareto_costs.remove(solution.cost())
+                                        except KeyError:
+                                            pass
+                                    print(f"Iteration #{iteration + 1} ({len(results)} sol(s)): Remove from pareto_costs took {time.perf_counter() - s:.4f}s")
 
                                 if candidate.to_propagate:
                                     propagated = True
@@ -148,17 +165,24 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
                     propagate = [solution.shuffle(use_tqdm=use_tqdm, logger=logger) for solution in current]
 
                 if propagation_priority_key is not None:
-                    propagate.sort(key=partial(propagation_priority_key, set(s.cost() for s in results)))
+                    assert pareto_costs is not None
+                    propagate.sort(key=partial(propagation_priority_key, pareto_costs))
+
+                else:
+                    random.shuffle(propagate)
 
                 current = propagate[:max_propagation]
 
                 if logger is not None:
-                    logger(f"Last improvement: #{last_improved + 1}/{iterations_count}\n")
+                    logger(f"Last improvement: #{last_improved + 1}/{iteration + 1}\n")
 
-            results = set(r.post_optimization(pool=pool, pool_size=pool_size, use_tqdm=use_tqdm, logger=logger) for r in results)
+            post_optimized_results = set(r.post_optimization(pool=pool, pool_size=pool_size, use_tqdm=use_tqdm, logger=logger) for r in results)
 
             pool.close()
             pool.join()
+
+        if pareto_costs is not None:
+            assert pareto_costs == set(s.cost() for s in results)
 
         if candidate_costs is not None:
             _, ax = pyplot.subplots()
@@ -184,4 +208,4 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
             pyplot.legend()
             pyplot.show()
 
-        return results
+        return post_optimized_results
