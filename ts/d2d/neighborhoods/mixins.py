@@ -13,6 +13,10 @@ __all__ = ("D2DBaseNeighborhood",)
 _T = TypeVar("_T")
 if TYPE_CHECKING:
     class D2DBaseNeighborhood(MultiObjectiveNeighborhood[D2DPathSolution, _T]):
+        """Base class for neighborhood of the D2D problem. When working in a subprocess, remember to call
+        `D2DBaseNeighborhood.ensure_imported_data` first.
+        """
+
         __slots__ = ()
         def __init__(self, solution: D2DPathSolution, /) -> None: ...
         def ensure_imported_data(self) -> None: ...

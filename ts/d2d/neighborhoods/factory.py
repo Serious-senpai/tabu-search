@@ -11,7 +11,43 @@ __all__ = ("SolutionFactory",)
 
 
 class SolutionFactory(SolutionMetricsMixin):
-    """Factory for initializing a solution from another one"""
+    """A factory for creating `D2DPathSolution`s. This object holds transformation information with the cost of the target solution,
+    not the actual solution (which makes it faster for IPC). The underlying mechanism is as follows:
+
+    1. In the main process, `MultiObjectiveNeighborhood.find_best_candidates` delegates the calculation to worker processes. During
+    this IPC, the original solution and the neighborhood with extra data (via `IPCBundle`) are pickled and transfered.
+    2. In the worker process, calculations are performed and should create a Pareto set of `SolutionFactory` objects. This set
+    is then pickled and returned back to the main process. During IPC, only this set is transfered.
+    3. The main process combines the Pareto sets from all worker processes and creates a new Pareto set of `SolutionFactory`.
+    Then, it creates a Pareto set of `D2DPathSolution` objects from the `SolutionFactory` objects, using the original solution
+    as the argument to `SolutionFactory.from_solution`.
+
+    This process ensures that the data during each IPC is minimal.
+
+    Parameters
+    -----
+    append_drones:
+        The list of paths to be appended to each drone. For example, to append (0, 1, 2, 0) to the first drone and (0, 6, 9, 0) to
+        the second one, set `append_drones=[(0, (0, 1, 2, 0)), (1, (0, 6, 9, 0))]`.
+    update_drones:
+        The list of drone paths to update. For example, to update the second path of the first drone to (0, 1, 2, 0), set
+        `update_drones=[(0, 1, (0, 1, 2, 0))]`.
+    update_technicians:
+        The list of technician paths to update. For example, to update the path of the third technician to (0, 1, 2, 0), set
+        `update_technicians=[(2, (0, 1, 2, 0))]`.
+    drone_timespans:
+        The service timespan of each drone. For example, `drone_timespans[0] = 2700.0` means that the first drone returns to the depot
+        after completing the last path at t = 2700.0s.
+    drone_waiting_times:
+        The total waiting time for each path of each drone. For example, `drone_waiting_times[0][1] = 300.0` means that the second path
+        of the first drone has the total waiting time of 300.0s.
+    technician_timespans:
+        The service timespan of each technician. For example, `technician_timespans[0] = 2700.0` means that the first technician returns
+        to the depot at t = 2700.0s.
+    technician_waiting_times:
+        The total waiting time for each technician. For example, `technician_waiting_times[0] = 1200.0` means that the total waiting time
+        for the first technician's path is 1200.0s.
+    """
 
     __slots__ = (
         "__append_drones",

@@ -33,7 +33,6 @@ class MultiObjectiveNeighborhood(BaseNeighborhood[_MultiST, _TT]):
 
         Returns
         -----
-        Iterable[`MultiObjectiveSolution`]
-            The set of non-dominant solutions
+        An iterable of non-dominant solutions
         """
         raise NotImplementedError
