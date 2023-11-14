@@ -3,7 +3,7 @@ colorama==0.4.6
 contourpy==1.2.0
 coverage==7.3.2
 cycler==0.12.1
-fonttools==4.44.0
+fonttools==4.44.1
 kiwisolver==1.4.5
 matplotlib==3.8.1
 mypy==1.6.1
