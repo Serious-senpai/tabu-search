@@ -127,23 +127,18 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
                                 if candidate_costs is not None:
                                     candidate_costs.add(candidate.cost())
 
-                                s = time.perf_counter()
                                 is_optimal, dominated = candidate.add_to_pareto_set(results)
                                 if is_optimal:
                                     improved = True
                                     if pareto_costs is not None:
                                         pareto_costs.add(candidate.cost())
 
-                                print(f"Iteration #{iteration + 1} ({len(results)} sol(s)): Add to Pareto set took {time.perf_counter() - s:.4f}s")
-
                                 if pareto_costs is not None:
-                                    s = time.perf_counter()
                                     for solution in dominated:
                                         try:
                                             pareto_costs.remove(solution.cost())
                                         except KeyError:
                                             pass
-                                    print(f"Iteration #{iteration + 1} ({len(results)} sol(s)): Remove from pareto_costs took {time.perf_counter() - s:.4f}s")
 
                                 if candidate.to_propagate:
                                     propagated = True
