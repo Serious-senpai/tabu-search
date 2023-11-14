@@ -93,7 +93,7 @@ class ParetoSet(Generic[_ST]):
                 self.add(s)
 
     def add(self, __s: _ST, /) -> Tuple[bool, Set[_ST]]:
-        __s_cost = __s.cost()
+        __s_cost = tuple(round(c, 4) for c in __s.cost())
         try:
             if __s not in self.__cost_to_solutions[__s_cost]:
                 self.__length += 1
