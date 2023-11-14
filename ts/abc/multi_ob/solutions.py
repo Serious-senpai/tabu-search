@@ -5,7 +5,7 @@ import time
 import threading
 from functools import partial
 from multiprocessing import Pool, pool as p
-from typing import Any, Callable, List, Optional, Sequence, Set, Tuple, Union, TYPE_CHECKING
+from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union, TYPE_CHECKING
 
 from matplotlib import axes, pyplot
 from tqdm import tqdm
@@ -49,7 +49,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
         pool_size: int,
         iterations_count: int,
         use_tqdm: bool,
-        propagation_priority_key: Optional[Callable[[Set[Tuple[float, ...]], Self], float]] = None,
+        propagation_priority_key: Optional[Callable[[Dict[Tuple[float, ...], int], Self], float]] = None,
         max_propagation: int,
         plot_pareto_front: bool = False,
         logger: Optional[Callable[[str], Any]] = None,
@@ -65,7 +65,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
         use_tqdm:
             Whether to display the progress bar
         propagation_priority_key:
-            A function taking 2 arguments: The first one is the set of costs of current Pareto-optimal solutions, the second one is
+            A function taking 2 arguments: The first one is the counter of costs of current Pareto-optimal solutions, the second one is
             the solution S. The less the returned value, the more likely the solution S will be added to the propagation tree.
         max_propagation:
             An integer or a function that takes the current Pareto front as a single parameter and return the maximum number of
@@ -95,7 +95,6 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
 
         current = [initial]
         candidate_costs = {initial.cost()} if plot_pareto_front else None
-        pareto_costs = {initial.cost()} if propagation_priority_key is not None else None
         if len(initial.cost()) != 2:
             message = f"Cannot plot the Pareto front when the number of objectives is not 2"
             raise ValueError(message)
@@ -127,18 +126,8 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
                                 if candidate_costs is not None:
                                     candidate_costs.add(candidate.cost())
 
-                                is_optimal, dominated = candidate.add_to_pareto_set(results)
-                                if is_optimal:
+                                if candidate.add_to_pareto_set(results)[0]:
                                     improved = True
-                                    if pareto_costs is not None:
-                                        pareto_costs.add(candidate.cost())
-
-                                if pareto_costs is not None:
-                                    for solution in dominated:
-                                        try:
-                                            pareto_costs.remove(solution.cost())
-                                        except KeyError:
-                                            pass
 
                                 if candidate.to_propagate:
                                     propagated = True
@@ -160,8 +149,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
                     propagate = [solution.shuffle(use_tqdm=use_tqdm, logger=logger) for solution in current]
 
                 if propagation_priority_key is not None:
-                    assert pareto_costs is not None
-                    propagate.sort(key=partial(propagation_priority_key, pareto_costs))
+                    propagate.sort(key=partial(propagation_priority_key, results.counter()))
 
                 else:
                     random.shuffle(propagate)
@@ -179,9 +167,6 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
         if len(set(results)) != len(results):
             message = f"Check {results.__class__.__name__}.__len__ implementation"
             raise RuntimeError(message)
-
-        if pareto_costs is not None:
-            assert pareto_costs == set(s.cost() for s in results)
 
         if candidate_costs is not None:
             _, ax = pyplot.subplots()

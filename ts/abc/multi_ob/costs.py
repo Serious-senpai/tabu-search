@@ -92,6 +92,10 @@ class ParetoSet(Generic[_ST]):
             for s in initial:
                 self.add(s)
 
+    def counter(self) -> Dict[Tuple[float, ...], int]:
+        """Return a counter of the costs of the solutions in this set"""
+        return {k: len(v) for k, v in self.__cost_to_solutions.items()}
+
     def add(self, __s: _ST, /) -> Tuple[bool, Set[_ST]]:
         __s_cost = tuple(round(c, 4) for c in __s.cost())
         try:
