@@ -4,7 +4,7 @@ import argparse
 import cProfile
 import json
 import os
-from typing import Any, Callable, Dict, List, Literal, Optional, Set, Tuple, TYPE_CHECKING
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, TYPE_CHECKING
 
 from ts import d2d, utils
 
@@ -39,20 +39,20 @@ def to_json(solution: d2d.D2DPathSolution) -> Dict[str, Any]:
     }
 
 
-def _max_distance_key(pareto_costs: Set[Tuple[float, ...]], candidate: d2d.D2DPathSolution, /) -> float:
+def _max_distance_key(pareto_costs: Dict[Tuple[float, ...], int], candidate: d2d.D2DPathSolution, /) -> float:
     cost = candidate.cost()
     result = 0.0
-    for s in pareto_costs:
-        result += abs(s[0] - cost[0]) + abs(s[1] - cost[1])
+    for pareto_cost, counter in pareto_costs.items():
+        result += counter * abs(pareto_cost[0] - cost[0]) + abs(pareto_cost[1] - cost[1])
 
     return -result
 
 
-def _min_distance_key(pareto_costs: Set[Tuple[float, ...]], candidate: d2d.D2DPathSolution, /) -> float:
+def _min_distance_key(pareto_costs: Dict[Tuple[float, ...], int], candidate: d2d.D2DPathSolution, /) -> float:
     cost = candidate.cost()
     result = 0.0
-    for s in pareto_costs:
-        result += abs(s[0] - cost[0]) + abs(s[1] - cost[1])
+    for pareto_cost, counter in pareto_costs.items():
+        result += counter * abs(pareto_cost[0] - cost[0]) + abs(pareto_cost[1] - cost[1])
 
     return result
 
@@ -100,7 +100,7 @@ if __name__ == "__main__":
             raise ValueError(message)
 
         propagation_priority: Optional[str] = None
-        propagation_priority_key: Optional[Callable[[Set[Tuple[float, ...]], d2d.D2DPathSolution], float]] = None
+        propagation_priority_key: Optional[Callable[[Dict[Tuple[float, ...], int], d2d.D2DPathSolution], float]] = None
         if namespace.max_distance:
             propagation_priority = "max-distance"
             propagation_priority_key = _max_distance_key

@@ -5,14 +5,14 @@ import time
 import threading
 from functools import partial
 from multiprocessing import Pool, pool as p
-from typing import Any, Callable, List, Optional, Sequence, Set, Tuple, Union, TYPE_CHECKING
+from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union, TYPE_CHECKING
 
 from matplotlib import axes, pyplot
 from tqdm import tqdm
 if TYPE_CHECKING:
     from typing_extensions import Self
 
-from .costs import BaseMulticostComparison
+from .costs import BaseMulticostComparison, ParetoSet
 from ..bases import BaseSolution
 from ...utils import ngettext, synchronized
 if TYPE_CHECKING:
@@ -49,7 +49,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
         pool_size: int,
         iterations_count: int,
         use_tqdm: bool,
-        propagation_priority_key: Optional[Callable[[Set[Tuple[float, ...]], Self], float]] = None,
+        propagation_priority_key: Optional[Callable[[Dict[Tuple[float, ...], int], Self], float]] = None,
         max_propagation: int,
         plot_pareto_front: bool = False,
         logger: Optional[Callable[[str], Any]] = None,
@@ -65,7 +65,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
         use_tqdm:
             Whether to display the progress bar
         propagation_priority_key:
-            A function taking 2 arguments: The first one is the set of costs of current Pareto-optimal solutions, the second one is
+            A function taking 2 arguments: The first one is the counter of costs of current Pareto-optimal solutions, the second one is
             the solution S. The less the returned value, the more likely the solution S will be added to the propagation tree.
         max_propagation:
             An integer or a function that takes the current Pareto front as a single parameter and return the maximum number of
@@ -85,7 +85,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
         - https://en.wikipedia.org/wiki/Pareto_front
         """
         initial = cls.initial()
-        results = {initial}
+        results = ParetoSet([initial])
         iterations: Union[range, tqdm[int]] = range(iterations_count)
         if use_tqdm:
             iterations = tqdm(iterations, ascii=" █")
@@ -126,7 +126,8 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
                                 if candidate_costs is not None:
                                     candidate_costs.add(candidate.cost())
 
-                                improved = improved or candidate.add_to_pareto_set(results)
+                                if candidate.add_to_pareto_set(results)[0]:
+                                    improved = True
 
                                 if candidate.to_propagate:
                                     propagated = True
@@ -148,17 +149,24 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
                     propagate = [solution.shuffle(use_tqdm=use_tqdm, logger=logger) for solution in current]
 
                 if propagation_priority_key is not None:
-                    propagate.sort(key=partial(propagation_priority_key, set(s.cost() for s in results)))
+                    propagate.sort(key=partial(propagation_priority_key, results.counter()))
+
+                else:
+                    random.shuffle(propagate)
 
                 current = propagate[:max_propagation]
 
                 if logger is not None:
-                    logger(f"Last improvement: #{last_improved + 1}/{iterations_count}\n")
+                    logger(f"Last improvement: #{last_improved + 1}/{iteration + 1}\n")
 
-            results = set(r.post_optimization(pool=pool, pool_size=pool_size, use_tqdm=use_tqdm, logger=logger) for r in results)
+            post_optimized_results = set(r.post_optimization(pool=pool, pool_size=pool_size, use_tqdm=use_tqdm, logger=logger) for r in results)
 
             pool.close()
             pool.join()
+
+        if len(set(results)) != len(results):
+            message = f"Check {results.__class__.__name__}.__len__ implementation"
+            raise RuntimeError(message)
 
         if candidate_costs is not None:
             _, ax = pyplot.subplots()
@@ -184,4 +192,4 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
             pyplot.legend()
             pyplot.show()
 
-        return results
+        return post_optimized_results

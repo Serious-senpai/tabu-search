@@ -32,7 +32,7 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
 
         def callback(candidates: Set[Tuple[SolutionFactory, Tuple[Tuple[int, int], int]]]) -> None:
             for result, pair in candidates:
-                if result.add_to_pareto_set(results):
+                if result.add_to_pareto_set(results)[0]:
                     swaps_mapping[result] = pair
 
         def swap_technician_technician() -> None:
@@ -177,7 +177,7 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                         technician_waiting_times=tuple(_technician_total_waiting_times),
                     )
 
-                    if factory.add_to_pareto_set(results):
+                    if factory.add_to_pareto_set(results)[0]:
                         swaps_mapping[factory] = ((i_path[point_i], i_path[point_i + neighborhood.length - 1]), j_path[location_j])
 
         return set((r, swaps_mapping[r]) for r in results)
@@ -250,7 +250,7 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                             drone_timespans=tuple(_drone_timespans),
                             drone_waiting_times=tuple(tuple(w) for w in _drone_waiting_times),
                         )
-                        if factory.add_to_pareto_set(results):
+                        if factory.add_to_pareto_set(results)[0]:
                             swaps_mapping[factory] = ((first_path[first_point], first_path[first_point + neighborhood.length - 1]), 0)
 
                 # Create a new path for second_drone
@@ -301,7 +301,7 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                                 drone_timespans=tuple(_drone_timespans),
                                 drone_waiting_times=tuple(tuple(w) for w in _drone_waiting_times),
                             )
-                            if factory.add_to_pareto_set(results):
+                            if factory.add_to_pareto_set(results)[0]:
                                 swaps_mapping[factory] = ((first_path[first_point], first_path[first_point + neighborhood.length - 1]), second_path[second_location])
 
         return set((r, swaps_mapping[r]) for r in results)
@@ -356,7 +356,7 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                             drone_timespans=tuple(_drone_timespans),
                             drone_waiting_times=tuple(tuple(w) for w in _drone_total_waiting_times),
                         )
-                        if factory.add_to_pareto_set(results):
+                        if factory.add_to_pareto_set(results)[0]:
                             swaps_mapping[factory] = ((drone_path[drone_point], drone_path[drone_point + neighborhood.length - 1]), tech_path[location_tech])
 
         return set((r, swaps_mapping[r]) for r in results)
@@ -427,7 +427,7 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                         drone_timespans=tuple(_drone_timespans),
                         drone_waiting_times=tuple(tuple(w) for w in _drone_total_waiting_times),
                     )
-                    if factory.add_to_pareto_set(results):
+                    if factory.add_to_pareto_set(results)[0]:
                         swaps_mapping[factory] = ((tech_path[tech_point], tech_path[tech_point + neighborhood.length - 1]), 0)
 
                 # Create a new drone path
@@ -477,7 +477,7 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                             drone_timespans=tuple(_drone_timespans),
                             drone_waiting_times=tuple(tuple(w) for w in _drone_total_waiting_times),
                         )
-                        if factory.add_to_pareto_set(results):
+                        if factory.add_to_pareto_set(results)[0]:
                             swaps_mapping[factory] = ((tech_path[tech_point], tech_path[tech_point + neighborhood.length - 1]), drone_path[drone_location])
 
         return set((r, swaps_mapping[r]) for r in results)
