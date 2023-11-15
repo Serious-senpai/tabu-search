@@ -95,10 +95,10 @@ jobs:
         - problem: "100.10.1"
           iterations: 500
           tabu_size: 10
-          energy_mode: ["linear", "non-linear"]
+          energy_mode: "linear"
           profile: "--profile"
-          max_propagation: 3
-          pool_size: 4
+          max_propagation: 5
+          pool_size: 8
           verbose: "--verbose"
 
     steps:
