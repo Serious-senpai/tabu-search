@@ -29,7 +29,6 @@ jobs:
             iterations: 1000
             tabu_size: 5
             shuffle_after: 5
-            profile: "--profile"
             verbose: "--verbose"
 
     steps:
@@ -54,7 +53,6 @@ jobs:
         --iterations ${{ matrix.iterations }} \
         --tabu-size ${{ matrix.tabu_size }} \
         --shuffle-after ${{ matrix.shuffle_after }} \
-        ${{ matrix.profile }} \
         ${{ matrix.verbose }} \
         --dump output-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.shuffle_after }}.json
 
@@ -96,7 +94,6 @@ jobs:
           iterations: 200
           tabu_size: 10
           energy_mode: "linear"
-          profile: "--profile"
           max_propagation: 5
           pool_size: 8
           verbose: "--verbose"
@@ -125,7 +122,6 @@ jobs:
         --energy-mode ${{ matrix.energy_mode }} \
         ${{ matrix.propagation_priority }} \
         --max-propagation ${{ matrix.max_propagation }} \
-        ${{ matrix.profile }} \
         --pool-size ${{ matrix.pool_size }} \
         ${{ matrix.verbose }} \
         --dump output-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}.json \
