@@ -7,7 +7,7 @@ contourpy==1.2.0
 cycler==0.12.1
 Deprecated==1.2.14
 dill==0.3.7
-fonttools==4.44.1
+fonttools==4.44.3
 future==0.18.3
 grapheme==0.6.0
 kiwisolver==1.4.5
