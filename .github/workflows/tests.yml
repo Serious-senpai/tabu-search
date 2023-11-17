@@ -87,7 +87,7 @@ jobs:
         tabu_size: [10]
         drone_config: ["0 0 0 0"]
         energy_mode: ["linear", "non-linear"]
-        propagation_priority: ["", "--min-distance", "--max-distance"]
+        propagation_priority: ["--min-distance", "--max-distance", "--ideal-distance"]
         max_propagation: [5]
         pool_size: [8]
         include:
