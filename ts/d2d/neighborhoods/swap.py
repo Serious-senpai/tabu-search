@@ -9,6 +9,7 @@ from .factory import SolutionFactory
 from .mixins import D2DBaseNeighborhood
 from ..errors import NeighborhoodException
 from ...bundle import IPCBundle
+from ...utils import synchronized
 if TYPE_CHECKING:
     from ..solutions import D2DPathSolution
 
@@ -43,14 +44,12 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
         results: Set[SolutionFactory] = set()
         swaps_mapping: Dict[SolutionFactory, Tuple[Tuple[int, int], Tuple[int, int]]] = {}
 
-        lock = threading.Lock()
-
+        @synchronized
         def callback(collected: List[Set[Tuple[SolutionFactory, Tuple[Tuple[int, int], Tuple[int, int]]]]]) -> None:
             for s in collected:
                 for result, pair in s:
-                    with lock:
-                        if result.add_to_pareto_set(results)[0]:
-                            swaps_mapping[result] = pair
+                    if result.add_to_pareto_set(results)[0]:
+                        swaps_mapping[result] = pair
 
         def drone_drone_swap() -> p.MapResult[Set[Tuple[SolutionFactory, Tuple[int, int]]]]:
             bundles: List[IPCBundle[Swap, List[Tuple[Tuple[int, int], Tuple[int, int]]]]] = [IPCBundle(self, []) for _ in range(pool_size)]
