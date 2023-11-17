@@ -145,6 +145,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
                     thread_pool.close()
                     thread_pool.join()
 
+                propagate = list(set(propagate))
                 if len(propagate) == 0:
                     propagate = [solution.shuffle(use_tqdm=use_tqdm, logger=logger) for solution in current]
 

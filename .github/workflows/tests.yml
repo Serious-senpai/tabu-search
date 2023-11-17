@@ -29,7 +29,6 @@ jobs:
             iterations: 1000
             tabu_size: 5
             shuffle_after: 5
-            profile: "--profile"
             verbose: "--verbose"
 
     steps:
@@ -54,7 +53,6 @@ jobs:
         --iterations ${{ matrix.iterations }} \
         --tabu-size ${{ matrix.tabu_size }} \
         --shuffle-after ${{ matrix.shuffle_after }} \
-        ${{ matrix.profile }} \
         ${{ matrix.verbose }} \
         --dump output-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.shuffle_after }}.json
 
@@ -85,7 +83,7 @@ jobs:
           "10.10.1", "10.10.2", "10.10.3", "10.10.4", "10.20.1", "10.20.2", "10.20.3", "10.20.4", "10.5.1", "10.5.2", "10.5.3", "10.5.4",
           "20.10.1", "20.10.2", "20.10.3", "20.10.4", "20.20.1", "20.20.2", "20.20.3", "20.20.4", "20.5.1", "20.5.2", "20.5.3", "20.5.4",
         ]
-        iterations: [3000]
+        iterations: [2000]
         tabu_size: [10]
         energy_mode: ["linear", "non-linear"]
         propagation_priority: ["", "--min-distance", "--max-distance"]
@@ -93,12 +91,11 @@ jobs:
         pool_size: [8]
         include:
         - problem: "100.10.1"
-          iterations: 250
+          iterations: 200
           tabu_size: 10
           energy_mode: "linear"
-          profile: "--profile"
-          max_propagation: 3
-          pool_size: 4
+          max_propagation: 5
+          pool_size: 8
           verbose: "--verbose"
 
     steps:
@@ -125,7 +122,6 @@ jobs:
         --energy-mode ${{ matrix.energy_mode }} \
         ${{ matrix.propagation_priority }} \
         --max-propagation ${{ matrix.max_propagation }} \
-        ${{ matrix.profile }} \
         --pool-size ${{ matrix.pool_size }} \
         ${{ matrix.verbose }} \
         --dump output-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}.json \

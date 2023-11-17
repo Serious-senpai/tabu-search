@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import cProfile
 import json
 import os
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, TYPE_CHECKING
@@ -23,7 +22,6 @@ class Namespace(argparse.Namespace):
         max_distance: bool
         min_distance: bool
         max_propagation: int
-        profile: bool
         verbose: bool
         dump: Optional[str]
         log: Optional[str]
@@ -67,7 +65,6 @@ if __name__ == "__main__":
     parser.add_argument("--max-distance", action="store_true", help="set the propagation predicate using the maximum total distance to the Pareto front instead of the propagation rate")
     parser.add_argument("--min-distance", action="store_true", help="set the propagation predicate using the minimum total distance to the Pareto front instead of the propagation rate")
     parser.add_argument("-m", "--max-propagation", default=5, type=int, help="maximum number of propagating solutions at a time (default: 5)")
-    parser.add_argument("-p", "--profile", action="store_true", help="run in profile mode and exit immediately")
     parser.add_argument("-v", "--verbose", action="store_true", help="whether to display the progress bar and plot the solution")
     parser.add_argument("-d", "--dump", type=str, help="dump the solution to a file")
     parser.add_argument("-l", "--log", type=str, help="dump the iteration logs to a file")
@@ -111,19 +108,6 @@ if __name__ == "__main__":
 
         logfile = None if namespace.log is None else open(namespace.log, "w")
         try:
-            if namespace.profile:
-                eval_func = f"""d2d.D2DPathSolution.tabu_search(
-                    pool_size={namespace.pool_size},
-                    iterations_count={namespace.iterations},
-                    use_tqdm={namespace.verbose},
-                    propagation_priority_key=propagation_priority_key,
-                    max_propagation={namespace.max_propagation},
-                    plot_pareto_front={namespace.verbose},
-                    logger=None if logfile is None else logfile.write,
-                )"""
-                cProfile.run(eval_func)
-                exit(0)
-
             solutions = sorted(
                 d2d.D2DPathSolution.tabu_search(
                     pool_size=namespace.pool_size,
