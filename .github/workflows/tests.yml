@@ -85,7 +85,7 @@ jobs:
         ]
         iterations: [2000]
         tabu_size: [10]
-        drone_config: ["0 0 0 0"]
+        drone_config: ["3 3 3 3"]
         energy_mode: ["linear", "non-linear"]
         propagation_priority: ["--min-distance", "--max-distance", "--ideal-distance"]
         max_propagation: [5]
