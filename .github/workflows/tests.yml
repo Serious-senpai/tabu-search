@@ -94,6 +94,7 @@ jobs:
         - problem: "100.10.1"
           iterations: 200
           tabu_size: 10
+          drone_config: "0 0 0 0"
           energy_mode: "linear"
           max_propagation: 5
           pool_size: 8
