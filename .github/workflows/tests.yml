@@ -85,6 +85,7 @@ jobs:
         ]
         iterations: [2000]
         tabu_size: [10]
+        drone_config: ["3 3 3 3"]
         energy_mode: ["linear", "non-linear"]
         propagation_priority: ["", "--min-distance", "--max-distance"]
         max_propagation: [5]
@@ -119,6 +120,7 @@ jobs:
         d2d.py ${{ matrix.problem }} \
         --iterations ${{ matrix.iterations }} \
         --tabu-size ${{ matrix.tabu_size }} \
+        --drone-config-mapping ${{ matrix.drone_config }} \
         --energy-mode ${{ matrix.energy_mode }} \
         ${{ matrix.propagation_priority }} \
         --max-propagation ${{ matrix.max_propagation }} \
