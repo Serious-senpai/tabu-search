@@ -127,10 +127,17 @@ def normalize_costs(costs: Sequence[Tuple[float, float]], /) -> List[Tuple[float
     max_costs = (max(cost[0] for cost in costs), max(cost[1] for cost in costs))
 
     def scale(cost: Tuple[float, float], /) -> Tuple[float, float]:
-        return (
-            (cost[0] - min_costs[0]) / (max_costs[0] - min_costs[0]),
-            (cost[1] - min_costs[1]) / (max_costs[1] - min_costs[1]),
-        )
+        try:
+            x = (cost[0] - min_costs[0]) / (max_costs[0] - min_costs[0])
+        except ZeroDivisionError:  # 0 / 0
+            x = 1
+
+        try:
+            y = (cost[1] - min_costs[1]) / (max_costs[1] - min_costs[1])
+        except ZeroDivisionError:  # 0 / 0
+            y = 1
+
+        return (x, y)
 
     return list(map(scale, costs))
 

@@ -47,7 +47,7 @@ with open(summary_dir / "d2d-summary.csv", "w") as csv:
                             str(data["tabu-size"]),
                             data["energy-mode"],
                             data["propagation-priority"],
-                            data["hypervolume"],
+                            str(data["hypervolume"]),
                             str(d["cost"][0]),
                             str(d["cost"][1]),
                             "\"" + str(d["drone_config_mapping"]) + "\"",
