@@ -132,22 +132,23 @@ if __name__ == "__main__":
             if logfile is not None:
                 logfile.close()
 
-        print(f"Found {len(solutions)} " + utils.ngettext(len(solutions) == 1, "solution", "solutions") + ":")
+        hypervolume = utils.hypervolume([s.cost() for s in solutions], ref_normalized_point=(1.0, 1.0))
+        print(f"Found {len(solutions)} " + utils.ngettext(len(solutions) == 1, "solution", "solutions") + f" (HV {hypervolume:.4f}):")
         errors: List[str] = []
         for index, solution in enumerate(solutions):
             print(f"SOLUTION #{index + 1}: cost = {solution.cost()}")
             print("\n".join(f"Drone #{drone_index + 1}: {paths}" for drone_index, paths in enumerate(solution.drone_paths)))
             print("\n".join(f"Technician #{technician_index + 1}: {path}" for technician_index, path in enumerate(solution.technician_paths)))
 
+            errors_messages: List[str] = []
             if not solution.feasible():
-                raise ValueError("Solution is infeasible")
+                errors_messages.append("Solution is infeasible")
 
             check = d2d.D2DPathSolution(
                 drone_paths=solution.drone_paths,
                 technician_paths=solution.technician_paths,
             )
 
-            errors_messages: List[str] = []
             if not utils.isclose(check.cost(), solution.cost()):
                 errors_messages.append(f"Incorrect solution cost: Expected {check.cost()}, got {solution.cost()}")
 
@@ -174,6 +175,7 @@ if __name__ == "__main__":
                 "tabu-size": namespace.tabu_size,
                 "energy-mode": namespace.energy_mode,
                 "propagation-priority": namespace.propagation_priority,
+                "hypervolume": hypervolume,
                 "solutions": [to_json(s) for s in solutions],
             }
             json.dump(data, f)
