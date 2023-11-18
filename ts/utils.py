@@ -147,6 +147,7 @@ def hypervolume(
     *,
     ref_normalized_point: Tuple[float, float],
 ) -> Optional[float]:
+    pareto_costs = list(set(pareto_costs))
     indicator = HV(ref_point=ref_normalized_point)
     return indicator(np.array(normalize_costs(pareto_costs)))
 
@@ -156,6 +157,9 @@ def inverted_generational_distance(
     *,
     ref_costs: Sequence[Tuple[float, float]],
 ) -> Optional[float]:
+    pareto_costs = list(set(pareto_costs))
+    ref_costs = list(set(ref_costs))
+
     merged = list(pareto_costs) + list(ref_costs)
     normalized = normalize_costs(merged)
 
