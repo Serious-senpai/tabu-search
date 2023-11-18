@@ -5,7 +5,11 @@ import math
 import os
 import threading
 import sys
-from typing import Any, Callable, Literal, ParamSpec, Sequence, TypeVar, TYPE_CHECKING, overload
+from typing import Any, Callable, Literal, Optional, ParamSpec, Sequence, Tuple, TypeVar, TYPE_CHECKING, overload
+
+import numpy as np
+from pymoo.indicators.hv import HV  # type: ignore
+from pymoo.indicators.igd import IGD  # type: ignore
 
 
 __all__ = (
@@ -16,6 +20,8 @@ __all__ = (
     "display_platform",
     "synchronized",
     "isclose",
+    "hypervolume",
+    "inverted_generational_distance"
 )
 
 
@@ -114,3 +120,21 @@ def isclose(first: Any, second: Any, /) -> bool:
         return all(isclose(f, s) for f, s in zip(first, second))
     except TypeError:
         return math.isclose(first, second, rel_tol=0.001, abs_tol=0.001)
+
+
+def hypervolume(
+    pareto_costs: Sequence[Tuple[float, float]],
+    *,
+    ref_point: Tuple[float, float],
+) -> Optional[float]:
+    indicator = HV(ref_point=ref_point)
+    return indicator(np.array(pareto_costs))
+
+
+def inverted_generational_distance(
+    pareto_costs: Sequence[Tuple[float, float]],
+    *,
+    ref_costs: Sequence[Tuple[float, float]],
+) -> Optional[float]:
+    indicator = IGD(np.array(ref_costs))
+    return indicator(np.array(pareto_costs))
