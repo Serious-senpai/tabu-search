@@ -8,8 +8,16 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, TYPE_CHE
 from ts import d2d, utils
 
 
+# Energy modes
 LINEAR = "linear"
 NON_LINEAR = "non-linear"
+
+
+# Propagation priority
+NONE = "none"
+MIN_DISTANCE = "min-distance"
+MAX_DISTANCE = "max-distance"
+IDEAL_DISTANCE = "ideal-distance"
 
 
 class Namespace(argparse.Namespace):
@@ -19,9 +27,7 @@ class Namespace(argparse.Namespace):
         tabu_size: int
         drone_config_mapping: List[int]
         energy_mode: Literal["linear", "non-linear"]
-        max_distance: bool
-        min_distance: bool
-        ideal_distance: bool
+        propagation_priority: Literal["none", "min-distance", "max-distance", "ideal-distance"]
         max_propagation: int
         verbose: bool
         dump: Optional[str]
@@ -69,9 +75,7 @@ if __name__ == "__main__":
     parser.add_argument("-t", "--tabu-size", default=10, type=int, help="the tabu size for every neighborhood (default: 10)")
     parser.add_argument("-c", "--drone-config-mapping", nargs="+", default=[3, 3, 3, 3], type=int, help="the energy configuration index for each drone (default: \"0 0 0 0\")")
     parser.add_argument("-e", "--energy-mode", default=LINEAR, choices=[LINEAR, NON_LINEAR], help="the energy consumption mode to use (default: linear)")
-    parser.add_argument("--max-distance", action="store_true", help="prioritize solutions which are far from the Pareto front")
-    parser.add_argument("--min-distance", action="store_true", help="prioritize solutions which are close to the Pareto front")
-    parser.add_argument("--ideal-distance", action="store_true", help="prioritize solutions which are close to the ideal solution")
+    parser.add_argument("-k", "--propagation-priority", default=NONE, choices=[NONE, MIN_DISTANCE, MAX_DISTANCE, IDEAL_DISTANCE], help="set the solution propagation priority null (default: none)")
     parser.add_argument("-m", "--max-propagation", default=5, type=int, help="maximum number of propagating solutions at a time (default: 5)")
     parser.add_argument("-v", "--verbose", action="store_true", help="whether to display the progress bar and plot the solution")
     parser.add_argument("-d", "--dump", type=str, help="dump the solution to a file")
@@ -82,7 +86,8 @@ if __name__ == "__main__":
 
     utils.display_platform()
 
-    namespace: Namespace = parser.parse_args()  # type: ignore
+    namespace = Namespace()
+    parser.parse_args(namespace=namespace)
     print(namespace)
 
     if namespace.energy_mode == LINEAR:
@@ -100,22 +105,12 @@ if __name__ == "__main__":
     with d2d.D2DPathSolution.share_distances():
         d2d.Swap.reset_tabu(maxlen=namespace.tabu_size)
 
-        if namespace.max_distance + namespace.min_distance + namespace.ideal_distance > 1:
-            message = "--max-distance, --min-distance and --ideal-distance are mutually exclusive"
-            raise ValueError(message)
-
-        propagation_priority: Optional[str] = None
         propagation_priority_key: Optional[Callable[[Dict[Tuple[float, ...], int], d2d.D2DPathSolution], float]] = None
-        if namespace.max_distance:
-            propagation_priority = "max-distance"
-            propagation_priority_key = _max_distance_key
-
-        if namespace.min_distance:
-            propagation_priority = "min-distance"
+        if namespace.propagation_priority == MIN_DISTANCE:
             propagation_priority_key = _min_distance_key
-
-        if namespace.ideal_distance:
-            propagation_priority = "ideal-distance"
+        elif namespace.propagation_priority == MAX_DISTANCE:
+            propagation_priority_key = _max_distance_key
+        elif namespace.propagation_priority == IDEAL_DISTANCE:
             propagation_priority_key = _ideal_distance_key
 
         logfile = None if namespace.log is None else open(namespace.log, "w")
@@ -178,7 +173,7 @@ if __name__ == "__main__":
                 "iterations": namespace.iterations,
                 "tabu-size": namespace.tabu_size,
                 "energy-mode": namespace.energy_mode,
-                "propagation-priority": propagation_priority,
+                "propagation-priority": namespace.propagation_priority,
                 "solutions": [to_json(s) for s in solutions],
             }
             json.dump(data, f)
