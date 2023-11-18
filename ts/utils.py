@@ -160,7 +160,7 @@ def inverted_generational_distance(
     pareto_costs = list(set(pareto_costs))
     ref_costs = list(set(ref_costs))
 
-    merged = list(pareto_costs) + list(ref_costs)
+    merged = pareto_costs + ref_costs
     normalized = normalize_costs(merged)
 
     offset = len(pareto_costs)
