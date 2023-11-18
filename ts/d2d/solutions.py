@@ -13,7 +13,7 @@ from typing import Any, Callable, ClassVar, Final, List, Literal, Optional, Sequ
 from matplotlib import axes, pyplot
 
 from .config import DroneEnduranceConfig, DroneEnergyConsumptionMode, DroneLinearConfig, DroneNonlinearConfig, TruckConfig
-from .errors import ImportException
+from .errors import ImportException, NoProblemImported
 from .mixins import SolutionMetricsMixin
 from .neighborhoods import Swap, Insert
 from ..abc import MultiObjectiveNeighborhood, MultiObjectiveSolution
@@ -639,7 +639,10 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
 
     @classmethod
     def share_distances(cls) -> _SharedDistancesManager:
-        return _SharedDistancesManager()
+        if cls.problem is None:
+            raise NoProblemImported
+
+        return _SharedDistancesManager(problem=cls.problem, distances=cls.distances)
 
     @classmethod
     def import_problem(
@@ -721,9 +724,9 @@ class _SharedDistancesManager(contextlib.AbstractContextManager):
     if TYPE_CHECKING:
         memory: Final[shared_memory.SharedMemory]
 
-    def __init__(self) -> None:
-        data = pickle.dumps(D2DPathSolution.distances)
-        self.memory = shared_memory.SharedMemory(name=D2DPathSolution.problem, create=True, size=len(data))
+    def __init__(self, *, problem: str, distances: Tuple[Tuple[float, ...], ...]) -> None:
+        data = pickle.dumps(distances)
+        self.memory = shared_memory.SharedMemory(name=problem, create=True, size=len(data))
         self.memory.buf[:] = data
 
     def __exit__(self, *args: Any) -> Literal[False]:

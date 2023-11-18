@@ -87,7 +87,7 @@ jobs:
         tabu_size: [10]
         drone_config: ["3 3 3 3"]
         energy_mode: ["linear", "non-linear"]
-        propagation_priority: ["--min-distance", "--max-distance", "--ideal-distance"]
+        propagation_priority: ["min-distance", "max-distance", "ideal-distance"]
         max_propagation: [5]
         pool_size: [8]
         include:
@@ -96,6 +96,7 @@ jobs:
           tabu_size: 10
           drone_config: "3 3 3 3"
           energy_mode: "linear"
+          propagation_priority: "none"
           max_propagation: 5
           pool_size: 8
           verbose: "--verbose"
@@ -123,7 +124,7 @@ jobs:
         --tabu-size ${{ matrix.tabu_size }} \
         --drone-config-mapping ${{ matrix.drone_config }} \
         --energy-mode ${{ matrix.energy_mode }} \
-        ${{ matrix.propagation_priority }} \
+        --propagation-priority ${{ matrix.propagation_priority }} \
         --max-propagation ${{ matrix.max_propagation }} \
         --pool-size ${{ matrix.pool_size }} \
         ${{ matrix.verbose }} \
