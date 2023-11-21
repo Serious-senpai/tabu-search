@@ -5,7 +5,7 @@ import math
 import os
 import threading
 import sys
-from typing import Any, Callable, Literal, Optional, ParamSpec, Sequence, Tuple, TypeVar, TYPE_CHECKING, overload
+from typing import Any, Callable, List, Literal, Optional, ParamSpec, Sequence, Tuple, TypeVar, TYPE_CHECKING, overload
 
 import numpy as np
 from pymoo.indicators.hv import HV  # type: ignore
@@ -122,13 +122,34 @@ def isclose(first: Any, second: Any, /) -> bool:
         return math.isclose(first, second, rel_tol=0.001, abs_tol=0.001)
 
 
+def normalize_costs(costs: Sequence[Tuple[float, float]], /) -> List[Tuple[float, float]]:
+    min_costs = (min(cost[0] for cost in costs), min(cost[1] for cost in costs))
+    max_costs = (max(cost[0] for cost in costs), max(cost[1] for cost in costs))
+
+    def scale(cost: Tuple[float, float], /) -> Tuple[float, float]:
+        try:
+            x = (cost[0] - min_costs[0]) / (max_costs[0] - min_costs[0])
+        except ZeroDivisionError:  # 0 / 0
+            x = 1
+
+        try:
+            y = (cost[1] - min_costs[1]) / (max_costs[1] - min_costs[1])
+        except ZeroDivisionError:  # 0 / 0
+            y = 1
+
+        return (x, y)
+
+    return list(map(scale, costs))
+
+
 def hypervolume(
     pareto_costs: Sequence[Tuple[float, float]],
     *,
-    ref_point: Tuple[float, float],
+    ref_normalized_point: Tuple[float, float],
 ) -> Optional[float]:
-    indicator = HV(ref_point=ref_point)
-    return indicator(np.array(pareto_costs))
+    pareto_costs = list(set(pareto_costs))
+    indicator = HV(ref_point=ref_normalized_point)
+    return indicator(np.array(normalize_costs(pareto_costs)))
 
 
 def inverted_generational_distance(
@@ -136,5 +157,15 @@ def inverted_generational_distance(
     *,
     ref_costs: Sequence[Tuple[float, float]],
 ) -> Optional[float]:
+    pareto_costs = list(set(pareto_costs))
+    ref_costs = list(set(ref_costs))
+
+    merged = pareto_costs + ref_costs
+    normalized = normalize_costs(merged)
+
+    offset = len(pareto_costs)
+    pareto_costs = normalized[:offset]
+    ref_costs = normalized[offset:]
+
     indicator = IGD(np.array(ref_costs))
     return indicator(np.array(pareto_costs))
