@@ -151,7 +151,7 @@ jobs:
   summary:
     name: Summarize solutions
     runs-on: ubuntu-latest
-    if: always()
+    if: ${{ cancelled() }}
     needs: [tsp-test, d2d-test]
 
     steps:
@@ -192,7 +192,17 @@ jobs:
           coverage html --directory=coverage-html
 
       - name: Report coverage results
-        run: coverage report
+        run: |
+          coverage report
+          coverage report > coverage-report.txt
+
+      - name: Upload coverage result
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: coverage-report.txt
+          retention-days: 1
 
       - name: Upload summary as artifacts
         uses: actions/upload-artifact@v3
@@ -202,3 +212,38 @@ jobs:
             tsp-summary/*.csv
             d2d-summary/*.csv
             coverage-html/
+
+  comment:
+    name: Comment coverage results
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' && !cancelled() }}
+    needs: summary
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Download coverage results
+        uses: actions/download-artifact@v3
+        with:
+          name: coverage-report
+          path: .
+
+      - name: Send coverage results in PR
+        uses: actions/github-script@v7
+        with:
+          retries: 3
+          script: |
+            var fs = require("fs");
+            await fs.readFile(
+              "coverage-report.txt",
+              "utf-8",
+              function(error, data) {
+                if (error) throw error;
+                console.log(`Context SHA: ${context.sha}`);
+                github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: ${{ github.event.pull_request.number }},
+                  body: `Coverage report for \`${context.sha.substring(0, 6)}\`\n\`\`\`\n${data}\n\`\`\``,
+                });
+              }
+            );
