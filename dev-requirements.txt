@@ -13,7 +13,7 @@ fonttools==4.44.3
 future==0.18.3
 grapheme==0.6.0
 kiwisolver==1.4.5
-matplotlib==3.8.1
+matplotlib==3.8.2
 mypy==1.7.0
 mypy-extensions==1.0.0
 numpy==1.26.2
