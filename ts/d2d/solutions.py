@@ -157,8 +157,6 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         return D2DPathSolution(
             drone_paths=tuple(tuple(paths) for paths in drone_paths),
             technician_paths=tuple(technician_paths),
-            drone_timespans=self.drone_timespans,
-            technician_timespans=self.technician_timespans,
         )
 
     def get_neighborhoods(self) -> Tuple[MultiObjectiveNeighborhood[D2DPathSolution, Any], ...]:
