@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Sequence, Tuple, TYPE_CHECKING
+from typing import Final, List, Sequence, Tuple, TYPE_CHECKING
 
 from ..mixins import SolutionMetricsMixin
 if TYPE_CHECKING:
@@ -55,9 +55,9 @@ class SolutionFactory(SolutionMetricsMixin):
         "__update_technicians",
     )
     if TYPE_CHECKING:
-        __append_drones: Sequence[Tuple[int, Tuple[int, ...]]]
-        __update_drones: Sequence[Tuple[int, int, Tuple[int, ...]]]
-        __update_technicians: Sequence[Tuple[int, Tuple[int, ...]]]
+        __append_drones: Final[Sequence[Tuple[int, Tuple[int, ...]]]]
+        __update_drones: Final[Sequence[Tuple[int, int, Tuple[int, ...]]]]
+        __update_technicians: Final[Sequence[Tuple[int, Tuple[int, ...]]]]
 
     def __init__(
         self,
@@ -134,4 +134,4 @@ class SolutionFactory(SolutionMetricsMixin):
         )
 
     def __hash__(self) -> int:
-        return hash((self.__update_drones, self.__update_technicians))
+        return hash((self.__append_drones, self.__update_drones, self.__update_technicians))
