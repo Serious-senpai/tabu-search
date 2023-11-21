@@ -8,7 +8,7 @@ import re
 from math import sqrt
 from multiprocessing import shared_memory
 from os.path import join
-from typing import Any, Callable, ClassVar, Final, List, Literal, Optional, Sequence, Set, Tuple, Union, TYPE_CHECKING, final, overload
+from typing import Any, Callable, ClassVar, Final, FrozenSet, List, Literal, Optional, Sequence, Set, Tuple, Union, TYPE_CHECKING, final, overload
 
 from matplotlib import axes, pyplot
 
@@ -17,6 +17,7 @@ from .errors import ImportException, NoProblemImported
 from .mixins import SolutionMetricsMixin
 from .neighborhoods import Swap, Insert
 from ..abc import MultiObjectiveNeighborhood, MultiObjectiveSolution
+from ..utils import isclose
 
 
 __all__ = ("D2DPathSolution",)
@@ -27,7 +28,9 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
     """Represents a solution to the D2D problem"""
 
     __slots__ = (
-        "_to_propagate",
+        "__drone_paths_fold",
+        "__technician_paths_fold",
+        "__to_propagate",
         "drone_arrival_timestamps",
         "drone_paths",
         "technician_arrival_timestamps",
@@ -36,7 +39,9 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
     __config_imported: ClassVar[bool] = False
     problem: ClassVar[Optional[str]] = None
     if TYPE_CHECKING:
-        _to_propagate: bool
+        __drone_paths_fold: Final[FrozenSet[Tuple[int, ...]]]
+        __technician_paths_fold: Final[FrozenSet[Tuple[int, ...]]]
+        __to_propagate: bool
         drone_arrival_timestamps: Final[Tuple[Tuple[Tuple[float, ...], ...], ...]]
         drone_paths: Final[Tuple[Tuple[Tuple[int, ...], ...], ...]]
         technician_arrival_timestamps: Final[Tuple[Tuple[float, ...], ...]]
@@ -75,7 +80,9 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         technician_timespans: Optional[Tuple[float, ...]] = None,
         technician_waiting_times: Optional[Tuple[float, ...]] = None,
     ) -> None:
-        self._to_propagate = True
+        self.__drone_paths_fold = frozenset(itertools.chain(*drone_paths))
+        self.__technician_paths_fold = frozenset(technician_paths)
+        self.__to_propagate = True
         self.drone_paths = drone_paths
         self.technician_paths = technician_paths
 
@@ -128,11 +135,11 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
     @property
     def to_propagate(self) -> bool:
         """Set this to `False` if this solution is a result of a tabu-ed operation."""
-        return self._to_propagate
+        return self.__to_propagate
 
     @to_propagate.setter
     def to_propagate(self, propagate: bool) -> None:
-        self._to_propagate = propagate
+        self.__to_propagate = propagate
 
     def shuffle(self, *, use_tqdm: bool, logger: Optional[Callable[[str], Any]]) -> D2DPathSolution:
         drone_paths = list(list(paths) for paths in self.drone_paths)
@@ -707,11 +714,15 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
             raise ImportException(problem) from e
 
     def __hash__(self) -> int:
-        return hash((self.drone_paths, self.technician_paths))
+        return hash((self.__drone_paths_fold, self.__technician_paths_fold, tuple(round(c, 4) for c in self.cost())))
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, D2DPathSolution):
-            return self.drone_paths == other.drone_paths and self.technician_paths == other.technician_paths
+            return (
+                self.__drone_paths_fold == other.__drone_paths_fold
+                and self.__technician_paths_fold == other.__technician_paths_fold
+                and isclose(self.cost(), other.cost())
+            )
 
         return NotImplemented
 
