@@ -57,14 +57,14 @@ jobs:
           --dump output-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.shuffle_after }}.json
 
       - name: Combine coverage reports
-        if: always()
+        if: ${{ !cancelled() }}
         run: |
           coverage combine
           mv .coverage .coverage.${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.shuffle_after }}
 
       - name: Upload solution
         uses: actions/upload-artifact@v3
-        if: always()
+        if: ${{ !cancelled() }}
         with:
           name: tsp-summary
           path: |
@@ -132,14 +132,14 @@ jobs:
           --log log-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}.log.csv
 
       - name: Combine coverage reports
-        if: always()
+        if: ${{ !cancelled() }}
         run: |
           coverage combine
           mv .coverage .coverage.${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}
 
       - name: Upload solution
         uses: actions/upload-artifact@v3
-        if: always()
+        if: ${{ !cancelled() }}
         with:
           name: d2d-summary
           path: |
@@ -238,12 +238,11 @@ jobs:
               "utf-8",
               function(error, data) {
                 if (error) throw error;
-                console.log(`Context SHA: ${context.sha}`);
                 github.rest.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: ${{ github.event.pull_request.number }},
-                  body: `Coverage report for \`${context.sha.substring(0, 6)}\`\n\`\`\`\n${data}\n\`\`\``,
+                  body: `Coverage report for \`${context.sha.substring(0, 7)}\`\n\`\`\`\n${data}\n\`\`\``,
                 });
               }
             );
