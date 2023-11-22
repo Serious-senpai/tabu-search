@@ -32,45 +32,45 @@ jobs:
             verbose: "--verbose"
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-      with:
-        submodules: recursive
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.11"
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
 
-    - name: Install dependencies
-      run: pip install -r dev-requirements.txt
+      - name: Install dependencies
+        run: pip install -r dev-requirements.txt
 
-    - name: Test sample
-      timeout-minutes: 60
-      run: |
-        coverage run \
-        tsp.py ${{ matrix.problem }} \
-        --iterations ${{ matrix.iterations }} \
-        --tabu-size ${{ matrix.tabu_size }} \
-        --shuffle-after ${{ matrix.shuffle_after }} \
-        ${{ matrix.verbose }} \
-        --dump output-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.shuffle_after }}.json
+      - name: Test sample
+        timeout-minutes: 60
+        run: |
+          coverage run \
+          tsp.py ${{ matrix.problem }} \
+          --iterations ${{ matrix.iterations }} \
+          --tabu-size ${{ matrix.tabu_size }} \
+          --shuffle-after ${{ matrix.shuffle_after }} \
+          ${{ matrix.verbose }} \
+          --dump output-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.shuffle_after }}.json
 
-    - name: Combine coverage reports
-      if: always()
-      run: |
-        coverage combine
-        mv .coverage .coverage.${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.shuffle_after }}
+      - name: Combine coverage reports
+        if: ${{ !cancelled() }}
+        run: |
+          coverage combine
+          mv .coverage .coverage.${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.shuffle_after }}
 
-    - name: Upload solution
-      uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: tsp-summary
-        path: |
-          output-**.json
-          .coverage.**
-        retention-days: 1
+      - name: Upload solution
+        uses: actions/upload-artifact@v3
+        if: ${{ !cancelled() }}
+        with:
+          name: tsp-summary
+          path: |
+            output-**.json
+            .coverage.**
+          retention-days: 1
 
   d2d-test:
     name: Solve D2D
@@ -102,103 +102,147 @@ jobs:
           verbose: "--verbose"
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-      with:
-        submodules: recursive
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.11"
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
 
-    - name: Install dependencies
-      run: pip install -r dev-requirements.txt
+      - name: Install dependencies
+        run: pip install -r dev-requirements.txt
 
-    - name: Test sample
-      timeout-minutes: 60
-      run: |
-        coverage run \
-        d2d.py ${{ matrix.problem }} \
-        --iterations ${{ matrix.iterations }} \
-        --tabu-size ${{ matrix.tabu_size }} \
-        --drone-config-mapping ${{ matrix.drone_config }} \
-        --energy-mode ${{ matrix.energy_mode }} \
-        --propagation-priority ${{ matrix.propagation_priority }} \
-        --max-propagation ${{ matrix.max_propagation }} \
-        --pool-size ${{ matrix.pool_size }} \
-        ${{ matrix.verbose }} \
-        --dump output-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}.json \
-        --log log-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}.log.csv
+      - name: Test sample
+        timeout-minutes: 60
+        run: |
+          coverage run \
+          d2d.py ${{ matrix.problem }} \
+          --iterations ${{ matrix.iterations }} \
+          --tabu-size ${{ matrix.tabu_size }} \
+          --drone-config-mapping ${{ matrix.drone_config }} \
+          --energy-mode ${{ matrix.energy_mode }} \
+          --propagation-priority ${{ matrix.propagation_priority }} \
+          --max-propagation ${{ matrix.max_propagation }} \
+          --pool-size ${{ matrix.pool_size }} \
+          ${{ matrix.verbose }} \
+          --dump output-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}.json \
+          --log log-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}.log.csv
 
-    - name: Combine coverage reports
-      if: always()
-      run: |
-        coverage combine
-        mv .coverage .coverage.${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}
+      - name: Combine coverage reports
+        if: ${{ !cancelled() }}
+        run: |
+          coverage combine
+          mv .coverage .coverage.${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}
 
-    - name: Upload solution
-      uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: d2d-summary
-        path: |
-          output-*.json
-          log-*.log.csv
-          .coverage.*
-        retention-days: 1
+      - name: Upload solution
+        uses: actions/upload-artifact@v3
+        if: ${{ !cancelled() }}
+        with:
+          name: d2d-summary
+          path: |
+            output-*.json
+            log-*.log.csv
+            .coverage.*
+          retention-days: 1
 
   summary:
     name: Summarize solutions
     runs-on: ubuntu-latest
-    if: always()
+    if: ${{ !cancelled() }}
     needs: [tsp-test, d2d-test]
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-      with:
-        submodules: recursive
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
-    - name: Download TSP solutions
-      uses: actions/download-artifact@v3
-      with:
-        name: tsp-summary
-        path: tsp-summary/
+      - name: Download TSP solutions
+        uses: actions/download-artifact@v3
+        with:
+          name: tsp-summary
+          path: tsp-summary/
 
-    - name: Download D2D solutions
-      uses: actions/download-artifact@v3
-      with:
-        name: d2d-summary
-        path: d2d-summary/
+      - name: Download D2D solutions
+        uses: actions/download-artifact@v3
+        with:
+          name: d2d-summary
+          path: d2d-summary/
 
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.11"
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
 
-    - name: Install dependencies
-      run: pip install -r dev-requirements.txt
+      - name: Install dependencies
+        run: pip install -r dev-requirements.txt
 
-    - name: Summarize solutions
-      run: |
-        export PYTHONPATH=$GITHUB_WORKSPACE
-        python scripts/tsp-summary.py
-        python scripts/d2d-summary.py
+      - name: Summarize solutions
+        run: |
+          export PYTHONPATH=$GITHUB_WORKSPACE
+          python scripts/tsp-summary.py
+          python scripts/d2d-summary.py
 
-    - name: Combine coverage results
-      run: |
-        coverage combine tsp-summary/ d2d-summary/
-        coverage html --directory=coverage-html
+      - name: Combine coverage results
+        run: |
+          coverage combine tsp-summary/ d2d-summary/
+          coverage html --directory=coverage-html
 
-    - name: Report coverage results
-      run: coverage report
+      - name: Report coverage results
+        run: |
+          coverage report
+          coverage report > coverage-report.txt
 
-    - name: Upload summary as artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: summary
-        path: |
-          tsp-summary/*.csv
-          d2d-summary/*.csv
-          coverage-html/
+      - name: Upload coverage result
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: coverage-report.txt
+          retention-days: 1
+
+      - name: Upload summary as artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: summary
+          path: |
+            tsp-summary/*.csv
+            d2d-summary/*.csv
+            coverage-html/
+
+  comment:
+    name: Comment coverage results
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' && !cancelled() }}
+    needs: summary
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Download coverage results
+        uses: actions/download-artifact@v3
+        with:
+          name: coverage-report
+          path: .
+
+      - name: Send coverage results in PR
+        uses: actions/github-script@v7
+        with:
+          retries: 3
+          script: |
+            var fs = require("fs");
+            await fs.readFile(
+              "coverage-report.txt",
+              "utf-8",
+              function(error, data) {
+                if (error) throw error;
+                github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: ${{ github.event.pull_request.number }},
+                  body: `Coverage report for \`${context.sha.substring(0, 7)}\`\n\`\`\`\n${data}\n\`\`\``,
+                });
+              }
+            );
