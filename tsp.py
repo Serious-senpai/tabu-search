@@ -35,7 +35,8 @@ if __name__ == "__main__":
 
     utils.display_platform()
 
-    namespace: Namespace = parser.parse_args()  # type: ignore
+    namespace = Namespace()
+    parser.parse_args(namespace=namespace)
     print(namespace)
     tsp.TSPPathSolution.import_problem(namespace.problem)
 
