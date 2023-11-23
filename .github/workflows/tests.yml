@@ -2,6 +2,8 @@ name: Tests
 
 on:
   push:
+    branches:
+      - "main"
     paths-ignore:
       - "**.md"
   pull_request:
@@ -242,7 +244,7 @@ jobs:
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: ${{ github.event.pull_request.number }},
-                  body: `Coverage report for \`${context.sha.substring(0, 7)}\`\n\`\`\`\n${data}\n\`\`\``,
+                  body: `🎉 All tests completed! Here is the coverage report.\n\`\`\`\n${data}\n\`\`\``,
                 });
               }
             );
