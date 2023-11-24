@@ -41,7 +41,7 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
 
             for pair in itertools.permutations(range(solution.technicians_count), 2):
                 x = next(bundles_iter)
-                x.data.append(pair)  # type: ignore
+                x.data.append(pair)
 
             for candidates in pool.map(self.swap_technician_technician, bundles):
                 callback(candidates)
@@ -63,7 +63,7 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
 
             for pair in itertools.permutations(range(solution.drones_count), 2):
                 x = next(bundles_iter)
-                x.data.append(pair)  # type: ignore
+                x.data.append(pair)
 
             for candidates in pool.map(self.swap_drone_drone, bundles):
                 callback(candidates)

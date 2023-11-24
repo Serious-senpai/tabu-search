@@ -61,12 +61,12 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
 
             pairs: Iterable[Tuple[Tuple[int, int], Tuple[int, int]]] = itertools.combinations(paths, 2)
             if self._first_length != self._second_length:
-                pairs = itertools.permutations(paths, 2)  # type: ignore
+                pairs = itertools.permutations(paths, 2)
 
             for pair in pairs:
                 next(bundle_iter).data.append(pair)
 
-            return pool.map_async(self.swap_drone_drone, bundles, callback=callback)  # type: ignore  # typing bug in multiprocessing.pool module
+            return pool.map_async(self.swap_drone_drone, bundles, callback=callback)
 
         def technician_technician_swap() -> p.MapResult[Set[Tuple[SolutionFactory, Tuple[int, int]]]]:
             bundles: List[IPCBundle[Swap, List[Tuple[int, int]]]] = [IPCBundle(self, []) for _ in range(pool_size)]
@@ -74,13 +74,12 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
 
             pairs: Iterable[Tuple[int, int]] = itertools.combinations(range(solution.technicians_count), 2)
             if self._first_length != self._second_length:
-                pairs = itertools.permutations(range(solution.technicians_count), 2)  # type: ignore
+                pairs = itertools.permutations(range(solution.technicians_count), 2)
 
             for pair in pairs:
                 next(bundle_iter).data.append(pair)
 
-            # typing bug in multiprocessing.pool module
-            return pool.map_async(self.swap_technician_technician, bundles, callback=callback)  # type: ignore  # typing bug in multiprocessing.pool module
+            return pool.map_async(self.swap_technician_technician, bundles, callback=callback)
 
         def technician_drone_swap() -> p.MapResult[Set[Tuple[SolutionFactory, Tuple[int, int]]]]:
             bundles: List[IPCBundle[Swap, List[Tuple[int, Tuple[int, int]]]]] = [IPCBundle(self, []) for _ in range(pool_size)]
@@ -93,8 +92,7 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
             for arg in itertools.product(range(solution.technicians_count), drone_paths):
                 next(bundle_iter).data.append(arg)
 
-            # typing bug in multiprocessing.pool module
-            return pool.map_async(self.swap_technician_drone, bundles, callback=callback)  # type: ignore  # typing bug in multiprocessing.pool module
+            return pool.map_async(self.swap_technician_drone, bundles, callback=callback)
 
         def drone_self_swap() -> p.MapResult[Set[Tuple[SolutionFactory, Tuple[int, int]]]]:
             bundles: List[IPCBundle[Swap, List[Tuple[int, int]]]] = [IPCBundle(self, []) for _ in range(pool_size)]
@@ -104,7 +102,7 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
                 for path_index in range(len(path)):
                     next(bundle_iter).data.append((drone, path_index))
 
-            return pool.map_async(self.swap_drone_self, bundles, callback=callback)  # type: ignore  # typing bug in multiprocessing.pool module
+            return pool.map_async(self.swap_drone_self, bundles, callback=callback)
 
         def technician_self_swap() -> p.MapResult[Set[Tuple[SolutionFactory, Tuple[int, int]]]]:
             bundles: List[IPCBundle[Swap, List[int]]] = [IPCBundle(self, []) for _ in range(pool_size)]
@@ -113,9 +111,7 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
             for technician in range(solution.technicians_count):
                 next(bundle_iter).data.append(technician)
 
-            return pool.map_async(self.swap_technician_self, bundles, callback=callback)  # type: ignore  # typing bug in multiprocessing.pool module
-
-        # Wait for https://github.com/microsoft/pyright/pull/6323 to be merged
+            return pool.map_async(self.swap_technician_self, bundles, callback=callback)
 
         for r in (
             drone_drone_swap(),
