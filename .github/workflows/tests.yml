@@ -81,9 +81,9 @@ jobs:
       fail-fast: false
       matrix:
         problem: [
-          "6.10.1", "6.10.2", "6.10.3", "6.10.4", "6.20.1", "6.20.2", "6.20.3", "6.20.4", "6.5.1", "6.5.2", "6.5.3", "6.5.4",
           "10.10.1", "10.10.2", "10.10.3", "10.10.4", "10.20.1", "10.20.2", "10.20.3", "10.20.4", "10.5.1", "10.5.2", "10.5.3", "10.5.4",
           "20.10.1", "20.10.2", "20.10.3", "20.10.4", "20.20.1", "20.20.2", "20.20.3", "20.20.4", "20.5.1", "20.5.2", "20.5.3", "20.5.4",
+          "50.10.1", "50.10.2", "50.10.3", "50.10.4", "50.20.1", "50.20.2", "50.20.3", "50.20.4", "50.30.1", "50.30.2", "50.30.3", "50.30.4", "50.40.1", "50.40.2", "50.40.3", "50.40.4",
         ]
         iterations: [2000]
         tabu_size: [10]
@@ -131,7 +131,6 @@ jobs:
           --pool-size ${{ matrix.pool_size }} \
           ${{ matrix.verbose }} \
           --dump output-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}.json \
-          --log log-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}.log.csv
 
       - name: Combine coverage reports
         if: ${{ !cancelled() }}
@@ -146,7 +145,6 @@ jobs:
           name: d2d-summary
           path: |
             output-*.json
-            log-*.log.csv
             .coverage.*
           retention-days: 1
 
