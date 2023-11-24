@@ -182,6 +182,7 @@ def plot_multi_fronts(pareto_fronts: Iterable[Tuple[Iterable[Tuple[float, float]
             [cost[0] for cost in result_costs],
             [cost[1] for cost in result_costs],
             c=f"C{index}",
+            alpha=0.3
             label=description,
         )
 
