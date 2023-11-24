@@ -192,3 +192,5 @@ def plot_multi_fronts(pareto_fronts: Iterable[Tuple[Iterable[Tuple[float, float]
         pyplot.show()
     else:
         pyplot.savefig(dump)
+
+    pyplot.close()

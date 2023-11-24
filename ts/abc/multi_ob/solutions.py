@@ -192,5 +192,6 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
 
             pyplot.legend()
             pyplot.show()
+            pyplot.close()
 
         return post_optimized_results

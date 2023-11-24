@@ -150,6 +150,7 @@ class TSPPathSolution(SingleObjectiveSolution):
 
         pyplot.legend()
         pyplot.show()
+        pyplot.close()
 
     @classmethod
     def initial(cls) -> TSPPathSolution:

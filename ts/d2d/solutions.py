@@ -281,6 +281,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
 
         pyplot.legend()
         pyplot.show()
+        pyplot.close()
 
     @classmethod
     def calculate_drone_arrival_timestamps(cls, path: Sequence[int], *, config_index: int, offset: float) -> Tuple[float, ...]:
