@@ -177,17 +177,19 @@ def plot_multi_fronts(pareto_fronts: Iterable[Tuple[Iterable[Tuple[float, float]
     assert isinstance(ax, axes.Axes)
 
     for index, (pareto_front, description) in enumerate(pareto_fronts):
-        result_costs = set(result for result in pareto_front)
+        result_costs = set((round(r[0], 4), round(r[1], 4)) for r in pareto_front)
         ax.scatter(
             [cost[0] for cost in result_costs],
             [cost[1] for cost in result_costs],
             c=f"C{index}",
-            alpha=0.3,
+            alpha=0.5,
             label=description,
         )
 
     ax.grid(True)
 
+    pyplot.xlabel("Service duration")
+    pyplot.ylabel("Total waiting time")
     pyplot.legend()
     if dump is None:
         pyplot.show()

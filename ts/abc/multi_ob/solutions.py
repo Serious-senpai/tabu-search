@@ -190,6 +190,8 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
 
             ax.grid(True)
 
+            pyplot.xlabel("Objective 1")
+            pyplot.ylabel("Objective 2")
             pyplot.legend()
             pyplot.show()
 
