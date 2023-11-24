@@ -62,11 +62,12 @@ with open(summary_dir / "d2d-summary.csv", "w") as csv:
                 )
                 front.append(tuple(d["cost"]))  # type: ignore
 
+            key = data["problem"] + "-" + data["energy-mode"]
             try:
-                pareto_fronts[data["problem"]].append((front, data["propagation-priority"]))
+                pareto_fronts[key].append((front, data["propagation-priority"]))
             except KeyError:
-                pareto_fronts[data["problem"]] = [(front, data["propagation-priority"])]
+                pareto_fronts[key] = [(front, data["propagation-priority"])]
 
 
-for problem, fronts in pareto_fronts.items():
-    utils.plot_multi_fronts(fronts, dump=f"d2d-summary/{problem}.png")
+for key, fronts in pareto_fronts.items():
+    utils.plot_multi_fronts(fronts, dump=f"d2d-summary/{key}.png")
