@@ -211,6 +211,7 @@ jobs:
           path: |
             tsp-summary/*.csv
             d2d-summary/*.csv
+            d2d-summary/*.png
             coverage-html/
 
   comment:

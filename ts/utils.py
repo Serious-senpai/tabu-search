@@ -5,9 +5,10 @@ import math
 import os
 import threading
 import sys
-from typing import Any, Callable, List, Literal, Optional, ParamSpec, Sequence, Tuple, TypeVar, TYPE_CHECKING, overload
+from typing import Any, Callable, Iterable, List, Literal, Optional, ParamSpec, Sequence, Tuple, TypeVar, TYPE_CHECKING, overload
 
 import numpy as np
+from matplotlib import axes, pyplot
 from pymoo.indicators.hv import HV  # type: ignore
 from pymoo.indicators.igd import IGD  # type: ignore
 
@@ -169,3 +170,25 @@ def inverted_generational_distance(
 
     indicator = IGD(np.array(ref_costs))
     return indicator(np.array(pareto_costs))
+
+
+def plot_multi_fronts(pareto_fronts: Iterable[Tuple[Iterable[Tuple[float, float]], str]], *, dump: Optional[str] = None) -> None:
+    _, ax = pyplot.subplots()
+    assert isinstance(ax, axes.Axes)
+
+    for index, (pareto_front, description) in enumerate(pareto_fronts):
+        result_costs = set(result for result in pareto_front)
+        ax.scatter(
+            [cost[0] for cost in result_costs],
+            [cost[1] for cost in result_costs],
+            c=f"C{index}",
+            label=description,
+        )
+
+    ax.grid(True)
+
+    pyplot.legend()
+    if dump is None:
+        pyplot.show()
+    else:
+        pyplot.savefig(dump)

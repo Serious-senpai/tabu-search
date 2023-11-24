@@ -1,7 +1,9 @@
 import json
 import os
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List, Tuple
+
+from ts import utils
 
 
 summary_dir = Path("d2d-summary/")
@@ -29,6 +31,7 @@ def to_map(*args: str) -> Dict[str, str]:
     return result
 
 
+pareto_fronts: Dict[str, List[Tuple[List[Tuple[float, float]], str]]] = {}
 with open(summary_dir / "d2d-summary.csv", "w") as csv:
     csv.write(",".join(field_names) + "\n")
 
@@ -37,6 +40,7 @@ with open(summary_dir / "d2d-summary.csv", "w") as csv:
             with open(summary_dir / file, "r") as f:
                 data = json.load(f)
 
+            front: List[Tuple[float, float]] = []
             for d in data["solutions"]:
                 csv.write(
                     ",".join(
@@ -56,3 +60,13 @@ with open(summary_dir / "d2d-summary.csv", "w") as csv:
                         )
                     ) + "\n"
                 )
+                front.append(tuple(d["cost"]))  # type: ignore
+
+            try:
+                pareto_fronts[data["problem"]].append((front, data["propagation-priority"]))
+            except KeyError:
+                pareto_fronts[data["problem"]] = [(front, data["propagation-priority"])]
+
+
+for problem, fronts in pareto_fronts.items():
+    utils.plot_multi_fronts(fronts, dump=f"d2d-summary/{problem}.png")
