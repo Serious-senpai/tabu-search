@@ -222,7 +222,6 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                         if solution.calculate_drone_energy_consumption(
                             _second_path,
                             config_index=solution.drone_config_mapping[second_drone],
-                            arrival_timestamps=second_arrival_timestamps,
                         ) > second_config.battery:
                             continue
 
@@ -280,10 +279,10 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                             if solution.calculate_total_weight(p1) > first_config.capacity or solution.calculate_total_weight(p2) > second_config.capacity:
                                 continue
 
-                            if solution.calculate_drone_energy_consumption(p1, config_index=solution.drone_config_mapping[first_drone], arrival_timestamps=first_arrival_timestamps) > first_config.battery:
+                            if solution.calculate_drone_energy_consumption(p1, config_index=solution.drone_config_mapping[first_drone]) > first_config.battery:
                                 continue
 
-                            if solution.calculate_drone_energy_consumption(p2, config_index=solution.drone_config_mapping[second_drone], arrival_timestamps=second_arrival_timestamps) > second_config.battery:
+                            if solution.calculate_drone_energy_consumption(p2, config_index=solution.drone_config_mapping[second_drone]) > second_config.battery:
                                 continue
 
                             _drone_timespans = list(solution.drone_timespans)
@@ -398,7 +397,6 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                     if solution.calculate_drone_energy_consumption(
                         _drone_path,
                         config_index=solution.drone_config_mapping[drone],
-                        arrival_timestamps=drone_arrival_timestamps,
                     ) > drone_config.battery:
                         return
 
@@ -451,7 +449,7 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                         if solution.calculate_total_weight(_drone_path) > drone_config.capacity:
                             continue
 
-                        if solution.calculate_drone_energy_consumption(_drone_path, config_index=solution.drone_config_mapping[drone], arrival_timestamps=drone_arrival_timestamps) > drone_config.battery:
+                        if solution.calculate_drone_energy_consumption(_drone_path, config_index=solution.drone_config_mapping[drone]) > drone_config.battery:
                             continue
 
                         _technician_timespans = list(solution.technician_timespans)

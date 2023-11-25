@@ -182,8 +182,8 @@ jobs:
       - name: Summarize solutions
         run: |
           export PYTHONPATH=$GITHUB_WORKSPACE
-          python scripts/tsp-summary.py
-          python scripts/d2d-summary.py
+          coverage run scripts/tsp-summary.py
+          coverage run scripts/d2d-summary.py
 
       - name: Run pytest
         run: coverage run -m pytest

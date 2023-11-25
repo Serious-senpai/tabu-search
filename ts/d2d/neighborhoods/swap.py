@@ -227,10 +227,10 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
                 if solution.calculate_total_weight(_first_path) > first_config.capacity or solution.calculate_total_weight(_second_path) > second_config.capacity:
                     continue
 
-                if solution.calculate_drone_energy_consumption(_first_path, config_index=solution.drone_config_mapping[first_drone], arrival_timestamps=first_arrival_timestamps) > first_config.battery:
+                if solution.calculate_drone_energy_consumption(_first_path, config_index=solution.drone_config_mapping[first_drone]) > first_config.battery:
                     continue
 
-                if solution.calculate_drone_energy_consumption(_second_path, config_index=solution.drone_config_mapping[second_drone], arrival_timestamps=second_arrival_timestamps) > second_config.battery:
+                if solution.calculate_drone_energy_consumption(_second_path, config_index=solution.drone_config_mapping[second_drone]) > second_config.battery:
                     continue
 
                 _drone_timespans = drone_timespans.copy()
@@ -351,7 +351,7 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
                         if solution.calculate_total_weight(_drone_path) > drone_config.capacity:
                             continue
 
-                        if solution.calculate_drone_energy_consumption(_drone_path, config_index=solution.drone_config_mapping[drone], arrival_timestamps=drone_arrival_timestamps) > drone_config.battery:
+                        if solution.calculate_drone_energy_consumption(_drone_path, config_index=solution.drone_config_mapping[drone]) > drone_config.battery:
                             continue
 
                         _technician_timespans = list(solution.technician_timespans)
@@ -422,7 +422,7 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
                     if solution.calculate_total_weight(_path) > config.capacity:
                         continue
 
-                    if solution.calculate_drone_energy_consumption(_path, config_index=solution.drone_config_mapping[drone], arrival_timestamps=arrival_timestamps) > config.battery:
+                    if solution.calculate_drone_energy_consumption(_path, config_index=solution.drone_config_mapping[drone]) > config.battery:
                         continue
 
                     _drone_timespans = list(solution.drone_timespans)

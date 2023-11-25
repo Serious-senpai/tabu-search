@@ -6,7 +6,7 @@ import os
 import platform
 import threading
 import sys
-from typing import Any, Callable, Iterable, List, Literal, Optional, ParamSpec, Sequence, Tuple, TypeVar, TYPE_CHECKING, overload
+from typing import Any, Callable, Iterable, List, Optional, ParamSpec, Sequence, Tuple, TypeVar, TYPE_CHECKING, overload
 
 import numpy as np
 from matplotlib import axes, pyplot
@@ -15,28 +15,14 @@ from pymoo.indicators.igd import IGD  # type: ignore
 
 
 __all__ = (
-    "false",
-    "true",
-    "zero",
     "ngettext",
     "display_platform",
     "synchronized",
     "isclose",
     "hypervolume",
-    "inverted_generational_distance"
+    "inverted_generational_distance",
+    "plot_multi_fronts",
 )
-
-
-def false(*args: Any, **kwargs: Any) -> Literal[False]:
-    return False
-
-
-def true(*args: Any, **kwargs: Any) -> Literal[True]:
-    return True
-
-
-def zero(*args: Any, **kwargs: Any) -> Literal[0]:
-    return 0
 
 
 def ngettext(predicate: bool, if_true: str, if_false: str, /) -> str:
