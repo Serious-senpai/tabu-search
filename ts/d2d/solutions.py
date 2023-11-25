@@ -13,7 +13,7 @@ from typing import Any, Callable, ClassVar, Final, FrozenSet, List, Literal, Opt
 from matplotlib import axes, pyplot
 
 from .config import DroneEnduranceConfig, DroneEnergyConsumptionMode, DroneLinearConfig, DroneNonlinearConfig, TruckConfig
-from .errors import ImportException, NoProblemImported
+from .errors import ProblemImportException
 from .mixins import SolutionMetricsMixin
 from .neighborhoods import Swap, Insert
 from ..abc import MultiObjectiveNeighborhood, MultiObjectiveSolution
@@ -646,7 +646,8 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
     @classmethod
     def share_distances(cls) -> _SharedDistancesManager:
         if cls.problem is None:
-            raise NoProblemImported
+            message = "No problem has been imported yet"
+            raise RuntimeError(message)
 
         return _SharedDistancesManager(problem=cls.problem, distances=cls.distances)
 
@@ -710,7 +711,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
                 cls.distances = tuple(tuple(r) for r in distances)
 
         except Exception as e:
-            raise ImportException(problem) from e
+            raise ProblemImportException(problem) from e
 
     def __hash__(self) -> int:
         return hash((self.__drone_paths_fold, self.__technician_paths_fold, tuple(round(c, 4) for c in self.cost())))

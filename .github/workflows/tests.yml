@@ -185,9 +185,12 @@ jobs:
           python scripts/tsp-summary.py
           python scripts/d2d-summary.py
 
+      - name: Run pytest
+        run: coverage run -m pytest
+
       - name: Combine coverage results
         run: |
-          coverage combine tsp-summary/ d2d-summary/
+          coverage combine tsp-summary/ d2d-summary/ .
           coverage html --directory=coverage-html
 
       - name: Report coverage results
