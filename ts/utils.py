@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-import platform
+import itertools
 import math
 import os
+import platform
 import threading
 import sys
 from typing import Any, Callable, Iterable, List, Literal, Optional, ParamSpec, Sequence, Tuple, TypeVar, TYPE_CHECKING, overload
@@ -182,13 +183,14 @@ def plot_multi_fronts(
     _, ax = pyplot.subplots()
     assert isinstance(ax, axes.Axes)
 
+    markers = itertools.cycle(["s", "d", "x", "*", "2"])
     for index, (pareto_front, description) in enumerate(pareto_fronts):
         result_costs = set((round(r[0], 4), round(r[1], 4)) for r in pareto_front)
         ax.scatter(
             [cost[0] for cost in result_costs],
             [cost[1] for cost in result_costs],
             c=f"C{index}",
-            alpha=0.5,
+            marker=next(markers),
             label=description,
         )
 
