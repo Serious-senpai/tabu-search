@@ -172,7 +172,13 @@ def inverted_generational_distance(
     return indicator(np.array(pareto_costs))
 
 
-def plot_multi_fronts(pareto_fronts: Iterable[Tuple[Iterable[Tuple[float, float]], str]], *, dump: Optional[str] = None) -> None:
+def plot_multi_fronts(
+    pareto_fronts: Iterable[Tuple[Iterable[Tuple[float, float]], str]],
+    *,
+    dump: Optional[str] = None,
+    xlabel: str = "Objective 1",
+    ylabel: str = "Objective 2",
+) -> None:
     _, ax = pyplot.subplots()
     assert isinstance(ax, axes.Axes)
 
@@ -188,8 +194,8 @@ def plot_multi_fronts(pareto_fronts: Iterable[Tuple[Iterable[Tuple[float, float]
 
     ax.grid(True)
 
-    pyplot.xlabel("Service duration")
-    pyplot.ylabel("Total waiting time")
+    pyplot.xlabel(xlabel)
+    pyplot.ylabel(ylabel)
     pyplot.legend()
     if dump is None:
         pyplot.show()

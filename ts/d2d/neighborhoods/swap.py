@@ -5,8 +5,8 @@ import threading
 from multiprocessing import pool as p
 from typing import Any, Callable, Dict, Final, Iterable, Optional, List, Set, Tuple, TYPE_CHECKING
 
+from .base import D2DBaseNeighborhood
 from .factory import SolutionFactory
-from .mixins import D2DBaseNeighborhood
 from ..errors import NeighborhoodException
 from ...bundle import IPCBundle
 from ...utils import synchronized
@@ -131,10 +131,10 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
                 (
                     "Thread",
                     f"\"Swap {self._first_length, self._second_length}\"",
-                    "Old service duration",
-                    "Old total waiting time",
-                    "New service duration",
-                    "New total waiting time",
+                    "Old service duration (s)",
+                    "Old total waiting time (s)",
+                    "New service duration (s)",
+                    "New total waiting time (s)",
                     "Old drone paths",
                     "New drone paths",
                     "Old technician paths",

@@ -5,8 +5,8 @@ import threading
 from multiprocessing import pool as p
 from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, TYPE_CHECKING
 
+from .base import D2DBaseNeighborhood
 from .factory import SolutionFactory
-from .mixins import D2DBaseNeighborhood
 from ...bundle import IPCBundle
 if TYPE_CHECKING:
     from ..solutions import D2DPathSolution
@@ -92,10 +92,10 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                 (
                     "Thread",
                     f"\"Insert {self.length}\"",
-                    "Old service duration",
-                    "Old total waiting time",
-                    "New service duration",
-                    "New total waiting time",
+                    "Old service duration (s)",
+                    "Old total waiting time (s)",
+                    "New service duration (s)",
+                    "New total waiting time (s)",
                     "Old drone paths",
                     "New drone paths",
                     "Old technician paths",
