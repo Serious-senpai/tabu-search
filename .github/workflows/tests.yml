@@ -93,7 +93,7 @@ jobs:
         pool_size: [8]
         include:
         - problem: "100.10.1"
-          iterations: 200
+          iterations: 500
           tabu_size: 10
           drone_config: "3 3 3 3"
           energy_mode: "linear"
@@ -130,6 +130,7 @@ jobs:
           --pool-size ${{ matrix.pool_size }} \
           ${{ matrix.verbose }} \
           --dump output-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}.json \
+          --log log-${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}.log.csv
 
       - name: Combine coverage reports
         if: ${{ !cancelled() }}
@@ -144,6 +145,7 @@ jobs:
           name: d2d-summary
           path: |
             output-*.json
+            log-*.log.csv
             .coverage.*
           retention-days: 1
 
