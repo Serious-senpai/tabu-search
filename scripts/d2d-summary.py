@@ -23,14 +23,6 @@ field_names = (
 )
 
 
-def to_map(*args: str) -> Dict[str, str]:
-    result: Dict[str, str] = {}
-    for index, key in enumerate(field_names):
-        result[key] = args[index]
-
-    return result
-
-
 pareto_fronts: Dict[str, List[Tuple[List[Tuple[float, float]], str]]] = {}
 with open(summary_dir / "d2d-summary.csv", "w") as csv:
     csv.write(",".join(field_names) + "\n")

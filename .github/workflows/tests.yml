@@ -186,7 +186,7 @@ jobs:
           coverage run scripts/d2d-summary.py
 
       - name: Run pytest
-        run: coverage run -m pytest
+        run: coverage run -m pytest -v
 
       - name: Combine coverage results
         run: |
