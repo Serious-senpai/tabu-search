@@ -1,0 +1,43 @@
+name: Compare
+
+on:
+  issue_comment:
+    types: created
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    name: Compare results to main
+    if: ${{ github.event.issue.pull_request }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v3
+        with:
+          path: issue-${{ github.event.issue.number }}
+
+      - name: Checkout main branch
+        uses: actions/checkout@v3
+        with:
+          ref: main
+          path: main
+
+      - name: Install issue-${{ github.event.issue.number }} dependencies
+        working-directory: issue-${{ github.event.issue.number }}
+        run: pip install -r dev-requirements.txt
+
+      - name: Install main dependencies
+        working-directory: main
+        run: pip install -r dev-requirements.txt
+
+      - name: Run test and compare results
+        run: |
+          export PYTHONPATH=$GITHUB_WORKSPACE
+          python scripts/d2d-compare.py ${{ github.event.comment.body }} --repos issue-${{ github.event.issue.number }} main
