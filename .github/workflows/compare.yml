@@ -26,7 +26,8 @@ jobs:
 
       - name: Run test
         run: |
-          python d2d.py ${${{ github.event.comment.body }}#"/d2d-compare"} \
+          problem="${{ github.event.comment.body }}"
+          python d2d.py ${problem#"/d2d-compare"} \
           --iterations 2000 \
           --drone-config-mapping 3 3 3 3 \
           --propagation-priority min-distance \
@@ -55,7 +56,8 @@ jobs:
 
       - name: Run test
         run: |
-          python d2d.py ${${{ github.event.comment.body }}#"/d2d-compare"} \
+          problem="${{ github.event.comment.body }}"
+          python d2d.py ${problem#"/d2d-compare"} \
           --iterations 2000 \
           --drone-config-mapping 3 3 3 3 \
           --propagation-priority min-distance \
