@@ -21,7 +21,8 @@ jobs:
           problem="${{ github.event.comment.body }}"
           problem=$(echo ${problem#"/d2d-compare"} | xargs)
           echo "$problem" > input.txt
-          exit [[ "$problem" =~ ^[0-9]+$dot[0-9]+$dot[0-9]+$ ]]
+          [[ "$problem" =~ ^[0-9]+$dot[0-9]+$dot[0-9]+$ ]]
+          exit $?
 
       - name: Upload parsed input
         uses: actions/upload-artifact@v3
