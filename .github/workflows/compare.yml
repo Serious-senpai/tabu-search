@@ -1,0 +1,98 @@
+name: Compare D2D solutions
+
+on:
+  issue_comment:
+    types: created
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  pr-test:
+    name: Test on PR
+    if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, '/d2d-compare') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: pip install -r dev-requirements.txt
+
+      - name: Run test
+        run: |
+          python d2d.py ${${{ github.event.comment.body }}#"/d2d-compare"} \
+          --iterations 2000 \
+          --drone-config-mapping 3 3 3 3 \
+          --propagation-priority min-distance \
+          --pool-size 8 \
+          --dump pr-#${{ github.event.issue.number }}.json 
+
+      - name: Upload solution
+        uses: actions/upload-artifact@v3
+        with:
+          name: solutions
+          path: pr-#${{ github.event.issue.number }}.json
+
+  main-test:
+    name: Test on main
+    if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, '/d2d-compare') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v3
+        with:
+          ref: main
+
+      - name: Install dependencies
+        run: pip install -r dev-requirements.txt
+
+      - name: Run test
+        run: |
+          python d2d.py ${${{ github.event.comment.body }}#"/d2d-compare"} \
+          --iterations 2000 \
+          --drone-config-mapping 3 3 3 3 \
+          --propagation-priority min-distance \
+          --pool-size 8 \
+          --dump main.json 
+
+      - name: Upload solution
+        uses: actions/upload-artifact@v3
+        with:
+          name: solutions
+          path: main.json
+
+  compare:
+    name: Compare solutions
+    if: ${{ github.event.issue.pull_request }}
+    needs: [pr-test, main-test]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: pip install -r dev-requirements.txt
+
+      - name: Download solutions
+        uses: actions/download-artifact@v3
+        with:
+          name: solutions
+
+      - name: Combine solutions and compare
+        run: |
+          export PYTHONPATH=$GITHUB_WORKSPACE
+          python scripts/compare.py pr-#${{ github.event.issue.number }}.json main.json
+
+      - name: Upload compare result
+        uses: actions/upload-artifact@v3
+        with:
+          name: solutions
+          path: compare.png
