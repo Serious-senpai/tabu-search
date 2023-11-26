@@ -20,7 +20,7 @@ jobs:
           dot="\."
           problem="${{ github.event.comment.body }}"
           problem=$(echo ${problem#"/d2d-compare"} | xargs)
-          echo -n "$problem"> input.txt
+          echo -n "$problem" > input.txt
           [[ "$problem" =~ ^[0-9]+$dot[0-9]+$dot[0-9]+$ ]]
           exit $?
 
@@ -50,6 +50,18 @@ jobs:
                 });
               }
             );
+
+      - name: Add reaction to comment
+        uses: actions/github-script@v7
+        with:
+          retries: 3
+          script: |
+            github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: ${{ github.event.comment.id }},
+              content: "+1",
+            });
 
   pr-test:
     name: Test on PR
