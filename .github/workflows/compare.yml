@@ -91,7 +91,7 @@ jobs:
       - name: Combine solutions and compare
         run: |
           export PYTHONPATH=$GITHUB_WORKSPACE
-          python scripts/compare.py pr-#${{ github.event.issue.number }}.json main.json
+          python scripts/d2d-compare.py pr-#${{ github.event.issue.number }}.json main.json
 
       - name: Upload compare result
         uses: actions/upload-artifact@v3
