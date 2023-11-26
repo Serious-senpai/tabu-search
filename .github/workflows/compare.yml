@@ -147,3 +147,23 @@ jobs:
         with:
           name: solutions
           path: compare.png
+
+      - name: Send completion notification
+        uses: actions/github-script@v7
+        with:
+          retries: 3
+          script: |
+            var fs = require("fs");
+            await fs.readFile(
+              "input.txt",
+              "utf-8",
+              function(error, data) {
+                if (error) throw error;
+                github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: ${{ github.event.issue.number }},
+                  body: `🎉 Comparison request for D2D problem \`${data}\` completed! You can view the workflow results [here](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).`,
+                });
+              }
+            );
