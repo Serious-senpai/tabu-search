@@ -20,7 +20,7 @@ jobs:
           dot="\."
           problem="${{ github.event.comment.body }}"
           problem=$(echo ${problem#"/d2d-compare"} | xargs)
-          echo "$problem" > input.txt
+          echo -n "$problem"> input.txt
           [[ "$problem" =~ ^[0-9]+$dot[0-9]+$dot[0-9]+$ ]]
           exit $?
 
