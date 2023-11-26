@@ -145,9 +145,15 @@ jobs:
           name: d2d-summary
           path: |
             output-*.json
-            log-*.log.csv
             .coverage.*
           retention-days: 1
+
+      - name: Upload log file
+        uses: actions/upload-artifact@v3
+        if: ${{ !cancelled() }}
+        with:
+          name: d2d-log.${{ matrix.problem }}.${{ matrix.iterations }}.${{ matrix.tabu_size }}.${{ matrix.energy_mode }}.${{ matrix.propagation_priority }}.${{ matrix.max_propagation }}.${{ matrix.pool_size }}
+          path: log-*.log.csv
 
   summary:
     name: Summarize solutions
