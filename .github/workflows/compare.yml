@@ -163,7 +163,7 @@ jobs:
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: ${{ github.event.issue.number }},
-                  body: `🎉 Comparison request for D2D problem \`${data}\` completed! You can view the workflow results [here](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).`,
+                  body: `🎉 Comparison request for D2D problem \`${data.trim()}\` completed! You can view the workflow results [here](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).`,
                 });
               }
             );
