@@ -10,7 +10,7 @@ permissions:
 jobs:
   pr-test:
     name: Test on PR
-    if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, '/d2d-compare') }}
+    if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, '/d2d-compare') && github.event.comment.author_association == 'OWNER' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -38,7 +38,7 @@ jobs:
 
   main-test:
     name: Test on main
-    if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, '/d2d-compare') }}
+    if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, '/d2d-compare') && github.event.comment.author_association == 'OWNER' }}
     runs-on: ubuntu-latest
 
     steps:
