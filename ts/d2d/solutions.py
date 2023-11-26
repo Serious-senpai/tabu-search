@@ -640,12 +640,15 @@ class _SharedDistancesManager(contextlib.AbstractContextManager):
         "memory",
     )
     if TYPE_CHECKING:
-        memory: Final[shared_memory.SharedMemory]
+        memory: shared_memory.SharedMemory
 
     def __init__(self, *, problem: str, distances: Tuple[Tuple[float, ...], ...]) -> None:
         data = pickle.dumps(distances)
-        self.memory = shared_memory.SharedMemory(name=problem, create=True, size=len(data))
-        self.memory.buf[:] = data
+        try:
+            self.memory = shared_memory.SharedMemory(name=problem, create=True, size=len(data))
+            self.memory.buf[:] = data
+        except FileExistsError:
+            self.memory = shared_memory.SharedMemory(name=problem, create=False)
 
     def __exit__(self, *args: Any) -> Literal[False]:
         self.memory.unlink()
