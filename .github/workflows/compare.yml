@@ -8,10 +8,51 @@ permissions:
   contents: read
 
 jobs:
-  pr-test:
-    name: Test on PR
+  input-check:
+    name: Check input
     if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, '/d2d-compare') && github.event.comment.author_association == 'OWNER' }}
     runs-on: ubuntu-latest
+
+    steps:
+      - name: Parse and check input
+        run: |
+          dot="\."
+          problem="${{ github.event.comment.body }}"
+          problem=$(echo ${problem#"/d2d-compare"} | xargs)
+          echo "$problem" > input.txt
+          exit [[ "$problem" =~ ^[0-9]+$dot[0-9]+$dot[0-9]+$ ]]
+
+      - name: Upload parsed input
+        uses: actions/upload-artifact@v3
+        with:
+          name: solutions
+          path: input.txt
+
+      - name: Send comment on failure
+        if: ${{ failure() }}
+        uses: actions/github-script@v7
+        with:
+          retries: 3
+          script: |
+            var fs = require("fs");
+            await fs.readFile(
+              "input.txt",
+              "utf-8",
+              function(error, data) {
+                if (error) throw error;
+                github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: ${{ github.event.issue.number }},
+                  body: `❌ Invalid input \`${data}\``,
+                });
+              }
+            );
+
+  pr-test:
+    name: Test on PR
+    runs-on: ubuntu-latest
+    needs: input-check
 
     steps:
       - name: Checkout PR branch
@@ -20,10 +61,15 @@ jobs:
       - name: Install dependencies
         run: pip install -r dev-requirements.txt
 
+      - name: Download parsed input
+        uses: actions/download-artifact@v3
+        with:
+          name: solutions
+
       - name: Run test
         run: |
-          problem="${{ github.event.comment.body }}"
-          python d2d.py ${problem#"/d2d-compare"} \
+          problem=$(cat input.txt)
+          python d2d.py "$problem" \
           --iterations 2000 \
           --drone-config-mapping 3 3 3 3 \
           --propagation-priority min-distance \
@@ -38,8 +84,8 @@ jobs:
 
   main-test:
     name: Test on main
-    if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, '/d2d-compare') && github.event.comment.author_association == 'OWNER' }}
     runs-on: ubuntu-latest
+    needs: input-check
 
     steps:
       - name: Checkout main branch
@@ -50,10 +96,15 @@ jobs:
       - name: Install dependencies
         run: pip install -r dev-requirements.txt
 
+      - name: Download parsed input
+        uses: actions/download-artifact@v3
+        with:
+          name: solutions
+
       - name: Run test
         run: |
-          problem="${{ github.event.comment.body }}"
-          python d2d.py ${problem#"/d2d-compare"} \
+          problem=$(cat input.txt)
+          python d2d.py "$problem" \
           --iterations 2000 \
           --drone-config-mapping 3 3 3 3 \
           --propagation-priority min-distance \
