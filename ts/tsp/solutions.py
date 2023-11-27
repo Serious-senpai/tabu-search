@@ -1,11 +1,10 @@
 from __future__ import annotations
-from multiprocessing import pool
 
 import itertools
 import random
 import re
 from math import sqrt
-from multiprocessing import pool
+from multiprocessing import pool as p
 from os import path
 from typing import Any, Callable, ClassVar, Final, List, Optional, Tuple, Union, TYPE_CHECKING
 
@@ -81,7 +80,7 @@ class TSPPathSolution(SingleObjectiveSolution):
     def cost(self) -> float:
         return self._cost
 
-    def post_optimization(self, *, pool: pool.Pool, pool_size: int, use_tqdm: bool, logger: Optional[Callable[[str], Any]]) -> TSPPathSolution:
+    def post_optimization(self, *, pool: p.Pool, pool_size: int, use_tqdm: bool, logger: Optional[Callable[[str], Any]]) -> TSPPathSolution:
         result = self
         iterations: Union[Tuple[SingleObjectiveNeighborhood[TSPPathSolution, Any], ...], tqdm[SingleObjectiveNeighborhood[TSPPathSolution, Any]]] = self.get_neighborhoods()
         if use_tqdm:

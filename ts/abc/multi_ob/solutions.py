@@ -96,7 +96,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
         current = [initial]
         candidate_costs = {initial.cost()} if plot_pareto_front else None
         if len(initial.cost()) != 2:
-            message = f"Cannot plot the Pareto front when the number of objectives is not 2"
+            message = "Cannot plot the Pareto front when the number of objectives is not 2"
             raise ValueError(message)
 
         with Pool(pool_size) as pool:

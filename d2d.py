@@ -183,4 +183,4 @@ if __name__ == "__main__":
         print(f"Saved solution to {namespace.dump!r}")
 
     if len(errors) > 0:
-        raise ValueError(f"Some calculations were incorrect:\n" + "\n".join(errors))
+        raise ValueError("Some calculations were incorrect:\n" + "\n".join(errors))

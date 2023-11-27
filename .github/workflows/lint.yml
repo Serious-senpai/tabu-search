@@ -21,8 +21,11 @@ jobs:
       - name: Install dependencies
         run: pip install -r dev-requirements.txt
 
-      - name: Check code format
+      - name: Run autopep8
         run: autopep8 --exit-code --diff -aaar .
 
-      - name: Check typings
+      - name: Run mypy
         run: mypy .
+
+      - name: Run flake8
+        run: flake8 .
