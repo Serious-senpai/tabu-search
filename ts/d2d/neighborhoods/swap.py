@@ -65,12 +65,7 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
 
             drone_paths = solution.drone_paths
             for pair in pairs:
-                (first_drone, first_path_index), (second_drone, second_path_index) = pair
-                if (
-                    len(drone_paths[first_drone][first_path_index]) - 2 > self._first_length
-                    or len(drone_paths[second_drone][second_path_index]) - 2 > self._second_length
-                ):
-                    next(bundle_iter).data.append(pair)
+                next(bundle_iter).data.append(pair)
 
             return pool.map_async(self.swap_drone_drone, bundles, callback=callback)  # type: ignore  # typing bug in multiprocessing.pool module
 
