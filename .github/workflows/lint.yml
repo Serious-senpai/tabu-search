@@ -10,8 +10,8 @@ permissions:
   contents: read
 
 jobs:
-  python:
-    name: Python lint
+  autopep8:
+    name: Run autopep8
     runs-on: ubuntu-latest
 
     steps:
@@ -24,8 +24,30 @@ jobs:
       - name: Run autopep8
         run: autopep8 --exit-code --diff -aaar .
 
+  mypy:
+    name: Run mypy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: pip install -r dev-requirements.txt
+
       - name: Run mypy
         run: mypy .
+
+  flake8:
+    name: Run flake8
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: pip install -r dev-requirements.txt
 
       - name: Run flake8
         run: flake8 .
