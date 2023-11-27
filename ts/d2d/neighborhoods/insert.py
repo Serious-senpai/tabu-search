@@ -253,8 +253,7 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                             swaps_mapping[factory] = ((first_path[first_point], first_path[first_point + neighborhood.length - 1]), 0)
 
                 # Create a new path for second_drone
-                if len(first_path) - 2 > neighborhood.length:
-                    create_new()
+                create_new()
 
                 # Insert into an existing path of second_drone
                 for second_path_index, second_path in enumerate(second_paths):

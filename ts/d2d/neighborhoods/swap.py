@@ -103,8 +103,7 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
 
             for drone, paths in enumerate(solution.drone_paths):
                 for path_index, path in enumerate(paths):
-                    if len(path) - 2 >= self._first_length + self._second_length:
-                        next(bundle_iter).data.append((drone, path_index))
+                    next(bundle_iter).data.append((drone, path_index))
 
             return pool.map_async(self.swap_drone_self, bundles, callback=callback)  # type: ignore  # typing bug in multiprocessing.pool module
 
@@ -113,8 +112,7 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
             bundle_iter = itertools.cycle(bundles)
 
             for technician, path in enumerate(solution.technician_paths):
-                if len(path) - 2 >= self._first_length + self._second_length:
-                    next(bundle_iter).data.append(technician)
+                next(bundle_iter).data.append(technician)
 
             return pool.map_async(self.swap_technician_self, bundles, callback=callback)  # type: ignore  # typing bug in multiprocessing.pool module
 
