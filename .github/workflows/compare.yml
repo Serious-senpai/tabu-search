@@ -161,11 +161,19 @@ jobs:
           export PYTHONPATH=$GITHUB_WORKSPACE
           python scripts/d2d-compare.py PR#${{ github.event.issue.number }}-run#1.json PR#${{ github.event.issue.number }}-run#2.json main-run#1.json main-run#2.json
 
-      - name: Upload compare result
+      - name: Upload compare result as artifact
         uses: actions/upload-artifact@v3
         with:
           name: solutions
           path: compare.png
+
+      - name: Upload compare result to catbox.moe
+        run: |
+          url=$(curl -F "reqtype=fileupload" -F "fileToUpload=@compare.png" "https://catbox.moe/user/api.php")
+          errorcode=$?
+          echo "$url"
+          echo -n "$url" > url.txt
+          exit $errorcode
 
       - name: Send completion notification
         uses: actions/github-script@v7
@@ -173,16 +181,15 @@ jobs:
           retries: 3
           script: |
             var fs = require("fs");
-            await fs.readFile(
-              "input.txt",
-              "utf-8",
-              function(error, data) {
+            await fs.readFile("input.txt", "utf-8", async function (error, input) {
+              if (error) throw error;
+              await fs.readFile("url.txt", "utf-8", async function (error, url) {
                 if (error) throw error;
                 github.rest.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: ${{ github.event.issue.number }},
-                  body: `🎉 Comparison request for D2D problem \`${data.trim()}\` completed! You can view the workflow results [here](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).`,
+                  body: `🎉 Comparison request for D2D problem \`${input.trim()}\` completed! You can view the workflow results [here](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).\n![compare.png](${url.trim()})`,
                 });
-              }
-            );
+              });
+            });
