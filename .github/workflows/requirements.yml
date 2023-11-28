@@ -23,14 +23,12 @@ jobs:
       
       - name: Setup Python
         uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
 
       - name: Install dependencies
         run: pip install -r requirements.txt
 
       - name: Run TSP test
-        run: python tsp.py berlin52 --iterations 200 --verbose
+        run: python tsp.py berlin52 --iterations 200
 
       - name: Run D2D test
-        run: python d2d.py 6.5.1 --iterations 200 --verbose
+        run: python d2d.py 6.5.1 --iterations 200
