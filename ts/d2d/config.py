@@ -22,7 +22,7 @@ class DroneEnergyConsumptionMode(Enum):
     LINEAR = 1
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True)
 class TruckConfig:
     maximum_velocity: float
     m_t: float  # What the hell is this doing here?
@@ -44,7 +44,7 @@ class TruckConfig:
         )
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True)
 class _BaseDroneConfig:
     takeoff_speed: float
     cruise_speed: float
@@ -78,7 +78,7 @@ class _BaseDroneConfig:
         )
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True)
 class DroneLinearConfig(_BaseDroneConfig):
     beta: float
     gamma: float
@@ -116,7 +116,7 @@ class DroneLinearConfig(_BaseDroneConfig):
         return tuple(results)
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True)
 class DroneNonlinearConfig(_BaseDroneConfig):
     k1: float
     k2: float
@@ -179,7 +179,7 @@ class DroneNonlinearConfig(_BaseDroneConfig):
         return tuple(results)
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True)
 class DroneEnduranceConfig:
     speed_type: Literal["low", "high"]
     range: Literal["low", "high"]
