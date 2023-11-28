@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Final, List, Sequence, Tuple, TYPE_CHECKING
+from typing import Any, Final, List, Sequence, Tuple, TYPE_CHECKING
 
 from ..mixins import SolutionMetricsMixin
 if TYPE_CHECKING:
@@ -135,3 +135,13 @@ class SolutionFactory(SolutionMetricsMixin):
 
     def __hash__(self) -> int:
         return hash((self.__append_drones, self.__update_drones, self.__update_technicians))
+
+    def __eq__(self, other: Any, /) -> bool:
+        if isinstance(other, SolutionFactory):
+            return (
+                self.__append_drones == other.__append_drones
+                and self.__update_drones == other.__update_drones
+                and self.__update_technicians == other.__update_technicians
+            )
+
+        return NotImplemented

@@ -1,0 +1,195 @@
+name: Compare D2D solutions
+
+on:
+  issue_comment:
+    types: created
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  input-check:
+    name: Check input
+    if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, '/d2d-compare') && github.event.comment.author_association == 'OWNER' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Parse and check input
+        run: |
+          dot="\."
+          problem="${{ github.event.comment.body }}"
+          problem=$(echo ${problem#"/d2d-compare"} | xargs)
+          echo -n "$problem" > input.txt
+          echo "$problem"
+          [[ "$problem" =~ ^[0-9]+$dot[0-9]+$dot[0-9]+$ ]]
+          exit $?
+
+      - name: Upload parsed input
+        uses: actions/upload-artifact@v3
+        with:
+          name: solutions
+          path: input.txt
+
+      - name: Send comment on failure
+        if: ${{ failure() }}
+        uses: actions/github-script@v7
+        with:
+          retries: 3
+          script: |
+            var fs = require("fs");
+            await fs.readFile(
+              "input.txt",
+              "utf-8",
+              function(error, data) {
+                if (error) throw error;
+                github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: ${{ github.event.issue.number }},
+                  body: `❌ Invalid input \`${data}\``,
+                });
+              }
+            );
+
+      - name: Add reaction to comment
+        uses: actions/github-script@v7
+        with:
+          retries: 3
+          script: |
+            github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: ${{ github.event.comment.id }},
+              content: "+1",
+            });
+
+  pr-test:
+    name: Test on PR
+    runs-on: ubuntu-latest
+    needs: input-check
+    strategy:
+      matrix:
+        counter: [1, 2]
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: pip install -r dev-requirements.txt
+
+      - name: Download parsed input
+        uses: actions/download-artifact@v3
+        with:
+          name: solutions
+
+      - name: Run test
+        run: |
+          problem=$(cat input.txt)
+          python d2d.py "$problem" \
+          --iterations 2000 \
+          --drone-config-mapping 3 3 3 3 \
+          --propagation-priority min-distance \
+          --pool-size 8 \
+          --dump PR#${{ github.event.issue.number }}-run#${{ matrix.counter }}.json
+
+      - name: Upload solution
+        uses: actions/upload-artifact@v3
+        with:
+          name: solutions
+          path: PR#${{ github.event.issue.number }}-run#${{ matrix.counter }}.json
+
+  main-test:
+    name: Test on main
+    runs-on: ubuntu-latest
+    needs: input-check
+    strategy:
+      matrix:
+        counter: [1, 2]
+
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v3
+        with:
+          ref: main
+
+      - name: Install dependencies
+        run: pip install -r dev-requirements.txt
+
+      - name: Download parsed input
+        uses: actions/download-artifact@v3
+        with:
+          name: solutions
+
+      - name: Run test
+        run: |
+          problem=$(cat input.txt)
+          python d2d.py "$problem" \
+          --iterations 2000 \
+          --drone-config-mapping 3 3 3 3 \
+          --propagation-priority min-distance \
+          --pool-size 8 \
+          --dump main-run#${{ matrix.counter }}.json 
+
+      - name: Upload solution
+        uses: actions/upload-artifact@v3
+        with:
+          name: solutions
+          path: main-run#${{ matrix.counter }}.json
+
+  compare:
+    name: Compare solutions
+    if: ${{ github.event.issue.pull_request }}
+    needs: [pr-test, main-test]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: pip install -r dev-requirements.txt
+
+      - name: Download solutions
+        uses: actions/download-artifact@v3
+        with:
+          name: solutions
+
+      - name: Combine solutions and compare
+        run: |
+          export PYTHONPATH=$GITHUB_WORKSPACE
+          python scripts/d2d-compare.py PR#${{ github.event.issue.number }}-run#1.json PR#${{ github.event.issue.number }}-run#2.json main-run#1.json main-run#2.json
+
+      - name: Upload compare result as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: solutions
+          path: compare.png
+
+      - name: Upload compare result to catbox.moe
+        run: |
+          url=$(curl -F "reqtype=fileupload" -F "fileToUpload=@compare.png" "https://catbox.moe/user/api.php")
+          errorcode=$?
+          echo "$url"
+          echo -n "$url" > url.txt
+          exit $errorcode
+
+      - name: Send completion notification
+        uses: actions/github-script@v7
+        with:
+          retries: 3
+          script: |
+            var fs = require("fs");
+            await fs.readFile("input.txt", "utf-8", async function (error, input) {
+              if (error) throw error;
+              await fs.readFile("url.txt", "utf-8", async function (error, url) {
+                if (error) throw error;
+                github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: ${{ github.event.issue.number }},
+                  body: `🎉 Comparison request for D2D problem \`${input.trim()}\` completed! You can view the workflow results [here](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).\n![compare.png](${url.trim()})`,
+                });
+              });
+            });

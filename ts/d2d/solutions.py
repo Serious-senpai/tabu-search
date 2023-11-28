@@ -8,12 +8,12 @@ import re
 from math import sqrt
 from multiprocessing import shared_memory
 from os.path import join
-from typing import Any, Callable, ClassVar, Final, FrozenSet, List, Literal, Optional, Sequence, Set, Tuple, Union, TYPE_CHECKING, final, overload
+from typing import Any, Callable, ClassVar, Final, FrozenSet, List, Literal, Optional, Sequence, Set, Tuple, Union, TYPE_CHECKING, final
 
 from matplotlib import axes, pyplot
 
 from .config import DroneEnduranceConfig, DroneEnergyConsumptionMode, DroneLinearConfig, DroneNonlinearConfig, TruckConfig
-from .errors import ImportException, NoProblemImported
+from .errors import ProblemImportException
 from .mixins import SolutionMetricsMixin
 from .neighborhoods import Swap, Insert
 from ..abc import MultiObjectiveNeighborhood, MultiObjectiveSolution
@@ -172,7 +172,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         existed: Set[int] = set()
         for drone, drone_paths in enumerate(self.drone_paths):
             config = self.get_drone_config(self.drone_config_mapping[drone])
-            for drone_path_index, drone_path in enumerate(drone_paths):
+            for drone_path in drone_paths:
                 if drone_path[0] != 0 or drone_path[-1] != 0:
                     return False
 
@@ -188,7 +188,6 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
                 if self.calculate_drone_energy_consumption(
                     drone_path,
                     config_index=self.drone_config_mapping[drone],
-                    arrival_timestamps=self.drone_arrival_timestamps[drone][drone_path_index],
                 ) > config.battery:
                     return False
 
@@ -317,33 +316,12 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
 
         return tuple(result)
 
-    @overload
     @classmethod
     def calculate_drone_total_waiting_time(
         cls,
         path: Sequence[int],
         *,
         arrival_timestamps: Tuple[float, ...],
-    ) -> float: ...
-
-    @overload
-    @classmethod
-    def calculate_drone_total_waiting_time(
-        cls,
-        path: Sequence[int],
-        *,
-        config_index: int,
-        offset: float,
-    ) -> float: ...
-
-    @classmethod
-    def calculate_drone_total_waiting_time(
-        cls,
-        path: Sequence[int],
-        *,
-        config_index: Optional[int] = None,
-        offset: Optional[float] = None,
-        arrival_timestamps: Optional[Tuple[float, ...]] = None,
     ) -> float:
         """Calculate the total waiting time of the given drone path
 
@@ -351,22 +329,13 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         -----
         path:
             The path to calculate
-        config_index:
-            The index of the drone config to use
-        offset:
-            The timestamp when the drone starts traveling
         arrival_timestamps:
-            The arrival timestamps of the given path. If this is `None`, returned value from `calculate_drone_arrival_timestamps`
-            will be used. Provide this argument can make the calculation faster.
+            The arrival timestamps of the given path.
 
         Returns
         -----
         The total waiting time of the given path
         """
-        if arrival_timestamps is None:
-            assert config_index is not None and offset is not None
-            arrival_timestamps = cls.calculate_drone_arrival_timestamps(path, config_index=config_index, offset=offset)
-
         result = 0.0
         for path_index, index in enumerate(path[1:-1], start=1):
             result += arrival_timestamps[-1] - arrival_timestamps[path_index] - cls.drone_service_time[index]
@@ -448,33 +417,12 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         """Calculate the total weight of all waypoints along the given path"""
         return sum(cls.demands[index] for index in path)
 
-    @overload
     @classmethod
     def calculate_drone_flight_duration(
         cls,
         path: Sequence[int],
         *,
         arrival_timestamps: Tuple[float, ...],
-    ) -> float: ...
-
-    @overload
-    @classmethod
-    def calculate_drone_flight_duration(
-        cls,
-        path: Sequence[int],
-        *,
-        config_index: int,
-        offset: float,
-    ) -> float: ...
-
-    @classmethod
-    def calculate_drone_flight_duration(
-        cls,
-        path: Sequence[int],
-        *,
-        config_index: Optional[int] = None,
-        offset: Optional[float] = None,
-        arrival_timestamps: Optional[Tuple[float, ...]] = None,
     ) -> float:
         """Calculate the total flight duration of the given drone path
 
@@ -482,52 +430,21 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         -----
         path:
             The path to calculate
-        config_index:
-            The index of the drone config to use
-        offset:
-            The timestamp when the drone starts traveling
         arrival_timestamps:
-            The arrival timestamps of the given path. If this is `None`, returned value from `calculate_drone_arrival_timestamps`
-            will be used. Provide this argument can make the calculation faster.
+            The arrival timestamps of the given path.
 
         Returns
         -----
         The total flight duration of the given path
         """
-        if arrival_timestamps is None:
-            assert config_index is not None and offset is not None
-            arrival_timestamps = cls.calculate_drone_arrival_timestamps(path, config_index=config_index, offset=offset)
-
         return arrival_timestamps[-1] - arrival_timestamps[0]
 
-    @overload
     @classmethod
     def calculate_drone_energy_consumption(
         cls,
         path: Sequence[int],
         *,
         config_index: int,
-        arrival_timestamps: Tuple[float, ...],
-    ) -> float: ...
-
-    @overload
-    @classmethod
-    def calculate_drone_energy_consumption(
-        cls,
-        path: Sequence[int],
-        *,
-        config_index: int,
-        offset: float,
-    ) -> float: ...
-
-    @classmethod
-    def calculate_drone_energy_consumption(
-        cls,
-        path: Sequence[int],
-        *,
-        config_index: int,
-        offset: Optional[float] = None,
-        arrival_timestamps: Optional[Tuple[float, ...]] = None,
     ) -> float:
         """Calculate the total energy consumption of the given drone path
 
@@ -537,20 +454,11 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
             The path to calculate
         config_index:
             The index of the drone config to use
-        offset:
-            The timestamp when the drone starts traveling
-        arrival_timestamps:
-            The arrival timestamps of the given path. If this is `None`, returned value from `calculate_drone_arrival_timestamps`
-            will be used. Provide this argument can make the calculation faster.
 
         Returns
         -----
         The total energy consumption of the given path
         """
-        if arrival_timestamps is None:
-            assert offset is not None
-            arrival_timestamps = cls.calculate_drone_arrival_timestamps(path, config_index=config_index, offset=offset)
-
         config = cls.get_drone_config(config_index)
 
         takeoff_time = config.altitude / config.takeoff_speed
@@ -602,10 +510,9 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
             index = min(dronable, key=cls.distances[path[-1]].__getitem__)
 
             hypothetical_path = path + [index, 0]
-            hypothetical_arrival_timestamps = cls.calculate_drone_arrival_timestamps(hypothetical_path, config_index=cls.drone_config_mapping[drone], offset=0.0)
             if (
                 cls.calculate_total_weight(hypothetical_path) > config.capacity
-                or cls.calculate_drone_energy_consumption(hypothetical_path, config_index=cls.drone_config_mapping[drone], arrival_timestamps=hypothetical_arrival_timestamps) > config.battery
+                or cls.calculate_drone_energy_consumption(hypothetical_path, config_index=cls.drone_config_mapping[drone]) > config.battery
             ):
                 path.append(0)
                 paths.append([0])
@@ -646,7 +553,8 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
     @classmethod
     def share_distances(cls) -> _SharedDistancesManager:
         if cls.problem is None:
-            raise NoProblemImported
+            message = "No problem has been imported yet"
+            raise RuntimeError(message)
 
         return _SharedDistancesManager(problem=cls.problem, distances=cls.distances)
 
@@ -710,7 +618,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
                 cls.distances = tuple(tuple(r) for r in distances)
 
         except Exception as e:
-            raise ImportException(problem) from e
+            raise ProblemImportException(problem) from e
 
     def __hash__(self) -> int:
         return hash((self.__drone_paths_fold, self.__technician_paths_fold, tuple(round(c, 4) for c in self.cost())))
@@ -732,12 +640,15 @@ class _SharedDistancesManager(contextlib.AbstractContextManager):
         "memory",
     )
     if TYPE_CHECKING:
-        memory: Final[shared_memory.SharedMemory]
+        memory: shared_memory.SharedMemory
 
     def __init__(self, *, problem: str, distances: Tuple[Tuple[float, ...], ...]) -> None:
         data = pickle.dumps(distances)
-        self.memory = shared_memory.SharedMemory(name=problem, create=True, size=len(data))
-        self.memory.buf[:] = data
+        try:
+            self.memory = shared_memory.SharedMemory(name=problem, create=True, size=len(data))
+            self.memory.buf[:] = data
+        except FileExistsError:
+            self.memory = shared_memory.SharedMemory(name=problem, create=False)
 
     def __exit__(self, *args: Any) -> Literal[False]:
         self.memory.unlink()

@@ -15,20 +15,12 @@ field_names = (
     "Energy mode",
     "Propagation priority",
     "Hypervolume",
-    "Service duration",
-    "Total waiting time",
+    "Service duration (s)",
+    "Total waiting time (s)",
     "Drone config mapping",
     "Drone paths",
     "Technician paths",
 )
-
-
-def to_map(*args: str) -> Dict[str, str]:
-    result: Dict[str, str] = {}
-    for index, key in enumerate(field_names):
-        result[key] = args[index]
-
-    return result
 
 
 pareto_fronts: Dict[str, List[Tuple[List[Tuple[float, float]], str]]] = {}
@@ -70,4 +62,9 @@ with open(summary_dir / "d2d-summary.csv", "w") as csv:
 
 
 for key, fronts in pareto_fronts.items():
-    utils.plot_multi_fronts(fronts, dump=f"d2d-summary/{key}.png")
+    utils.plot_multi_fronts(
+        fronts,
+        dump=f"d2d-summary/{key}.png",
+        xlabel="Service duration (s)",
+        ylabel="Total waiting time (s)",
+    )
