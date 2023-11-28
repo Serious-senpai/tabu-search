@@ -1,4 +1,4 @@
-name: requirements.txt check
+name: Check requirements.txt
 
 on: [ push, pull_request ]
 
