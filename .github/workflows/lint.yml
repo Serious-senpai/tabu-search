@@ -26,7 +26,10 @@ jobs:
 
   mypy:
     name: Run mypy
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
 
     steps:
       - name: Checkout repository
@@ -40,7 +43,10 @@ jobs:
 
   flake8:
     name: Run flake8
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
 
     steps:
       - name: Checkout repository
@@ -51,3 +57,20 @@ jobs:
 
       - name: Run flake8
         run: flake8 .
+
+  pyright:
+    name: Run pyright
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: pip install -r dev-requirements.txt
+
+      - name: Run pyright
+        run: pyright . --warnings
