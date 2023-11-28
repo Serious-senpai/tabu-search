@@ -6,12 +6,14 @@ import os
 import platform
 import threading
 import sys
-from typing import Any, Callable, Iterable, List, Optional, ParamSpec, Sequence, Tuple, TypeVar, TYPE_CHECKING, overload
+from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple, TypeVar, TYPE_CHECKING, overload
 
 import numpy as np
 from matplotlib import axes, pyplot
 from pymoo.indicators.hv import HV  # type: ignore
 from pymoo.indicators.igd import IGD  # type: ignore
+if TYPE_CHECKING:
+    from typing_extensions import ParamSpec
 
 
 __all__ = (
@@ -23,6 +25,9 @@ __all__ = (
     "inverted_generational_distance",
     "plot_multi_fronts",
 )
+if TYPE_CHECKING:
+    _P = ParamSpec("_P")
+    _T = TypeVar("_T")
 
 
 def ngettext(predicate: bool, if_true: str, if_false: str, /) -> str:
@@ -38,11 +43,6 @@ def display_platform() -> None:
     display += "-" * 30
 
     print(display)
-
-
-if TYPE_CHECKING:
-    _P = ParamSpec("_P")
-    _T = TypeVar("_T")
 
 
 def synchronized(func: Callable[_P, _T], /) -> Callable[_P, _T]:
