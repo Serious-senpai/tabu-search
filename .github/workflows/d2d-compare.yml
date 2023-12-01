@@ -91,7 +91,6 @@ jobs:
         run: |
           problem=$(cat input.txt)
           python d2d.py "$problem" \
-          --iterations 2000 \
           --drone-config-mapping 3 3 3 3 \
           --propagation-priority min-distance \
           --pool-size 8 \
@@ -132,7 +131,6 @@ jobs:
         run: |
           problem=$(cat input.txt)
           python d2d.py "$problem" \
-          --iterations 2000 \
           --drone-config-mapping 3 3 3 3 \
           --propagation-priority min-distance \
           --pool-size 8 \
