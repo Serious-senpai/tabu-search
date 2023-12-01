@@ -53,9 +53,8 @@ def _max_distance_key(
 ) -> float:
     cost = candidate.cost()
     result = 0.0
-    scale = tuple(max - min for min, max in zip(minimum, maximum))
     for pareto_cost, counter in pareto_costs.items():
-        result += counter * abs(pareto_cost[0] - cost[0]) / scale[0] + abs(pareto_cost[1] - cost[1]) / scale[1]
+        result += counter * abs(pareto_cost[0] - cost[0]) / maximum[0] + abs(pareto_cost[1] - cost[1]) / maximum[1]
 
     return -result
 
@@ -69,9 +68,8 @@ def _min_distance_key(
 ) -> float:
     cost = candidate.cost()
     result = 0.0
-    scale = tuple(max - min for min, max in zip(minimum, maximum))
     for pareto_cost, counter in pareto_costs.items():
-        result += counter * abs(pareto_cost[0] - cost[0]) / scale[0] + abs(pareto_cost[1] - cost[1]) / scale[1]
+        result += counter * abs(pareto_cost[0] - cost[0]) / maximum[0] + abs(pareto_cost[1] - cost[1]) / maximum[1]
 
     return result
 
@@ -84,9 +82,8 @@ def _ideal_distance_key(
     /
 ) -> float:
     ideal = (min(cost[0] for cost in pareto_costs.keys()), min(cost[1] for cost in pareto_costs.keys()))
-    scale = tuple(max - min for min, max in zip(minimum, maximum))
     cost = candidate.cost()
-    return abs(ideal[0] - cost[0]) / scale[0] + abs(ideal[1] - cost[1]) / scale[1]
+    return abs(ideal[0] - cost[0]) / maximum[0] + abs(ideal[1] - cost[1]) / maximum[1]
 
 
 if __name__ == "__main__":
