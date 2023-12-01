@@ -96,20 +96,22 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
         current = [initial]
         candidate_costs = {initial.cost()} if plot_pareto_front else None
         if len(initial.cost()) != 2:
-            message = f"Cannot plot the Pareto front when the number of objectives is not 2"
+            message = "Cannot plot the Pareto front when the number of objectives is not 2"
             raise ValueError(message)
 
         with Pool(pool_size) as pool:
             lock = threading.Lock()
             last_improved = 0
-            start = time.perf_counter()
+            start = last = time.perf_counter()
             for iteration in iterations:
                 if isinstance(iterations, tqdm):
                     solution_display = ngettext(len(results) == 1, "solution", "solutions")
                     iterations.set_description_str(f"Tabu search ({len(current)}/{len(results)} {solution_display})")
 
                 if logger is not None:
-                    logger(f"Iteration #{iteration + 1}/{iterations_count},Solutions count,{len(results)},Timer (s),{time.perf_counter() - start:.4f}\n")
+                    timer = time.perf_counter()
+                    logger(f"Iteration #{iteration + 1}/{iterations_count},Solutions count,{len(results)},Timer (s),{timer - start:.4f},Iteration timer (s),{timer - last:.4f}\n")
+                    last = timer
 
                 propagate: List[Self] = []
 
@@ -190,7 +192,10 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
 
             ax.grid(True)
 
+            pyplot.xlabel("Objective 1")
+            pyplot.ylabel("Objective 2")
             pyplot.legend()
             pyplot.show()
+            pyplot.close()
 
         return post_optimized_results

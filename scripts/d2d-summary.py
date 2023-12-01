@@ -1,7 +1,9 @@
 import json
 import os
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List, Tuple
+
+from ts import utils
 
 
 summary_dir = Path("d2d-summary/")
@@ -13,22 +15,15 @@ field_names = (
     "Energy mode",
     "Propagation priority",
     "Hypervolume",
-    "Service duration",
-    "Total waiting time",
+    "Service duration (s)",
+    "Total waiting time (s)",
     "Drone config mapping",
     "Drone paths",
     "Technician paths",
 )
 
 
-def to_map(*args: str) -> Dict[str, str]:
-    result: Dict[str, str] = {}
-    for index, key in enumerate(field_names):
-        result[key] = args[index]
-
-    return result
-
-
+pareto_fronts: Dict[str, List[Tuple[List[Tuple[float, float]], str]]] = {}
 with open(summary_dir / "d2d-summary.csv", "w") as csv:
     csv.write(",".join(field_names) + "\n")
 
@@ -37,6 +32,7 @@ with open(summary_dir / "d2d-summary.csv", "w") as csv:
             with open(summary_dir / file, "r") as f:
                 data = json.load(f)
 
+            front: List[Tuple[float, float]] = []
             for d in data["solutions"]:
                 csv.write(
                     ",".join(
@@ -56,3 +52,19 @@ with open(summary_dir / "d2d-summary.csv", "w") as csv:
                         )
                     ) + "\n"
                 )
+                front.append(tuple(d["cost"]))  # type: ignore
+
+            key = data["problem"] + "-" + data["energy-mode"]
+            try:
+                pareto_fronts[key].append((front, data["propagation-priority"]))
+            except KeyError:
+                pareto_fronts[key] = [(front, data["propagation-priority"])]
+
+
+for key, fronts in pareto_fronts.items():
+    utils.plot_multi_fronts(
+        fronts,
+        dump=f"d2d-summary/{key}.png",
+        xlabel="Service duration (s)",
+        ylabel="Total waiting time (s)",
+    )

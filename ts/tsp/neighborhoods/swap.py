@@ -4,7 +4,7 @@ import itertools
 from multiprocessing import pool
 from typing import Any, Callable, List, Optional, Tuple, TYPE_CHECKING
 
-from .mixins import TSPBaseNeighborhood
+from .base import TSPBaseNeighborhood
 from ...bundle import IPCBundle
 if TYPE_CHECKING:
     from ..solutions import TSPPathSolution

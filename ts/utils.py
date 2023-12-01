@@ -1,40 +1,28 @@
 from __future__ import annotations
 
-import platform
+import itertools
 import math
 import os
+import platform
 import threading
 import sys
-from typing import Any, Callable, List, Literal, Optional, ParamSpec, Sequence, Tuple, TypeVar, TYPE_CHECKING, overload
+from typing import Any, Callable, Iterable, List, Optional, ParamSpec, Sequence, Tuple, TypeVar, TYPE_CHECKING, overload
 
 import numpy as np
+from matplotlib import axes, pyplot
 from pymoo.indicators.hv import HV  # type: ignore
 from pymoo.indicators.igd import IGD  # type: ignore
 
 
 __all__ = (
-    "false",
-    "true",
-    "zero",
     "ngettext",
     "display_platform",
     "synchronized",
     "isclose",
     "hypervolume",
-    "inverted_generational_distance"
+    "inverted_generational_distance",
+    "plot_multi_fronts",
 )
-
-
-def false(*args: Any, **kwargs: Any) -> Literal[False]:
-    return False
-
-
-def true(*args: Any, **kwargs: Any) -> Literal[True]:
-    return True
-
-
-def zero(*args: Any, **kwargs: Any) -> Literal[0]:
-    return 0
 
 
 def ngettext(predicate: bool, if_true: str, if_false: str, /) -> str:
@@ -169,3 +157,37 @@ def inverted_generational_distance(
 
     indicator = IGD(np.array(ref_costs))
     return indicator(np.array(pareto_costs))
+
+
+def plot_multi_fronts(
+    pareto_fronts: Iterable[Tuple[Iterable[Tuple[float, float]], str]],
+    *,
+    dump: Optional[str] = None,
+    xlabel: str = "Objective 1",
+    ylabel: str = "Objective 2",
+) -> None:
+    _, ax = pyplot.subplots()
+    assert isinstance(ax, axes.Axes)
+
+    markers = itertools.cycle(["s", "d", "x", "*", "2"])
+    for index, (pareto_front, description) in enumerate(pareto_fronts):
+        result_costs = set((round(r[0], 4), round(r[1], 4)) for r in pareto_front)
+        ax.scatter(
+            [cost[0] for cost in result_costs],
+            [cost[1] for cost in result_costs],
+            c=f"C{index}",
+            marker=next(markers),
+            label=description,
+        )
+
+    ax.grid(True)
+
+    pyplot.xlabel(xlabel)
+    pyplot.ylabel(ylabel)
+    pyplot.legend()
+    if dump is None:
+        pyplot.show()
+    else:
+        pyplot.savefig(dump)
+
+    pyplot.close()

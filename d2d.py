@@ -69,7 +69,7 @@ def _ideal_distance_key(pareto_costs: Dict[Tuple[float, ...], int], candidate: d
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Tabu search algorithm for TSP problems")
+    parser = argparse.ArgumentParser(description="Tabu search algorithm for D2D problems")
     parser.add_argument("problem", type=str, help="the problem name (e.g. \"6.5.1\", \"200.10.1\", ...)")
     parser.add_argument("-i", "--iterations", default=500, type=int, help="the number of iterations to run the tabu search for (default: 500)")
     parser.add_argument("-t", "--tabu-size", default=10, type=int, help="the tabu size for every neighborhood (default: 10)")
@@ -183,4 +183,4 @@ if __name__ == "__main__":
         print(f"Saved solution to {namespace.dump!r}")
 
     if len(errors) > 0:
-        raise ValueError(f"Some calculations were incorrect:\n" + "\n".join(errors))
+        raise ValueError("Some calculations were incorrect:\n" + "\n".join(errors))

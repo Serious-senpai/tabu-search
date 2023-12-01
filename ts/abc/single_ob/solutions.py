@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+import time
 from multiprocessing import Pool
 from typing import Any, Callable, Optional, Sequence, Union, TYPE_CHECKING
 
@@ -63,12 +64,15 @@ class SingleObjectiveSolution(BaseSolution, BaseCostComparison):
         with Pool(pool_size) as pool:
             last_improved = 0
             local_optimal_hit = False
+            start = last = time.perf_counter()
             for iteration in iterations:
                 if isinstance(iterations, tqdm):
                     iterations.set_description_str(f"Tabu search ({current.cost()}/{result.cost()})")
 
                 if logger is not None:
-                    logger(f"Iteration #{iteration + 1}/{iterations_count}\n")
+                    timer = time.perf_counter()
+                    logger(f"Iteration #{iteration + 1}/{iterations_count},Timer (s),{timer - start:.4f},Iteration timer (s),{timer - last:.4f}\n")
+                    last = timer
 
                 neighborhoods = current.get_neighborhoods()
                 best_candidate = random.choice(neighborhoods).find_best_candidate(pool=pool, pool_size=pool_size, logger=logger)

@@ -1,0 +1,34 @@
+name: Check requirements.txt
+
+on: [ push, pull_request ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Test samples
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run TSP test
+        run: python tsp.py berlin52 --iterations 200
+
+      - name: Run D2D test
+        run: python d2d.py 6.5.1 --iterations 200
