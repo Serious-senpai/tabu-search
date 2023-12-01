@@ -92,6 +92,9 @@ class ParetoSet(Generic[_ST]):
             for s in initial:
                 self.add(s)
 
+    def keys(self) -> Iterable[Tuple[float, ...]]:
+        return self.__cost_to_solutions.keys()
+
     def counter(self) -> Dict[Tuple[float, ...], int]:
         """Return a counter of the costs of the solutions in this set"""
         return {k: len(v) for k, v in self.__cost_to_solutions.items()}
