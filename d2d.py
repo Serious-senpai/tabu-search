@@ -44,28 +44,49 @@ def to_json(solution: d2d.D2DPathSolution) -> Dict[str, Any]:
     }
 
 
-def _max_distance_key(pareto_costs: Dict[Tuple[float, ...], int], candidate: d2d.D2DPathSolution, /) -> float:
+def _max_distance_key(
+    pareto_costs: Dict[Tuple[float, ...], int],
+    minimum: Tuple[float, ...],
+    maximum: Tuple[float, ...],
+    candidate: d2d.D2DPathSolution,
+    /
+) -> float:
     cost = candidate.cost()
     result = 0.0
+    scale = tuple(max - min for min, max in zip(minimum, maximum))
     for pareto_cost, counter in pareto_costs.items():
-        result += counter * abs(pareto_cost[0] - cost[0]) + abs(pareto_cost[1] - cost[1])
+        result += counter * abs(pareto_cost[0] - cost[0]) / scale[0] + abs(pareto_cost[1] - cost[1]) / scale[1]
 
     return -result
 
 
-def _min_distance_key(pareto_costs: Dict[Tuple[float, ...], int], candidate: d2d.D2DPathSolution, /) -> float:
+def _min_distance_key(
+    pareto_costs: Dict[Tuple[float, ...], int],
+    minimum: Tuple[float, ...],
+    maximum: Tuple[float, ...],
+    candidate: d2d.D2DPathSolution,
+    /
+) -> float:
     cost = candidate.cost()
     result = 0.0
+    scale = tuple(max - min for min, max in zip(minimum, maximum))
     for pareto_cost, counter in pareto_costs.items():
-        result += counter * abs(pareto_cost[0] - cost[0]) + abs(pareto_cost[1] - cost[1])
+        result += counter * abs(pareto_cost[0] - cost[0]) / scale[0] + abs(pareto_cost[1] - cost[1]) / scale[1]
 
     return result
 
 
-def _ideal_distance_key(pareto_costs: Dict[Tuple[float, ...], int], candidate: d2d.D2DPathSolution, /) -> float:
+def _ideal_distance_key(
+    pareto_costs: Dict[Tuple[float, ...], int],
+    minimum: Tuple[float, ...],
+    maximum: Tuple[float, ...],
+    candidate: d2d.D2DPathSolution,
+    /
+) -> float:
     ideal = (min(cost[0] for cost in pareto_costs.keys()), min(cost[1] for cost in pareto_costs.keys()))
+    scale = tuple(max - min for min, max in zip(minimum, maximum))
     cost = candidate.cost()
-    return abs(ideal[0] - cost[0]) + abs(ideal[1] - cost[1])
+    return abs(ideal[0] - cost[0]) / scale[0] + abs(ideal[1] - cost[1]) / scale[1]
 
 
 if __name__ == "__main__":
@@ -105,7 +126,7 @@ if __name__ == "__main__":
     with d2d.D2DPathSolution.share_distances():
         d2d.Swap.reset_tabu(maxlen=namespace.tabu_size)
 
-        propagation_priority_key: Optional[Callable[[Dict[Tuple[float, ...], int], d2d.D2DPathSolution], float]] = None
+        propagation_priority_key: Optional[Callable[[Dict[Tuple[float, ...], int], Tuple[float, ...], Tuple[float, ...], d2d.D2DPathSolution], float]] = None
         if namespace.propagation_priority == MIN_DISTANCE:
             propagation_priority_key = _min_distance_key
         elif namespace.propagation_priority == MAX_DISTANCE:
