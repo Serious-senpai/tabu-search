@@ -53,6 +53,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
         max_propagation: int,
         plot_pareto_front: bool = False,
         logger: Optional[Callable[[str], Any]] = None,
+        force_distict_cost: bool = True,
     ) -> Set[Self]:
         """Run the tabu search algorithm to find the Pareto front for this multi-objective optimization problem.
 
@@ -78,6 +79,8 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
             Plot the Pareto front for 2-objective optimization problems only, default to False
         logger:
             The logging function taking a single str argument
+        force_distict_cost:
+            Whether to not propagate solutions with costs that have been recorded before
 
         Returns
         -----
@@ -98,7 +101,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
             logger = synchronized(logger)
 
         current = [initial]
-        candidate_costs = {initial.cost()} if plot_pareto_front else None
+        candidate_costs = {initial.cost()}
         dimensions = len(initial.cost())
         if dimensions != 2:
             message = "Cannot plot the Pareto front when the number of objectives is not 2"
@@ -130,8 +133,11 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
 
                         for candidate in neighborhood.find_best_candidates(pool=pool, pool_size=pool_size, logger=logger):
                             with lock:
-                                if candidate_costs is not None:
-                                    candidate_costs.add(candidate.cost())
+                                cost = candidate.cost()
+                                if force_distict_cost and candidate.cost() in candidate_costs:
+                                    continue
+
+                                candidate_costs.add(cost)
 
                                 if candidate.add_to_pareto_set(results)[0]:
                                     improved = True
@@ -178,7 +184,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
             message = f"Check {results.__class__.__name__}.__len__ implementation"
             raise RuntimeError(message)
 
-        if candidate_costs is not None:
+        if plot_pareto_front:
             _, ax = pyplot.subplots()
             assert isinstance(ax, axes.Axes)
 
