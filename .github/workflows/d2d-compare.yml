@@ -73,10 +73,25 @@ jobs:
         counter: [1, 2]
 
     steps:
+      - name: Get PR branch name
+        id: get-branch
+        uses: actions/github-script@v7
+        with: |
+          try {
+            var result = await githu.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: github.event.issue.number,
+            });
+            return result.data;
+          } finally {
+            core.setFailed(`Failed to get branch name of PR#${github.event.issue.number}`);
+          }
+
       - name: Checkout PR branch
         uses: actions/checkout@v3
         with:
-          ref: ${{ github.event.issue.pull_request.head_ref }}
+          ref: ${{ fromJSON(steps.get-branch.outputs.result).head.ref }}
 
       - name: Setup Python
         uses: actions/setup-python@v4
