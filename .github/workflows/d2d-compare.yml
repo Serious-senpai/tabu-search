@@ -79,7 +79,7 @@ jobs:
         with:
           script: |
             try {
-              var result = await github.pulls.get({
+              var result = await github.rest.pulls.get({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 pull_number: ${{ github.event.issue.number }},
