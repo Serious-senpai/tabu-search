@@ -82,11 +82,11 @@ jobs:
               var result = await github.pulls.get({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                pull_number: github.event.issue.number,
+                pull_number: ${{ github.event.issue.number }},
               });
               return result.data;
             } finally {
-              core.setFailed(`Failed to get branch name of PR#${github.event.issue.number}`);
+              core.setFailed("Failed to get branch name of PR#${{ github.event.issue.number }}");
             }
 
       - name: Checkout PR branch
