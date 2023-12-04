@@ -41,7 +41,7 @@ jobs:
             await fs.readFile(
               "input.txt",
               "utf-8",
-              function(error, data) {
+              async function(error, data) {
                 if (error) throw error;
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
