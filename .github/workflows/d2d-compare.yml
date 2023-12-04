@@ -43,7 +43,7 @@ jobs:
               "utf-8",
               function(error, data) {
                 if (error) throw error;
-                github.rest.issues.createComment({
+                await github.rest.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: ${{ github.event.issue.number }},
@@ -57,7 +57,7 @@ jobs:
         with:
           retries: 3
           script: |
-            github.rest.reactions.createForIssueComment({
+            await github.rest.reactions.createForIssueComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               comment_id: ${{ github.event.comment.id }},
@@ -110,7 +110,6 @@ jobs:
           problem=$(cat input.txt)
           python d2d.py "$problem" \
           --drone-config-mapping 3 3 3 3 \
-          --propagation-priority min-distance \
           --pool-size 8 \
           --dump PR#${{ github.event.issue.number }}-run#${{ matrix.counter }}.json
 
@@ -150,7 +149,6 @@ jobs:
           problem=$(cat input.txt)
           python d2d.py "$problem" \
           --drone-config-mapping 3 3 3 3 \
-          --propagation-priority min-distance \
           --pool-size 8 \
           --dump main-run#${{ matrix.counter }}.json 
 
@@ -210,7 +208,7 @@ jobs:
               if (error) throw error;
               await fs.readFile("url.txt", "utf-8", async function (error, url) {
                 if (error) throw error;
-                github.rest.issues.createComment({
+                await github.rest.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: ${{ github.event.issue.number }},
