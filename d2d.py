@@ -94,7 +94,7 @@ if __name__ == "__main__":
     parser.add_argument("-c", "--drone-config-mapping", nargs="+", default=[0, 0, 0, 0], type=int, help="the energy configuration index for each drone (default: \"0 0 0 0\")")
     parser.add_argument("-e", "--energy-mode", default=LINEAR, choices=[LINEAR, NON_LINEAR], help="the energy consumption mode to use (default: linear)")
     parser.add_argument("-k", "--propagation-priority", default=NONE, choices=[NONE, MIN_DISTANCE, MAX_DISTANCE, IDEAL_DISTANCE], help="set the solution propagation priority null (default: none)")
-    parser.add_argument("-m", "--max-propagation", default=10, type=int, help="maximum number of propagating solutions at a time (default: 10)")
+    parser.add_argument("-m", "--max-propagation", default=15, type=int, help="maximum number of propagating solutions at a time (default: 15)")
     parser.add_argument("-v", "--verbose", action="store_true", help="whether to display the progress bar and plot the solution")
     parser.add_argument("-d", "--dump", type=str, help="dump the solution to a file")
     parser.add_argument("-l", "--log", type=str, help="dump the iteration logs to a file")
