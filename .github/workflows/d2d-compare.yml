@@ -76,17 +76,18 @@ jobs:
       - name: Get PR branch name
         id: get-branch
         uses: actions/github-script@v7
-        with: |
-          try {
-            var result = await githu.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: github.event.issue.number,
-            });
-            return result.data;
-          } finally {
-            core.setFailed(`Failed to get branch name of PR#${github.event.issue.number}`);
-          }
+        with:
+          script: |
+            try {
+              var result = await github.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: github.event.issue.number,
+              });
+              return result.data;
+            } finally {
+              core.setFailed(`Failed to get branch name of PR#${github.event.issue.number}`);
+            }
 
       - name: Checkout PR branch
         uses: actions/checkout@v3
