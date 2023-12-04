@@ -85,8 +85,8 @@ jobs:
                 pull_number: ${{ github.event.issue.number }},
               });
               return result.data;
-            } finally {
-              core.setFailed("Failed to get branch name of PR#${{ github.event.issue.number }}");
+            } catch (e) {
+              core.setFailed(`Failed to get branch name of PR#${{ github.event.issue.number }}: ${e}`);
             }
 
       - name: Checkout PR branch
