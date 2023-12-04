@@ -43,7 +43,7 @@ jobs:
               "utf-8",
               function(error, data) {
                 if (error) throw error;
-                github.rest.issues.createComment({
+                await github.rest.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: ${{ github.event.issue.number }},
@@ -57,7 +57,7 @@ jobs:
         with:
           retries: 3
           script: |
-            github.rest.reactions.createForIssueComment({
+            await github.rest.reactions.createForIssueComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               comment_id: ${{ github.event.comment.id }},
@@ -73,8 +73,26 @@ jobs:
         counter: [1, 2]
 
     steps:
+      - name: Get PR branch name
+        id: get-branch
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              var result = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: ${{ github.event.issue.number }},
+              });
+              return result.data;
+            } catch (e) {
+              core.setFailed(`Failed to get branch name of PR#${{ github.event.issue.number }}: ${e}`);
+            }
+
       - name: Checkout PR branch
         uses: actions/checkout@v3
+        with:
+          ref: ${{ fromJSON(steps.get-branch.outputs.result).head.ref }}
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -91,9 +109,7 @@ jobs:
         run: |
           problem=$(cat input.txt)
           python d2d.py "$problem" \
-          --iterations 2000 \
           --drone-config-mapping 3 3 3 3 \
-          --propagation-priority min-distance \
           --pool-size 8 \
           --dump PR#${{ github.event.issue.number }}-run#${{ matrix.counter }}.json
 
@@ -132,9 +148,7 @@ jobs:
         run: |
           problem=$(cat input.txt)
           python d2d.py "$problem" \
-          --iterations 2000 \
           --drone-config-mapping 3 3 3 3 \
-          --propagation-priority min-distance \
           --pool-size 8 \
           --dump main-run#${{ matrix.counter }}.json 
 
@@ -194,7 +208,7 @@ jobs:
               if (error) throw error;
               await fs.readFile("url.txt", "utf-8", async function (error, url) {
                 if (error) throw error;
-                github.rest.issues.createComment({
+                await github.rest.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: ${{ github.event.issue.number }},
