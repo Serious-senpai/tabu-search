@@ -6,26 +6,10 @@ from typing import Dict, Iterable, Iterator, Final, Generic, Optional, Set, Tupl
 if TYPE_CHECKING:
     from typing_extensions import Self
 
-from ...utils import isclose
+from ...utils import cost_dominate
 
 
 __all__ = ("BaseMulticostComparison",)
-_T = TypeVar("_T", bound=Tuple[float, ...])
-
-
-def cost_dominate(first: _T, second: _T) -> bool:
-    result = False
-    for f, s in zip(first, second):
-        if isclose(f, s):
-            continue
-
-        if f > s:
-            return False
-
-        if f < s:
-            result = True
-
-    return result
 
 
 class BaseMulticostComparison:

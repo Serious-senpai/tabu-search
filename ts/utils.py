@@ -22,7 +22,13 @@ __all__ = (
     "hypervolume",
     "inverted_generational_distance",
     "plot_multi_fronts",
+    "cost_dominate",
+    "coverage_indicator",
 )
+if TYPE_CHECKING:
+    _P = ParamSpec("_P")
+    _T = TypeVar("_T")
+    _CostT = TypeVar("_CostT", bound=Sequence[float])
 
 
 def ngettext(predicate: bool, if_true: str, if_false: str, /) -> str:
@@ -38,11 +44,6 @@ def display_platform() -> None:
     display += "-" * 30
 
     print(display)
-
-
-if TYPE_CHECKING:
-    _P = ParamSpec("_P")
-    _T = TypeVar("_T")
 
 
 def synchronized(func: Callable[_P, _T], /) -> Callable[_P, _T]:
@@ -191,3 +192,32 @@ def plot_multi_fronts(
         pyplot.savefig(dump)
 
     pyplot.close()
+
+
+def cost_dominate(first: _CostT, second: _CostT) -> bool:
+    result = False
+    for f, s in zip(first, second):
+        if isclose(f, s):
+            continue
+
+        if f > s:
+            return False
+
+        if f < s:
+            result = True
+
+    return result
+
+
+def coverage_indicator(first: Sequence[_CostT], second: Sequence[_CostT]) -> Tuple[float, float]:
+    first_dominate = 0
+    for f in first:
+        if any(cost_dominate(f, s) for s in second):
+            first_dominate += 1
+
+    second_dominate = 0
+    for s in second:
+        if any(cost_dominate(s, f) for f in first):
+            second_dominate += 1
+
+    return first_dominate / len(first), second_dominate / len(second)
