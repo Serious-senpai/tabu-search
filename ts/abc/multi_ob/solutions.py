@@ -50,7 +50,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
         iterations_count: int,
         use_tqdm: bool,
         propagation_priority_key: Optional[Callable[[Dict[Tuple[float, ...], int], Tuple[float, ...], Tuple[float, ...], Self], float]] = None,
-        max_propagation: int,
+        max_propagation: Union[int, Callable[[int, Dict[Tuple[float, ...], int]], int]],
         plot_pareto_front: bool = False,
         logger: Optional[Callable[[str], Any]] = None,
     ) -> Set[Self]:
@@ -72,8 +72,10 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
             - The solution S
             The less the returned value, the more likely the solution S will be added to the propagation tree.
         max_propagation:
-            An integer or a function that takes the current Pareto front as a single parameter and return the maximum number of
-            propagating solutions at a time
+            An integer of a function taking 2 arguments:
+            - The index of the current iteration (starting from 0)
+            - The counter of costs of current Pareto-optimal solutions
+            Denotes the maximum number of propagating solutions in an iteration
         plot_pareto_front:
             Plot the Pareto front for 2-objective optimization problems only, default to False
         logger:
@@ -156,15 +158,21 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
                 if len(propagate) == 0:
                     propagate = [solution.shuffle(use_tqdm=use_tqdm, logger=logger) for solution in current]
 
+                pareto_counter = results.counter()
                 if propagation_priority_key is not None:
                     minimum = tuple(min(cost[i] for cost in results.keys()) for i in range(dimensions))
                     maximum = tuple(max(cost[i] for cost in results.keys()) for i in range(dimensions))
-                    propagate.sort(key=partial(propagation_priority_key, results.counter(), minimum, maximum))
+                    propagate.sort(key=partial(propagation_priority_key, pareto_counter, minimum, maximum))
 
                 else:
                     random.shuffle(propagate)
 
-                current = propagate[:max_propagation]
+                if isinstance(max_propagation, int):
+                    max_propagation_value = max_propagation
+                else:
+                    max_propagation_value = max_propagation(iteration, pareto_counter)
+
+                current = propagate[:max_propagation_value]
 
                 if logger is not None:
                     logger(f"Last improvement: #{last_improved + 1}/{iteration + 1}\n")
