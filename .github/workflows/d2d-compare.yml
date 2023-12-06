@@ -192,7 +192,7 @@ jobs:
 
       - name: Upload compare result to catbox.moe
         run: |
-          url=$(curl -F "reqtype=fileupload" -F "fileToUpload=@compare.png" "https://catbox.moe/user/api.php")
+          url=$(curl -F "reqtype=fileupload" -F "fileToUpload=@compare.png" -F "time=72h" "https://litterbox.catbox.moe/resources/internals/api.php")
           errorcode=$?
           echo "$url"
           echo -n "$url" > url.txt
