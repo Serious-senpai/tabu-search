@@ -4,7 +4,7 @@ import argparse
 import os
 import subprocess
 import sys
-from typing import List, Literal, TYPE_CHECKING
+from typing import Any, Dict, List, Literal, TYPE_CHECKING
 
 
 # Energy modes
@@ -56,7 +56,7 @@ for propagation_priority in (
 ):
     output = f"d2d-summary/{namespace.problem}.{propagation_priority}.json"
 
-    args = [
+    command = [
         sys.executable,
         "d2d.py", namespace.problem,
         "--iterations", str(namespace.iterations),
@@ -68,9 +68,13 @@ for propagation_priority in (
         "--pool-size", str(namespace.pool_size),
     ]
     if namespace.verbose:
-        args.append("--verbose")
+        command.append("--verbose")
 
-    process = subprocess.Popen(args, creationflags=subprocess.CREATE_NEW_CONSOLE)
+    kwargs: Dict[str, Any] = {}
+    if sys.platform == "win32":
+        kwargs["creationflags"] = subprocess.CREATE_NEW_CONSOLE
+
+    process = subprocess.Popen(command, **kwargs)
     processes.append(process)
     outputs.append(output)
 
