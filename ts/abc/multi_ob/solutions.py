@@ -67,8 +67,8 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
         propagation_priority_key:
             A function taking 4 arguments:
             - The counter of costs of current Pareto-optimal solutions
-            - The minimum value for each dimension of the Pareto front
-            - The maximum value for each dimension of the Pareto front
+            - The minimum cost of each dimension among the iterated solutions
+            - The maximum cost of each dimension among the iterated solutions
             - The solution S
             The less the returned value, the more likely the solution S will be added to the propagation tree.
         max_propagation:
@@ -106,6 +106,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
             message = "Cannot plot the Pareto front when the number of objectives is not 2"
             raise ValueError(message)
 
+        extremes = [initial.cost()] * 2
         with Pool(pool_size) as pool:
             lock = threading.Lock()
             last_improved = 0
@@ -142,6 +143,9 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
                                     propagated = True
                                     propagate.append(candidate)
 
+                                extremes[0] = tuple(min(m, c) for m, c in zip(extremes[0], candidate.cost()))
+                                extremes[1] = tuple(max(m, c) for m, c in zip(extremes[1], candidate.cost()))
+
                         if propagated:
                             break
 
@@ -160,9 +164,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
 
                 pareto_counter = results.counter()
                 if propagation_priority_key is not None:
-                    minimum = tuple(min(cost[i] for cost in results.keys()) for i in range(dimensions))
-                    maximum = tuple(max(cost[i] for cost in results.keys()) for i in range(dimensions))
-                    propagate.sort(key=partial(propagation_priority_key, pareto_counter, minimum, maximum))
+                    propagate.sort(key=partial(propagation_priority_key, pareto_counter, *extremes))
 
                 else:
                     random.shuffle(propagate)
