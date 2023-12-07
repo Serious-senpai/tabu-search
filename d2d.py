@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, TYPE_CHECKING
 
 from ts import d2d, utils
@@ -18,6 +19,9 @@ NONE = "none"
 MIN_DISTANCE = "min-distance"
 MAX_DISTANCE = "max-distance"
 IDEAL_DISTANCE = "ideal-distance"
+MIN_DISTANCE_NO_NORMALIZE = "min-distance-no-normalize"
+MAX_DISTANCE_NO_NORMALIZE = "max-distance-no-normalize"
+IDEAL_DISTANCE_NO_NORMALIZE = "ideal-distance-no-normalize"
 
 
 class Namespace(argparse.Namespace):
@@ -27,7 +31,15 @@ class Namespace(argparse.Namespace):
         tabu_size: int
         drone_config_mapping: List[int]
         energy_mode: Literal["linear", "non-linear"]
-        propagation_priority: Literal["none", "min-distance", "max-distance", "ideal-distance"]
+        propagation_priority: Literal[
+            "none",
+            "min-distance",
+            "max-distance",
+            "ideal-distance",
+            "min-distance-no-normalize",
+            "max-distance-no-normalize",
+            "ideal-distance-no-normalize",
+        ]
         max_propagation: int
         verbose: bool
         dump: Optional[str]
@@ -44,6 +56,32 @@ def to_json(solution: d2d.D2DPathSolution) -> Dict[str, Any]:
     }
 
 
+def normalization(value: float, minimum: float, maximum: float) -> float:
+    try:
+        return value / (maximum - minimum)
+    except ZeroDivisionError:
+        if not utils.isclose(value, 0.0):
+            message = f"Called with normalization({value}, {minimum}, {maximum})"
+            raise ValueError(message)
+
+        return 0.0
+
+
+def _max_distance_key_no_normalize(
+    pareto_costs: Dict[Tuple[float, ...], int],
+    minimum: Tuple[float, ...],
+    maximum: Tuple[float, ...],
+    candidate: d2d.D2DPathSolution,
+    /
+) -> float:
+    cost = candidate.cost()
+    result = 0.0
+    for pareto_cost, counter in pareto_costs.items():
+        result += counter * abs(pareto_cost[0] - cost[0]) + abs(pareto_cost[1] - cost[1])
+
+    return -result
+
+
 def _max_distance_key(
     pareto_costs: Dict[Tuple[float, ...], int],
     minimum: Tuple[float, ...],
@@ -54,9 +92,27 @@ def _max_distance_key(
     cost = candidate.cost()
     result = 0.0
     for pareto_cost, counter in pareto_costs.items():
-        result += counter * abs(pareto_cost[0] - cost[0]) / maximum[0] + abs(pareto_cost[1] - cost[1]) / maximum[1]
+        result += counter * (
+            normalization(abs(pareto_cost[0] - cost[0]), minimum[0], maximum[0])
+            + normalization(abs(pareto_cost[1] - cost[1]), minimum[1], maximum[1])
+        )
 
     return -result
+
+
+def _min_distance_key_no_normalize(
+    pareto_costs: Dict[Tuple[float, ...], int],
+    minimum: Tuple[float, ...],
+    maximum: Tuple[float, ...],
+    candidate: d2d.D2DPathSolution,
+    /
+) -> float:
+    cost = candidate.cost()
+    result = 0.0
+    for pareto_cost, counter in pareto_costs.items():
+        result += counter * abs(pareto_cost[0] - cost[0]) + abs(pareto_cost[1] - cost[1])
+
+    return result
 
 
 def _min_distance_key(
@@ -69,9 +125,24 @@ def _min_distance_key(
     cost = candidate.cost()
     result = 0.0
     for pareto_cost, counter in pareto_costs.items():
-        result += counter * abs(pareto_cost[0] - cost[0]) / maximum[0] + abs(pareto_cost[1] - cost[1]) / maximum[1]
+        result += counter * (
+            normalization(abs(pareto_cost[0] - cost[0]), minimum[0], maximum[0])
+            + normalization(abs(pareto_cost[1] - cost[1]), minimum[1], maximum[1])
+        )
 
     return result
+
+
+def _ideal_distance_key_no_normalize(
+    pareto_costs: Dict[Tuple[float, ...], int],
+    minimum: Tuple[float, ...],
+    maximum: Tuple[float, ...],
+    candidate: d2d.D2DPathSolution,
+    /
+) -> float:
+    ideal = (min(cost[0] for cost in pareto_costs.keys()), min(cost[1] for cost in pareto_costs.keys()))
+    cost = candidate.cost()
+    return abs(ideal[0] - cost[0]) + abs(ideal[1] - cost[1])
 
 
 def _ideal_distance_key(
@@ -83,7 +154,10 @@ def _ideal_distance_key(
 ) -> float:
     ideal = (min(cost[0] for cost in pareto_costs.keys()), min(cost[1] for cost in pareto_costs.keys()))
     cost = candidate.cost()
-    return abs(ideal[0] - cost[0]) / maximum[0] + abs(ideal[1] - cost[1]) / maximum[1]
+    return (
+        normalization(abs(ideal[0] - cost[0]), minimum[0], maximum[0])
+        + normalization(abs(ideal[1] - cost[1]), minimum[1], maximum[1])
+    )
 
 
 if __name__ == "__main__":
@@ -93,7 +167,13 @@ if __name__ == "__main__":
     parser.add_argument("-t", "--tabu-size", default=10, type=int, help="the tabu size for every neighborhood (default: 10)")
     parser.add_argument("-c", "--drone-config-mapping", nargs="+", default=[0, 0, 0, 0], type=int, help="the energy configuration index for each drone (default: \"0 0 0 0\")")
     parser.add_argument("-e", "--energy-mode", default=LINEAR, choices=[LINEAR, NON_LINEAR], help="the energy consumption mode to use (default: linear)")
-    parser.add_argument("-k", "--propagation-priority", default=NONE, choices=[NONE, MIN_DISTANCE, MAX_DISTANCE, IDEAL_DISTANCE], help="set the solution propagation priority null (default: none)")
+    parser.add_argument(
+        "-k",
+        "--propagation-priority",
+        default=NONE,
+        choices=[NONE, MIN_DISTANCE, MAX_DISTANCE, IDEAL_DISTANCE, MIN_DISTANCE_NO_NORMALIZE, MAX_DISTANCE_NO_NORMALIZE, IDEAL_DISTANCE_NO_NORMALIZE],
+        help="set the solution propagation priority (default: none)",
+    )
     parser.add_argument("-m", "--max-propagation", default=5, type=int, help="maximum number of propagating solutions at a time (default: 5)")
     parser.add_argument("-v", "--verbose", action="store_true", help="whether to display the progress bar and plot the solution")
     parser.add_argument("-d", "--dump", type=str, help="dump the solution to a file")
@@ -130,6 +210,12 @@ if __name__ == "__main__":
             propagation_priority_key = _max_distance_key
         elif namespace.propagation_priority == IDEAL_DISTANCE:
             propagation_priority_key = _ideal_distance_key
+        elif namespace.propagation_priority == MIN_DISTANCE_NO_NORMALIZE:
+            propagation_priority_key = _min_distance_key_no_normalize
+        elif namespace.propagation_priority == MAX_DISTANCE_NO_NORMALIZE:
+            propagation_priority_key = _max_distance_key_no_normalize
+        elif namespace.propagation_priority == IDEAL_DISTANCE_NO_NORMALIZE:
+            propagation_priority_key = _ideal_distance_key_no_normalize
 
         logfile = None if namespace.log is None else open(namespace.log, "w")
         try:
@@ -186,7 +272,10 @@ if __name__ == "__main__":
                 errors.extend(errors_messages)
 
     if namespace.dump is not None:
-        with open(namespace.dump, "w") as f:
+        dump_path = Path(namespace.dump)
+        dump_path_dir = dump_path / ".."
+        dump_path_dir.mkdir(parents=True, exist_ok=True)
+        with dump_path.open("w", encoding="utf-8") as f:
             data = {
                 "problem": namespace.problem,
                 "iterations": namespace.iterations,
