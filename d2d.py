@@ -274,7 +274,7 @@ if __name__ == "__main__":
     if namespace.dump is not None:
         dump_path = Path(namespace.dump)
         dump_path_dir = dump_path / ".."
-        dump_path_dir.mkdir(parents=True, exist_ok=True)
+        dump_path_dir.resolve().mkdir(parents=True, exist_ok=True)
         with dump_path.open("w", encoding="utf-8") as f:
             data = {
                 "problem": namespace.problem,
