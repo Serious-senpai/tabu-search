@@ -4,7 +4,7 @@ import argparse
 import os
 import subprocess
 import sys
-from typing import Any, Dict, List, Literal, TYPE_CHECKING
+from typing import List, Literal, TYPE_CHECKING
 
 
 # Energy modes
@@ -43,7 +43,7 @@ print(namespace)
 
 
 print("Launching subprocesses")
-processes: List[subprocess.Popen] = []
+processes: List[subprocess.Popen[bytes]] = []
 outputs: List[str] = []
 for propagation_priority in (
     "none",
@@ -70,19 +70,17 @@ for propagation_priority in (
     if namespace.verbose:
         command.append("--verbose")
 
-    kwargs: Dict[str, Any] = {}
-    if sys.platform == "win32":
-        kwargs["creationflags"] = subprocess.CREATE_NEW_CONSOLE
-
-    process = subprocess.Popen(command, **kwargs)
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     processes.append(process)
     outputs.append(output)
 
 
 print(f"Launched {len(processes)} subprocesses:", ", ".join(str(process.pid) for process in processes))
 for process in processes:
-    return_code = process.wait()
-    print(f"Process {process.pid} exited with code {return_code}")
+    _, stderr = process.communicate()
+    print(f"Process {process.pid} exited with code {process.returncode}.")
+    if process.returncode != 0:
+        print(stderr.decode("utf-8"))
 
 
 print("Combining results")
