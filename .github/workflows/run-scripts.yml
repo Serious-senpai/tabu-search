@@ -1,4 +1,4 @@
-name: Lint
+name: Run custom scripts
 
 on:
   push:
