@@ -235,7 +235,10 @@ if __name__ == "__main__":
         if logfile is not None:
             logfile.close()
 
-    hypervolume = utils.hypervolume([s.cost() for s in solutions], ref_normalized_point=(1.0, 1.0))
+    costs = [s.cost() for s in solutions]
+    hv_ref = max(cost[0] for cost in costs), max(cost[1] for cost in costs)
+    hypervolume = utils.hypervolume(costs, ref_point=hv_ref)
+
     print(f"Found {len(solutions)} " + utils.ngettext(len(solutions) == 1, "solution", "solutions") + f" (HV {hypervolume:.4f}):")
     errors: List[str] = []
     for index, solution in enumerate(solutions):
