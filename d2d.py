@@ -200,76 +200,75 @@ if __name__ == "__main__":
         drone_config_mapping=tuple(namespace.drone_config_mapping),
         energy_mode=energy_mode,
     )
-    with d2d.D2DPathSolution.share_distances():
-        d2d.Swap.reset_tabu(maxlen=namespace.tabu_size)
+    d2d.Swap.reset_tabu(maxlen=namespace.tabu_size)
 
-        propagation_priority_key: Optional[Callable[[Dict[Tuple[float, ...], int], Tuple[float, ...], Tuple[float, ...], d2d.D2DPathSolution], float]] = None
-        if namespace.propagation_priority == MIN_DISTANCE:
-            propagation_priority_key = _min_distance_key
-        elif namespace.propagation_priority == MAX_DISTANCE:
-            propagation_priority_key = _max_distance_key
-        elif namespace.propagation_priority == IDEAL_DISTANCE:
-            propagation_priority_key = _ideal_distance_key
-        elif namespace.propagation_priority == MIN_DISTANCE_NO_NORMALIZE:
-            propagation_priority_key = _min_distance_key_no_normalize
-        elif namespace.propagation_priority == MAX_DISTANCE_NO_NORMALIZE:
-            propagation_priority_key = _max_distance_key_no_normalize
-        elif namespace.propagation_priority == IDEAL_DISTANCE_NO_NORMALIZE:
-            propagation_priority_key = _ideal_distance_key_no_normalize
+    propagation_priority_key: Optional[Callable[[Dict[Tuple[float, ...], int], Tuple[float, ...], Tuple[float, ...], d2d.D2DPathSolution], float]] = None
+    if namespace.propagation_priority == MIN_DISTANCE:
+        propagation_priority_key = _min_distance_key
+    elif namespace.propagation_priority == MAX_DISTANCE:
+        propagation_priority_key = _max_distance_key
+    elif namespace.propagation_priority == IDEAL_DISTANCE:
+        propagation_priority_key = _ideal_distance_key
+    elif namespace.propagation_priority == MIN_DISTANCE_NO_NORMALIZE:
+        propagation_priority_key = _min_distance_key_no_normalize
+    elif namespace.propagation_priority == MAX_DISTANCE_NO_NORMALIZE:
+        propagation_priority_key = _max_distance_key_no_normalize
+    elif namespace.propagation_priority == IDEAL_DISTANCE_NO_NORMALIZE:
+        propagation_priority_key = _ideal_distance_key_no_normalize
 
-        logfile = None if namespace.log is None else open(namespace.log, "w")
-        try:
-            solutions = sorted(
-                d2d.D2DPathSolution.tabu_search(
-                    pool_size=namespace.pool_size,
-                    iterations_count=namespace.iterations,
-                    use_tqdm=namespace.verbose,
-                    propagation_priority_key=propagation_priority_key,
-                    max_propagation=namespace.max_propagation,
-                    plot_pareto_front=namespace.verbose,
-                    logger=None if logfile is None else logfile.write,
-                ),
-                key=lambda s: s.cost(),
-            )
+    logfile = None if namespace.log is None else open(namespace.log, "w")
+    try:
+        solutions = sorted(
+            d2d.D2DPathSolution.tabu_search(
+                pool_size=namespace.pool_size,
+                iterations_count=namespace.iterations,
+                use_tqdm=namespace.verbose,
+                propagation_priority_key=propagation_priority_key,
+                max_propagation=namespace.max_propagation,
+                plot_pareto_front=namespace.verbose,
+                logger=None if logfile is None else logfile.write,
+            ),
+            key=lambda s: s.cost(),
+        )
 
-        finally:
-            if logfile is not None:
-                logfile.close()
+    finally:
+        if logfile is not None:
+            logfile.close()
 
-        hypervolume = utils.hypervolume([s.cost() for s in solutions], ref_normalized_point=(1.0, 1.0))
-        print(f"Found {len(solutions)} " + utils.ngettext(len(solutions) == 1, "solution", "solutions") + f" (HV {hypervolume:.4f}):")
-        errors: List[str] = []
-        for index, solution in enumerate(solutions):
-            print(f"SOLUTION #{index + 1}: cost = {solution.cost()}")
-            print("\n".join(f"Drone #{drone_index + 1}: {paths}" for drone_index, paths in enumerate(solution.drone_paths)))
-            print("\n".join(f"Technician #{technician_index + 1}: {path}" for technician_index, path in enumerate(solution.technician_paths)))
+    hypervolume = utils.hypervolume([s.cost() for s in solutions], ref_normalized_point=(1.0, 1.0))
+    print(f"Found {len(solutions)} " + utils.ngettext(len(solutions) == 1, "solution", "solutions") + f" (HV {hypervolume:.4f}):")
+    errors: List[str] = []
+    for index, solution in enumerate(solutions):
+        print(f"SOLUTION #{index + 1}: cost = {solution.cost()}")
+        print("\n".join(f"Drone #{drone_index + 1}: {paths}" for drone_index, paths in enumerate(solution.drone_paths)))
+        print("\n".join(f"Technician #{technician_index + 1}: {path}" for technician_index, path in enumerate(solution.technician_paths)))
 
-            errors_messages: List[str] = []
-            if not solution.feasible():
-                errors_messages.append("Solution is infeasible")
+        errors_messages: List[str] = []
+        if not solution.feasible():
+            errors_messages.append("Solution is infeasible")
 
-            check = d2d.D2DPathSolution(
-                drone_paths=solution.drone_paths,
-                technician_paths=solution.technician_paths,
-            )
+        check = d2d.D2DPathSolution(
+            drone_paths=solution.drone_paths,
+            technician_paths=solution.technician_paths,
+        )
 
-            if not utils.isclose(check.cost(), solution.cost()):
-                errors_messages.append(f"Incorrect solution cost: Expected {check.cost()}, got {solution.cost()}")
+        if not utils.isclose(check.cost(), solution.cost()):
+            errors_messages.append(f"Incorrect solution cost: Expected {check.cost()}, got {solution.cost()}")
 
-            for attr in (
-                "drone_timespans",
-                "technician_timespans",
-                "drone_waiting_times",
-                "technician_waiting_times",
-            ):
-                check_attr = getattr(check, attr)
-                solution_attr = getattr(solution, attr)
-                if not utils.isclose(check_attr, solution_attr):
-                    errors_messages.append(f"Incorrect {attr}: Expected {check_attr}, got {solution_attr}")
+        for attr in (
+            "drone_timespans",
+            "technician_timespans",
+            "drone_waiting_times",
+            "technician_waiting_times",
+        ):
+            check_attr = getattr(check, attr)
+            solution_attr = getattr(solution, attr)
+            if not utils.isclose(check_attr, solution_attr):
+                errors_messages.append(f"Incorrect {attr}: Expected {check_attr}, got {solution_attr}")
 
-            if len(errors_messages) > 0:
-                errors.append(f"At solution #{index + 1}:")
-                errors.extend(errors_messages)
+        if len(errors_messages) > 0:
+            errors.append(f"At solution #{index + 1}:")
+            errors.extend(errors_messages)
 
     if namespace.dump is not None:
         dump_path = Path(namespace.dump)

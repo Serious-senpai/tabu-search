@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-import contextlib
 import itertools
-import pickle
 import random
 import re
 from math import sqrt
-from multiprocessing import shared_memory
 from os.path import join
-from typing import Any, Callable, ClassVar, Final, FrozenSet, List, Literal, Optional, Sequence, Set, Tuple, Union, TYPE_CHECKING, final
+from typing import Any, Callable, ClassVar, Final, FrozenSet, List, Optional, Sequence, Set, Tuple, Union, TYPE_CHECKING, final
 
 from matplotlib import axes, pyplot
 
@@ -551,20 +548,13 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         cls.drone_endurance_config = DroneEnduranceConfig.import_data()
 
     @classmethod
-    def share_distances(cls) -> _SharedDistancesManager:
-        if cls.problem is None:
-            message = "No problem has been imported yet"
-            raise RuntimeError(message)
-
-        return _SharedDistancesManager(problem=cls.problem, distances=cls.distances)
-
-    @classmethod
     def import_problem(
         cls,
         problem: str,
         *,
         drone_config_mapping: Tuple[int, ...],
         energy_mode: DroneEnergyConsumptionMode,
+        precalculated_distances: Optional[Tuple[Tuple[float, ...], ...]] = None,
     ) -> None:
         if not cls.__config_imported:
             cls.import_config()
@@ -606,16 +596,15 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
             cls.drone_config_mapping = drone_config_mapping
             cls.energy_mode = energy_mode
 
-            try:
-                memory = shared_memory.SharedMemory(name=problem, create=False)
-                cls.distances = pickle.loads(memory.buf)
-
-            except FileNotFoundError:
+            if precalculated_distances is None:
                 distances = [[0.0] * (cls.customers_count + 1) for _ in range(cls.customers_count + 1)]
                 for first, second in itertools.combinations(range(cls.customers_count + 1), 2):
                     distances[first][second] = distances[second][first] = sqrt((cls.x[first] - cls.x[second]) ** 2 + (cls.y[first] - cls.y[second]) ** 2)
 
                 cls.distances = tuple(tuple(r) for r in distances)
+
+            else:
+                cls.distances = precalculated_distances
 
         except Exception as e:
             raise ProblemImportException(problem) from e
@@ -632,24 +621,3 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
             )
 
         return NotImplemented
-
-
-class _SharedDistancesManager(contextlib.AbstractContextManager):
-
-    __slots__ = (
-        "memory",
-    )
-    if TYPE_CHECKING:
-        memory: shared_memory.SharedMemory
-
-    def __init__(self, *, problem: str, distances: Tuple[Tuple[float, ...], ...]) -> None:
-        data = pickle.dumps(distances)
-        try:
-            self.memory = shared_memory.SharedMemory(name=problem, create=True, size=len(data))
-            self.memory.buf[:] = data
-        except FileExistsError:
-            self.memory = shared_memory.SharedMemory(name=problem, create=False)
-
-    def __exit__(self, *args: Any) -> Literal[False]:
-        self.memory.unlink()
-        return False

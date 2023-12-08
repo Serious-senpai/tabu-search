@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Generic, TypeVar, TYPE_CHECKING
+from typing import TypeVar, TYPE_CHECKING
 
 from ...abc import MultiObjectiveNeighborhood
 if TYPE_CHECKING:
@@ -8,34 +8,32 @@ if TYPE_CHECKING:
 
 
 __all__ = ("D2DBaseNeighborhood",)
-
-
 _T = TypeVar("_T")
 if TYPE_CHECKING:
-    class D2DBaseNeighborhood(MultiObjectiveNeighborhood[D2DPathSolution, _T]):
-        """Base class for neighborhood of the D2D problem. When working in a subprocess, remember to call
-        `D2DBaseNeighborhood.ensure_imported_data` first.
-        """
-
-        __slots__ = ()
-        def __init__(self, solution: D2DPathSolution, /) -> None: ...
-        def ensure_imported_data(self) -> None: ...
-
+    _D2DPathSolution = D2DPathSolution
 else:
-    class D2DBaseNeighborhood(MultiObjectiveNeighborhood, Generic[_T]):
+    _D2DPathSolution = object
 
-        __slots__ = ()
 
-        def __init__(self, solution: D2DPathSolution, /) -> None:
-            super().__init__(solution)
-            self.extras["problem"] = solution.problem
-            self.extras["drone_config_mapping"] = solution.drone_config_mapping
-            self.extras["energy_mode"] = solution.energy_mode
+class D2DBaseNeighborhood(MultiObjectiveNeighborhood[_D2DPathSolution, _T]):
+    """Base class for neighborhood of the D2D problem. When working in a subprocess, remember to call
+    `D2DBaseNeighborhood.ensure_imported_data` first.
+    """
 
-        def ensure_imported_data(self) -> None:
-            if self.cls.problem != self.extras["problem"]:
-                self.cls.import_problem(
-                    self.extras["problem"],
-                    drone_config_mapping=self.extras["drone_config_mapping"],
-                    energy_mode=self.extras["energy_mode"],
-                )
+    __slots__ = ()
+
+    def __init__(self, solution: D2DPathSolution, /) -> None:
+        super().__init__(solution)
+        self.extras["problem"] = solution.problem
+        self.extras["drone_config_mapping"] = solution.drone_config_mapping
+        self.extras["energy_mode"] = solution.energy_mode
+        self.extras["precalculated_distances"] = solution.distances
+
+    def ensure_imported_data(self) -> None:
+        if self.cls.problem != self.extras["problem"]:
+            self.cls.import_problem(
+                self.extras["problem"],
+                drone_config_mapping=self.extras["drone_config_mapping"],
+                energy_mode=self.extras["energy_mode"],
+                precalculated_distances=self.extras["precalculated_distances"],
+            )
