@@ -34,7 +34,7 @@ jobs:
 
       - name: Run d2d-script-0.py
         run: |
-          python scripts/d2d-script-0.py ${{ matrix.problem }} -v
+          python scripts/d2d-script-0.py ${{ matrix.problem }} -c 3 3 3 3 -v
           mv compare.png ${{ matrix.problem }}-compare.png
 
       - name: Upload compare result
