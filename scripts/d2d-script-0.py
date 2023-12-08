@@ -131,7 +131,9 @@ for output, pareto_front in zip(outputs, solutions):
     costs = [s.cost() for s in pareto_front]
     hv = utils.hypervolume(costs, ref_point=hv_reference_point)
     igd = utils.inverted_generational_distance(costs, ref_costs=merged_costs)
-    print(f"{output}:: HV = {hv} IGD = {igd}")
+
+    solution_display = utils.ngettext(len(pareto_front) == 1, "solution", "solutions")
+    print(f"{output} ({len(pareto_front)} {solution_display}):: HV = {hv} IGD = {igd}")
 
 
 if has_exception:
