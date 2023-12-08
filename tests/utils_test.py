@@ -9,7 +9,7 @@ def test_hv_1() -> None:
             (100, 100),
             (100, 100),
         ],
-        ref_normalized_point=(1, 1),
+        ref_point=(100, 100),
     )
     assert hv is not None
     assert utils.isclose(hv, 0.0)
@@ -21,7 +21,7 @@ def test_hv_2() -> None:
             (100, 200),
             (200, 100),
         ],
-        ref_normalized_point=(1, 1),
+        ref_point=(200, 200),
     )
     assert hv is not None
     assert utils.isclose(hv, 0.0)
@@ -34,7 +34,7 @@ def test_hv_3() -> None:
             (100, 200),
             (200, 100),
         ],
-        ref_normalized_point=(1, 1),
+        ref_point=(200, 200),
     )
     assert hv is not None
     assert utils.isclose(hv, 1.0)
@@ -49,7 +49,7 @@ def test_hv_4() -> None:
             (400, 200),
             (500, 100),
         ],
-        ref_normalized_point=(1, 1),
+        ref_point=(500, 500),
     )
     assert hv is not None
     assert utils.isclose(hv, 6 / 16)

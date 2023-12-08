@@ -124,11 +124,12 @@ merged: Set[d2d.D2DPathSolution] = set()
 for solution in itertools.chain(*solutions):
     solution.add_to_pareto_set(merged)
 merged_costs = [s.cost() for s in merged]
+hv_reference_point = max(cost[0] for cost in merged_costs), max(cost[1] for cost in merged_costs)
 
 
 for output, pareto_front in zip(outputs, solutions):
     costs = [s.cost() for s in pareto_front]
-    hv = utils.hypervolume(costs, ref_normalized_point=(1, 1))
+    hv = utils.hypervolume(costs, ref_point=hv_reference_point)
     igd = utils.inverted_generational_distance(costs, ref_costs=merged_costs)
     print(f"{output}:: HV = {hv} IGD = {igd}")
 
