@@ -114,8 +114,8 @@ for output in outputs:
     for s in data["solutions"]:
         solutions[-1].append(
             d2d.D2DPathSolution(
-                drone_paths=s["drone_paths"],
-                technician_paths=s["technician_paths"],
+                drone_paths=tuple(tuple(tuple(path) for path in paths) for paths in s["drone_paths"]),
+                technician_paths=tuple(tuple(path) for path in s["technician_paths"]),
             )
         )
 
