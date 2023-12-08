@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import argparse
+import itertools
+import json
 import os
 import subprocess
 import sys
-from typing import List, Literal, TYPE_CHECKING
+from typing import List, Literal, Set, TYPE_CHECKING
+
+from ts import d2d, utils
 
 
 # Energy modes
@@ -50,9 +54,6 @@ for propagation_priority in (
     "min-distance",
     "max-distance",
     "ideal-distance",
-    "min-distance-no-normalize",
-    "max-distance-no-normalize",
-    "ideal-distance-no-normalize",
 ):
     output = f"d2d-summary/{namespace.problem}.{propagation_priority}.json"
 
@@ -76,24 +77,62 @@ for propagation_priority in (
 
 
 print(f"Launched {len(processes)} subprocesses:", ", ".join(str(process.pid) for process in processes))
+has_exception = False
 for process in processes:
     _, stderr = process.communicate()
     print(f"Process {process.pid} exited with code {process.returncode}.")
     if process.returncode != 0:
+        has_exception = True
         print(stderr.decode("utf-8"))
 
 
-print("Combining results")
+print("Plotting Pareto fronts...")
 subprocess.Popen(
     [
         sys.executable,
         "scripts/d2d-compare.py",
         *outputs,
     ],
-    stdout=subprocess.DEVNULL,
+    stdout=sys.stdout,
     stderr=sys.stderr,
-    env=dict(PYTHONPATH=os.getcwd(), **os.environ),
 ).wait()
 
 
-print("Results combined")
+d2d.D2DPathSolution.import_problem(
+    namespace.problem,
+    drone_config_mapping=tuple(namespace.drone_config_mapping),
+    energy_mode=d2d.DroneEnergyConsumptionMode.LINEAR if namespace.energy_mode == LINEAR else d2d.DroneEnergyConsumptionMode.NON_LINEAR,
+)
+
+
+solutions: List[List[d2d.D2DPathSolution]] = []
+for output in outputs:
+    solutions.append([])
+    with open(output, "r") as file:
+        data = json.load(file)
+
+    for s in data["solutions"]:
+        solutions[-1].append(
+            d2d.D2DPathSolution(
+                drone_paths=s["drone_paths"],
+                technician_paths=s["technician_paths"],
+            )
+        )
+
+
+merged: Set[d2d.D2DPathSolution] = set()
+for solution in itertools.chain(*solutions):
+    solution.add_to_pareto_set(merged)
+merged_costs = [s.cost() for s in merged]
+
+
+for output, pareto_front in zip(outputs, solutions):
+    costs = [s.cost() for s in pareto_front]
+    hv = utils.hypervolume(costs, ref_normalized_point=(1, 1))
+    igd = utils.inverted_generational_distance(costs, ref_costs=merged_costs)
+    print(f"{output}:: HV = {hv} IGD = {igd}")
+
+
+if has_exception:
+    print("Returning code 1 due to failure in some subprocesses")
+    sys.exit(1)
