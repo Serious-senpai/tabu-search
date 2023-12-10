@@ -50,7 +50,6 @@ class Namespace(argparse.Namespace):
 def to_json(solution: d2d.D2DPathSolution) -> Dict[str, Any]:
     return {
         "cost": solution.cost(),
-        "drone_config_mapping": solution.drone_config_mapping,
         "drone_paths": solution.drone_paths,
         "technician_paths": solution.technician_paths,
     }
@@ -222,9 +221,8 @@ if __name__ == "__main__":
 
     costs = [s.cost() for s in solutions]
     hv_ref = max(cost[0] for cost in costs), max(cost[1] for cost in costs)
-    hypervolume = utils.hypervolume(costs, ref_point=hv_ref)
 
-    print(f"Found {len(solutions)} " + utils.ngettext(len(solutions) == 1, "solution", "solutions") + f" (HV {hypervolume:.4f}):")
+    print(f"Found {len(solutions)} " + utils.ngettext(len(solutions) == 1, "solution", "solutions"))
     errors: List[str] = []
     for index, solution in enumerate(solutions):
         print(f"SOLUTION #{index + 1}: cost = {solution.cost()}")
@@ -266,10 +264,10 @@ if __name__ == "__main__":
             data = {
                 "problem": namespace.problem,
                 "iterations": namespace.iterations,
-                "tabu-size": namespace.tabu_size,
-                "energy-mode": namespace.energy_mode,
-                "propagation-priority": namespace.propagation_priority,
-                "hypervolume": hypervolume,
+                "tabu_size": namespace.tabu_size,
+                "drone_config_mapping": namespace.drone_config_mapping,
+                "energy_mode": namespace.energy_mode,
+                "propagation_priority": namespace.propagation_priority,
                 "solutions": [to_json(s) for s in solutions],
             }
             json.dump(data, f)

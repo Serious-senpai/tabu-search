@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import itertools
-import math
 import os
 import platform
 import threading
 import sys
-from typing import Any, Callable, Iterable, List, Optional, ParamSpec, Sequence, Tuple, TypeVar, TYPE_CHECKING, overload
+from typing import Any, Callable, Iterable, List, Optional, ParamSpec, Sequence, Set, Tuple, TypeVar, TYPE_CHECKING, overload
 
 import numpy as np
 from matplotlib import axes, pyplot
@@ -24,6 +23,7 @@ __all__ = (
     "plot_multi_fronts",
     "cost_dominate",
     "coverage_indicator",
+    "build_pareto_front",
 )
 if TYPE_CHECKING:
     _P = ParamSpec("_P")
@@ -108,7 +108,7 @@ def isclose(first: Any, second: Any, /) -> bool:
     try:
         return all(isclose(f, s) for f, s in zip(first, second))
     except TypeError:
-        return math.isclose(first, second, rel_tol=0.001, abs_tol=0.001)
+        return abs(first - second) < 0.0001
 
 
 def normalize_costs(costs: Sequence[Tuple[float, float]], /) -> List[Tuple[float, float]]:
@@ -224,3 +224,15 @@ def coverage_indicator(first: Sequence[_CostT], second: Sequence[_CostT]) -> Tup
             second_dominate += 1
 
     return first_dominate / len(first), second_dominate / len(second)
+
+
+def build_pareto_front(costs: Iterable[_CostT]) -> Set[_CostT]:
+    result: Set[_CostT] = set()
+    for cost in costs:
+        if any(cost_dominate(cost, c) for c in result):
+            continue
+
+        result = {c for c in result if not cost_dominate(c, cost)}
+        result.add(cost)
+
+    return result
