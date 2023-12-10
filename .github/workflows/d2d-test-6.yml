@@ -39,7 +39,7 @@ jobs:
         run: |
           python d2d.py ${{ matrix.problem }} \
           -e ${{ matrix.energy-mode }} \
-          --dump output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-1.json
+          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-1.json"
 
       - name: Run optimizer (2)
         run: |
