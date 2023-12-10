@@ -2,24 +2,17 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass
-from enum import Enum
 from math import cos, pi, sqrt
 from os.path import join
 from typing import Any, Dict, List, Literal, Tuple
 
 
 __all__ = (
-    "DroneEnergyConsumptionMode",
     "TruckConfig",
     "DroneLinearConfig",
     "DroneNonlinearConfig",
     "DroneEnduranceConfig",
 )
-
-
-class DroneEnergyConsumptionMode(Enum):
-    NON_LINEAR = 0
-    LINEAR = 1
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -183,6 +176,7 @@ class DroneNonlinearConfig(_BaseDroneConfig):
 class DroneEnduranceConfig:
     speed_type: Literal["low", "high"]
     range: Literal["low", "high"]
+    capacity: float
     fixed_time: float
     fixed_distance: float
     drone_speed: float
@@ -199,6 +193,7 @@ class DroneEnduranceConfig:
             item = DroneEnduranceConfig(
                 speed_type=d["speed_type"],
                 range=d["range"],
+                capacity=d["capacity [kg]"],
                 fixed_time=d["FixedTime (s)"],
                 fixed_distance=d["FixedDistance (m)"],
                 drone_speed=d["Drone_speed (m/s)"],

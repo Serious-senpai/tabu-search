@@ -12,6 +12,7 @@ from ts import d2d, utils
 # Energy modes
 LINEAR = "linear"
 NON_LINEAR = "non-linear"
+ENDURANCE = "endurance"
 
 
 # Propagation priority
@@ -30,7 +31,7 @@ class Namespace(argparse.Namespace):
         iterations: int
         tabu_size: int
         drone_config_mapping: List[int]
-        energy_mode: Literal["linear", "non-linear"]
+        energy_mode: Literal["linear", "non-linear", "endurance"]
         propagation_priority: Literal[
             "none",
             "min-distance",
@@ -166,7 +167,7 @@ if __name__ == "__main__":
     parser.add_argument("-i", "--iterations", default=2000, type=int, help="the number of iterations to run the tabu search for (default: 2000)")
     parser.add_argument("-t", "--tabu-size", default=10, type=int, help="the tabu size for every neighborhood (default: 10)")
     parser.add_argument("-c", "--drone-config-mapping", nargs="+", default=[0, 0, 0, 0], type=int, help="the energy configuration index for each drone (default: \"0 0 0 0\")")
-    parser.add_argument("-e", "--energy-mode", default=LINEAR, choices=[LINEAR, NON_LINEAR], help="the energy consumption mode to use (default: linear)")
+    parser.add_argument("-e", "--energy-mode", default=LINEAR, choices=[LINEAR, NON_LINEAR, ENDURANCE], help="the energy consumption mode to use (default: linear)")
     parser.add_argument(
         "-k",
         "--propagation-priority",
@@ -188,17 +189,10 @@ if __name__ == "__main__":
     parser.parse_args(namespace=namespace)
     print(namespace)
 
-    if namespace.energy_mode == LINEAR:
-        energy_mode = d2d.DroneEnergyConsumptionMode.LINEAR
-    elif namespace.energy_mode == NON_LINEAR:
-        energy_mode = d2d.DroneEnergyConsumptionMode.NON_LINEAR
-    else:
-        raise ValueError(f"Unknown energy mode {namespace.energy_mode!r}")
-
     d2d.D2DPathSolution.import_problem(
         namespace.problem,
         drone_config_mapping=tuple(namespace.drone_config_mapping),
-        energy_mode=energy_mode,
+        energy_mode=namespace.energy_mode,
     )
     d2d.Swap.reset_tabu(maxlen=namespace.tabu_size)
 

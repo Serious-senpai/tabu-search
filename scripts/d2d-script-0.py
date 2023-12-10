@@ -101,7 +101,7 @@ subprocess.Popen(
 d2d.D2DPathSolution.import_problem(
     namespace.problem,
     drone_config_mapping=tuple(namespace.drone_config_mapping),
-    energy_mode=d2d.DroneEnergyConsumptionMode.LINEAR if namespace.energy_mode == LINEAR else d2d.DroneEnergyConsumptionMode.NON_LINEAR,
+    energy_mode=namespace.energy_mode,
 )
 
 

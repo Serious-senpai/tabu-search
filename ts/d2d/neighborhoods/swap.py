@@ -7,6 +7,7 @@ from typing import Any, Callable, Dict, Final, Iterable, Optional, List, Set, Tu
 
 from .base import D2DBaseNeighborhood
 from .factory import SolutionFactory
+from ..config import DroneEnduranceConfig
 from ..errors import NeighborhoodException
 from ...bundle import IPCBundle
 from ...utils import synchronized
@@ -234,11 +235,27 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
                 if solution.calculate_total_weight(_first_path) > first_config.capacity or solution.calculate_total_weight(_second_path) > second_config.capacity:
                     continue
 
-                if solution.calculate_drone_energy_consumption(_first_path, config_index=solution.drone_config_mapping[first_drone]) > first_config.battery:
-                    continue
+                if isinstance(first_config, DroneEnduranceConfig):
+                    if solution.calculate_drone_flight_duration(_first_path, arrival_timestamps=first_arrival_timestamps) > first_config.fixed_time:
+                        continue
 
-                if solution.calculate_drone_energy_consumption(_second_path, config_index=solution.drone_config_mapping[second_drone]) > second_config.battery:
-                    continue
+                    if solution.calculate_required_range(_first_path) > first_config.fixed_distance:
+                        continue
+
+                else:
+                    if solution.calculate_drone_energy_consumption(_first_path, config_index=solution.drone_config_mapping[first_drone]) > first_config.battery:
+                        continue
+
+                if isinstance(second_config, DroneEnduranceConfig):
+                    if solution.calculate_drone_flight_duration(_second_path, arrival_timestamps=second_arrival_timestamps) > second_config.fixed_time:
+                        continue
+
+                    if solution.calculate_required_range(_second_path) > second_config.fixed_distance:
+                        continue
+
+                else:
+                    if solution.calculate_drone_energy_consumption(_second_path, config_index=solution.drone_config_mapping[second_drone]) > second_config.battery:
+                        continue
 
                 _drone_timespans = list(drone_timespans)
                 _drone_timespans[first_drone] += first_arrival_timestamps[-1] - solution.drone_arrival_timestamps[first_drone][first_path_index][-1]
@@ -356,8 +373,16 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
                         if solution.calculate_total_weight(_drone_path) > drone_config.capacity:
                             continue
 
-                        if solution.calculate_drone_energy_consumption(_drone_path, config_index=solution.drone_config_mapping[drone]) > drone_config.battery:
-                            continue
+                        if isinstance(drone_config, DroneEnduranceConfig):
+                            if solution.calculate_drone_flight_duration(_drone_path, arrival_timestamps=drone_arrival_timestamps) > drone_config.fixed_time:
+                                continue
+
+                            if solution.calculate_required_range(_drone_path) > drone_config.fixed_distance:
+                                continue
+
+                        else:
+                            if solution.calculate_drone_energy_consumption(_drone_path, config_index=solution.drone_config_mapping[drone]) > drone_config.battery:
+                                continue
 
                         _technician_timespans = list(solution.technician_timespans)
                         _technician_timespans[technician] = technician_arrival_timestamps[-1]
@@ -427,8 +452,16 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
                     if solution.calculate_total_weight(_path) > config.capacity:
                         continue
 
-                    if solution.calculate_drone_energy_consumption(_path, config_index=solution.drone_config_mapping[drone]) > config.battery:
-                        continue
+                    if isinstance(config, DroneEnduranceConfig):
+                        if solution.calculate_drone_flight_duration(_path, arrival_timestamps=arrival_timestamps) > config.fixed_time:
+                            continue
+
+                        if solution.calculate_required_range(_path) > config.fixed_distance:
+                            continue
+
+                    else:
+                        if solution.calculate_drone_energy_consumption(_path, config_index=solution.drone_config_mapping[drone]) > config.battery:
+                            continue
 
                     _drone_timespans = list(solution.drone_timespans)
                     _drone_timespans[drone] += arrival_timestamps[-1] - solution.drone_arrival_timestamps[drone][path_index][-1]
