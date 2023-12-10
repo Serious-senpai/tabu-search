@@ -44,6 +44,7 @@ class Namespace(argparse.Namespace):
         max_propagation: int
         verbose: bool
         dump: Optional[str]
+        extra: Optional[str]
         pool_size: int
 
 
@@ -169,13 +170,15 @@ if __name__ == "__main__":
     parser.add_argument(
         "-k",
         "--propagation-priority",
-        default=NONE,
+        default=MIN_DISTANCE,
         choices=[NONE, MIN_DISTANCE, MAX_DISTANCE, IDEAL_DISTANCE, MIN_DISTANCE_NO_NORMALIZE, MAX_DISTANCE_NO_NORMALIZE, IDEAL_DISTANCE_NO_NORMALIZE],
         help="set the solution propagation priority (default: none)",
     )
     parser.add_argument("-m", "--max-propagation", default=5, type=int, help="maximum number of propagating solutions at a time (default: 5)")
     parser.add_argument("-v", "--verbose", action="store_true", help="whether to display the progress bar and plot the solution")
     parser.add_argument("-d", "--dump", type=str, help="dump the solution to a file")
+
+    parser.add_argument("--extra", type=str, help="extra data dump to file specified by --dump")
 
     default_pool_size = os.cpu_count() or 1
     parser.add_argument("--pool-size", default=default_pool_size, type=int, help=f"the size of the process pool (default: {default_pool_size})")
@@ -269,6 +272,7 @@ if __name__ == "__main__":
                 "energy_mode": namespace.energy_mode,
                 "propagation_priority": namespace.propagation_priority,
                 "solutions": [to_json(s) for s in solutions],
+                "extra": namespace.extra,
             }
             json.dump(data, f)
 

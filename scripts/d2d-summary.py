@@ -6,7 +6,7 @@ import json
 import os
 from collections import defaultdict
 from pathlib import Path
-from typing import DefaultDict, List, Literal, Tuple, TypedDict, TYPE_CHECKING
+from typing import DefaultDict, List, Literal, Optional, Tuple, TypedDict, TYPE_CHECKING
 
 from ts import utils
 
@@ -22,6 +22,7 @@ class Namespace(argparse.Namespace):
         drone_config_mapping: Choices
         energy_mode: Choices
         propagation_priority: Choices
+        extra: Choices
 
 
 class SolutionJSON(TypedDict):
@@ -46,6 +47,7 @@ class ParetoFrontJSON(TypedDict):
         "ideal-distance-no-normalize",
     ]
     solutions: List[SolutionJSON]
+    extra: Optional[str]
 
 
 parser = argparse.ArgumentParser(
@@ -56,6 +58,7 @@ parser.add_argument("--tabu-size", default=0, type=int, choices=choices)
 parser.add_argument("--drone-config-mapping", default=0, type=int, choices=choices)
 parser.add_argument("--energy-mode", default=0, type=int, choices=choices)
 parser.add_argument("--propagation-priority", default=0, type=int, choices=choices)
+parser.add_argument("--extra", default=0, type=int, choices=choices)
 
 
 namespace = Namespace()
@@ -79,8 +82,9 @@ for index, file in enumerate(files):
         front: List[Tuple[float, float]] = [(d["cost"][0], d["cost"][1]) for d in data["solutions"]]
         fronts[data["problem"]][tuple(data["drone_config_mapping"])][data["energy_mode"]].append((index, front))
 
-hv = [0.0] * len(files)
-igd = [0.0] * len(files)
+
+hv = [-1.0] * len(files)
+igd = [-1.0] * len(files)
 for problem in fronts.keys():
     for drone_config_mapping in fronts[problem].keys():
         for energy_mode in fronts[problem][drone_config_mapping].keys():
@@ -94,6 +98,9 @@ for problem in fronts.keys():
             for index, front in pareto_fronts:
                 hv[index] = utils.hypervolume(front, ref_point=hv_ref_point) or -1.0
                 igd[index] = utils.inverted_generational_distance(front, ref_costs=igd_ref_front) or -1.0
+
+
+print("Calculated HV and IGD")
 
 
 def wrap_double_quotes(text: str) -> str:
@@ -166,6 +173,10 @@ with open(summary_dir / "d2d-summary.csv", "w") as csv:
                 s = str(data["propagation_priority"])
                 plot_name += f"-{s}"
 
+            if namespace.extra == 1:
+                s = str(data["extra"])
+                plot_name += f"-{s}"
+
             description: List[str] = []
 
             if namespace.iterations == 2:
@@ -183,7 +194,13 @@ with open(summary_dir / "d2d-summary.csv", "w") as csv:
             if namespace.propagation_priority == 2:
                 description.append(str(data["propagation_priority"]))
 
+            if namespace.extra == 2:
+                description.append(str(data["extra"]))
+
             plot_fronts[plot_name].append((plot_front, "-".join(description)))
+
+
+print("Summarized to CSV file")
 
 
 for plot_name, fronts_collection in plot_fronts.items():
