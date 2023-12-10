@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from multiprocessing import pool
-from typing import Any, Callable, Optional, TypeVar
+from typing import Optional, TypeVar
 
 from .solutions import SingleObjectiveSolution
 from ..bases import BaseNeighborhood
@@ -17,7 +17,7 @@ class SingleObjectiveNeighborhood(BaseNeighborhood[_SingleST, _TT]):
 
     __slots__ = ()
 
-    def find_best_candidate(self, *, pool: pool.Pool, pool_size: int, logger: Optional[Callable[[str], Any]]) -> Optional[_SingleST]:
+    def find_best_candidate(self, *, pool: pool.Pool, pool_size: int) -> Optional[_SingleST]:
         """Find the best candidate solution within the neighborhood of the current one.
 
         Parameters
@@ -26,8 +26,6 @@ class SingleObjectiveNeighborhood(BaseNeighborhood[_SingleST, _TT]):
             The process pool to perform the operation
         pool_size:
             The process pool size
-        logger:
-            The logging function taking a single str argument
 
         Returns
         -----

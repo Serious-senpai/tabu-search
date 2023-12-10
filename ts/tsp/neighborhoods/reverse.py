@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import itertools
 from multiprocessing import pool
-from typing import Any, Callable, List, Optional, Tuple, TYPE_CHECKING
+from typing import List, Optional, Tuple, TYPE_CHECKING
 
 from .base import TSPBaseNeighborhood
 from ...bundle import IPCBundle
@@ -50,7 +50,7 @@ class SegmentReverse(TSPBaseNeighborhood[Tuple[int, int]]):
 
         return self.cls(after=tuple(after), before=tuple(before), cost=cost)
 
-    def find_best_candidate(self, *, pool: pool.Pool, pool_size: int, logger: Optional[Callable[[str], Any]]) -> Optional[TSPPathSolution]:
+    def find_best_candidate(self, *, pool: pool.Pool, pool_size: int) -> Optional[TSPPathSolution]:
         solution = self._solution
 
         bundles: List[IPCBundle[SegmentReverse, List[List[int]]]] = [IPCBundle(self, []) for _ in range(pool_size)]

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from multiprocessing import pool
-from typing import Any, Callable, Iterable, Optional, TypeVar
+from typing import Iterable, TypeVar
 
 from .solutions import MultiObjectiveSolution
 from ..bases import BaseNeighborhood
@@ -17,7 +17,7 @@ class MultiObjectiveNeighborhood(BaseNeighborhood[_MultiST, _TT]):
 
     __slots__ = ()
 
-    def find_best_candidates(self, *, pool: pool.Pool, pool_size: int, logger: Optional[Callable[[str], Any]]) -> Iterable[_MultiST]:
+    def find_best_candidates(self, *, pool: pool.Pool, pool_size: int) -> Iterable[_MultiST]:
         """Find all non-dominant solutions in this neighborhood of the current solution.
 
         Subclasses must implement this.
@@ -28,8 +28,6 @@ class MultiObjectiveNeighborhood(BaseNeighborhood[_MultiST, _TT]):
             The process pool to perform the operation
         pool_size:
             The process pool size
-        logger:
-            The logging function taking a single str argument
 
         Returns
         -----

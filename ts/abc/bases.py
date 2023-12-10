@@ -5,13 +5,11 @@ from collections import deque
 from multiprocessing import pool
 from typing import (
     Any,
-    Callable,
     ClassVar,
     Deque,
     Dict,
     Final,
     Generic,
-    Optional,
     Sequence,
     Set,
     Type,
@@ -38,7 +36,7 @@ class BaseSolution:
         """
         raise NotImplementedError
 
-    def shuffle(self, *, use_tqdm: bool, logger: Optional[Callable[[str], Any]]) -> Self:
+    def shuffle(self, *, use_tqdm: bool) -> Self:
         """Shuffle the current solution
 
         The default implementation does nothing.
@@ -47,8 +45,6 @@ class BaseSolution:
         -----
         use_tqdm:
             Whether to display the progress bar
-        logger:
-            The logging function taking a single str argument
         """
         return self
 
@@ -58,7 +54,6 @@ class BaseSolution:
         pool: pool.Pool,
         pool_size: int,
         use_tqdm: bool,
-        logger: Optional[Callable[[str], Any]],
     ) -> Self:
         """Perform post-optimization for this solution
 
@@ -72,8 +67,6 @@ class BaseSolution:
             The process pool size
         use_tqdm:
             Whether to display the progress bar
-        logger:
-            The logging function taking a single str argument
         """
         return self
 

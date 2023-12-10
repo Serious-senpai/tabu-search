@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import itertools
-import threading
 from multiprocessing import pool as p
-from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, TYPE_CHECKING
+from typing import Dict, Iterable, List, Set, Tuple, TYPE_CHECKING
 
 from .base import D2DBaseNeighborhood
 from .factory import SolutionFactory
@@ -26,7 +25,7 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
         super().__init__(solution)
         self.length = length
 
-    def find_best_candidates(self, *, pool: p.Pool, pool_size: int, logger: Optional[Callable[[str], Any]]) -> Iterable[D2DPathSolution]:
+    def find_best_candidates(self, *, pool: p.Pool, pool_size: int) -> Iterable[D2DPathSolution]:
         solution = self._solution
         results: Set[SolutionFactory] = set()
         swaps_mapping: Dict[SolutionFactory, Tuple[Tuple[int, int], int]] = {}
@@ -88,24 +87,6 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
         ):
             func()
 
-        lines = [
-            ",".join(
-                (
-                    "Thread",
-                    f"\"Insert {self.length}\"",
-                    "Old service duration (s)",
-                    "Old total waiting time (s)",
-                    "New service duration (s)",
-                    "New total waiting time (s)",
-                    "Old drone paths",
-                    "New drone paths",
-                    "Old technician paths",
-                    "New technician paths",
-                    "Tabu list",
-                ),
-            ),
-        ] if logger is not None else None
-
         for result in results:
             pair = swaps_mapping[result]
             s = result.from_solution(solution)
@@ -113,30 +94,7 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                 s.to_propagate = False
 
             self.add_to_tabu(pair)
-            if lines is not None:
-                old_cost = solution.cost()
-                new_cost = s.cost()
-                lines.append(
-                    ",".join(
-                        f"\"{e}\"" for e in (
-                            threading.current_thread().name,
-                            pair,
-                            *old_cost,
-                            *new_cost,
-                            solution.drone_paths,
-                            s.drone_paths,
-                            solution.technician_paths,
-                            s.technician_paths,
-                            self._tabu_list,
-                        )
-                    )
-                )
-
             yield s
-
-        if logger is not None:
-            assert lines is not None
-            logger("\n".join(lines) + "\n")
 
     @staticmethod
     def swap_technician_technician(bundle: IPCBundle[Insert, List[Tuple[int, int]]]) -> Set[Tuple[SolutionFactory, Tuple[Tuple[int, int], int]]]:

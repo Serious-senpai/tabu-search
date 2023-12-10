@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import random
-import time
 import threading
 from functools import partial
 from multiprocessing import Pool, pool as p
@@ -14,7 +13,7 @@ if TYPE_CHECKING:
 
 from .costs import BaseMulticostComparison, ParetoSet
 from ..bases import BaseSolution
-from ...utils import ngettext, synchronized
+from ...utils import ngettext
 if TYPE_CHECKING:
     from .neighborhoods import MultiObjectiveNeighborhood
 
@@ -52,7 +51,6 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
         propagation_priority_key: Optional[Callable[[Dict[Tuple[float, ...], int], Tuple[float, ...], Tuple[float, ...], Self], float]] = None,
         max_propagation: Union[int, Callable[[int, Dict[Tuple[float, ...], int]], int]],
         plot_pareto_front: bool = False,
-        logger: Optional[Callable[[str], Any]] = None,
     ) -> Set[Self]:
         """Run the tabu search algorithm to find the Pareto front for this multi-objective optimization problem.
 
@@ -78,8 +76,6 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
             Denotes the maximum number of propagating solutions in an iteration
         plot_pareto_front:
             Plot the Pareto front for 2-objective optimization problems only, default to False
-        logger:
-            The logging function taking a single str argument
 
         Returns
         -----
@@ -96,9 +92,6 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
         if use_tqdm:
             iterations = tqdm(iterations, ascii=" █")
 
-        if logger is not None:
-            logger = synchronized(logger)
-
         current = [initial]
         candidate_costs = {initial.cost()} if plot_pareto_front else None
         dimensions = len(initial.cost())
@@ -109,17 +102,10 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
         extremes = [initial.cost()] * 2
         with Pool(pool_size) as pool:
             lock = threading.Lock()
-            last_improved = 0
-            start = last = time.perf_counter()
             for iteration in iterations:
                 if isinstance(iterations, tqdm):
                     solution_display = ngettext(len(results) == 1, "solution", "solutions")
                     iterations.set_description_str(f"Tabu search ({len(current)}/{len(results)} {solution_display})")
-
-                if logger is not None:
-                    timer = time.perf_counter()
-                    logger(f"Iteration #{iteration + 1}/{iterations_count},Solutions count,{len(results)},Timer (s),{timer - start:.4f},Iteration timer (s),{timer - last:.4f}\n")
-                    last = timer
 
                 propagate: List[Self] = []
 
@@ -131,7 +117,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
                     for neighborhood in neighborhoods:
                         propagated = False
 
-                        for candidate in neighborhood.find_best_candidates(pool=pool, pool_size=pool_size, logger=logger):
+                        for candidate in neighborhood.find_best_candidates(pool=pool, pool_size=pool_size):
                             with lock:
                                 if candidate_costs is not None:
                                     candidate_costs.add(candidate.cost())
@@ -152,15 +138,14 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
                     return improved
 
                 with p.ThreadPool(min(pool_size, len(current))) as thread_pool:
-                    if any(thread_pool.map(process_solution, current)):
-                        last_improved = iteration
+                    thread_pool.map(process_solution, current)
 
                     thread_pool.close()
                     thread_pool.join()
 
                 propagate = list(set(propagate))
                 if len(propagate) == 0:
-                    propagate = [solution.shuffle(use_tqdm=use_tqdm, logger=logger) for solution in current]
+                    propagate = [solution.shuffle(use_tqdm=use_tqdm) for solution in current]
 
                 pareto_counter = results.counter()
                 if propagation_priority_key is not None:
@@ -176,10 +161,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
 
                 current = propagate[:max_propagation_value]
 
-                if logger is not None:
-                    logger(f"Last improvement: #{last_improved + 1}/{iteration + 1}\n")
-
-            post_optimized_results = set(r.post_optimization(pool=pool, pool_size=pool_size, use_tqdm=use_tqdm, logger=logger) for r in results)
+            post_optimized_results = set(r.post_optimization(pool=pool, pool_size=pool_size, use_tqdm=use_tqdm) for r in results)
 
             pool.close()
             pool.join()
