@@ -108,12 +108,10 @@ field_names = (
     "Drone configuration",
     "Energy mode",
     "Propagation priority",
-    "Service duration (s)",
-    "Total waiting time (s)",
+    "Solutions count",
+    "Solutions",
     "Hypervolume",
     "Inverted generational distance",
-    "Drone paths",
-    "Technician paths",
 )
 with open(summary_dir / "d2d-summary.csv", "w") as csv:
     csv.write(",".join(field_names) + "\n")
@@ -124,27 +122,26 @@ with open(summary_dir / "d2d-summary.csv", "w") as csv:
             with open(summary_dir / file, "r") as f:
                 data = json.load(f)
 
+            csv.write(
+                ",".join(
+                    (
+                        str(index),
+                        data["problem"],
+                        str(data["iterations"]),
+                        str(data["tabu_size"]),
+                        wrap_double_quotes(str(data["drone_config_mapping"])),
+                        data["energy_mode"],
+                        data["propagation_priority"],
+                        str(len(data["solutions"])),
+                        wrap_double_quotes(", ".join(str(d["cost"]) for d in data["solutions"])),
+                        str(hv[index]),
+                        str(igd[index]),
+                    )
+                ) + "\n",
+            )
+
             plot_front: List[Tuple[float, float]] = []
             for solution in data["solutions"]:
-                csv.write(
-                    ",".join(
-                        (
-                            str(index),
-                            data["problem"],
-                            str(data["iterations"]),
-                            str(data["tabu_size"]),
-                            wrap_double_quotes(str(data["drone_config_mapping"])),
-                            data["energy_mode"],
-                            data["propagation_priority"],
-                            str(solution["cost"][0]),
-                            str(solution["cost"][1]),
-                            str(hv[index]),
-                            str(igd[index]),
-                            wrap_double_quotes(str(solution["drone_paths"])),
-                            wrap_double_quotes(str(solution["technician_paths"])),
-                        )
-                    ) + "\n",
-                )
                 plot_front.append((solution["cost"][0], solution["cost"][1]))
 
             plot_name = data["problem"]

@@ -162,7 +162,7 @@ def _ideal_distance_key(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Tabu search algorithm for D2D problems")
     parser.add_argument("problem", type=str, help="the problem name (e.g. \"6.5.1\", \"200.10.1\", ...)")
-    parser.add_argument("-i", "--iterations", default=2000, type=int, help="the number of iterations to run the tabu search for (default: 2000)")
+    parser.add_argument("-i", "--iterations", default=1500, type=int, help="the number of iterations to run the tabu search for (default: 1500)")
     parser.add_argument("-t", "--tabu-size", default=10, type=int, help="the tabu size for every neighborhood (default: 10)")
     parser.add_argument("-c", "--drone-config-mapping", nargs="+", default=[0, 0, 0, 0], type=int, help="the energy configuration index for each drone (default: \"0 0 0 0\")")
     parser.add_argument("-e", "--energy-mode", default=LINEAR, choices=[LINEAR, NON_LINEAR, ENDURANCE], help="the energy consumption mode to use (default: linear)")
