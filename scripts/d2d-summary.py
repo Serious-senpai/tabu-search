@@ -5,6 +5,7 @@ import itertools
 import json
 import os
 from collections import defaultdict
+from datetime import timedelta
 from pathlib import Path
 from typing import DefaultDict, List, Literal, Optional, Tuple, TypedDict, TYPE_CHECKING
 
@@ -50,6 +51,7 @@ class ParetoFrontJSON(TypedDict):
     ]
     solutions: List[SolutionJSON]
     extra: Optional[str]
+    time: float
 
 
 parser = argparse.ArgumentParser(
@@ -121,6 +123,7 @@ field_names = (
     "Solutions",
     "Hypervolume",
     "Inverted generational distance",
+    "Execution time",
 )
 with open(summary_dir / "d2d-summary.csv", "w") as csv:
     csv.write(",".join(field_names) + "\n")
@@ -142,9 +145,10 @@ with open(summary_dir / "d2d-summary.csv", "w") as csv:
                         data["energy_mode"],
                         data["propagation_priority"],
                         str(len(data["solutions"])),
-                        wrap_double_quotes(", ".join(str(d["cost"]) for d in data["solutions"])),
+                        wrap_double_quotes(", ".join(str(tuple(d["cost"])) for d in data["solutions"])),
                         str(hv[index]),
                         str(igd[index]),
+                        str(timedelta(seconds=data["time"])),
                     )
                 ) + "\n",
             )

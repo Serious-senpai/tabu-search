@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import time
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, TYPE_CHECKING
 
@@ -210,6 +211,7 @@ if __name__ == "__main__":
     elif namespace.propagation_priority == IDEAL_DISTANCE_NO_NORMALIZE:
         propagation_priority_key = _ideal_distance_key_no_normalize
 
+    start = time.perf_counter()
     solutions = sorted(
         d2d.D2DPathSolution.tabu_search(
             pool_size=namespace.pool_size,
@@ -221,6 +223,7 @@ if __name__ == "__main__":
         ),
         key=lambda s: s.cost(),
     )
+    total = time.perf_counter() - start
 
     costs = [s.cost() for s in solutions]
     hv_ref = max(cost[0] for cost in costs), max(cost[1] for cost in costs)
@@ -273,6 +276,7 @@ if __name__ == "__main__":
                 "propagation_priority": namespace.propagation_priority,
                 "solutions": [to_json(s) for s in solutions],
                 "extra": namespace.extra,
+                "time": total,
             }
             json.dump(data, f)
 
