@@ -218,6 +218,7 @@ jobs:
   summary:
     name: Summarize solutions
     runs-on: ubuntu-latest
+    if: ${{ !cancelled() }}
     needs: [test-6, test-10, test-20, test-50, test-100]
 
     steps:
