@@ -35,95 +35,18 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run optimizer (1)
+      - name: Run optimizer
         run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-1.json" \
-          --extra run-1
-
-      - name: Run optimizer (2)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-2.json" \
-          --extra run-2
-
-      - name: Run optimizer (3)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-3.json" \
-          --extra run-3
-
-      - name: Run optimizer (4)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-4.json" \
-          --extra run-4
-
-      - name: Run optimizer (5)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-5.json" \
-          --extra run-5
-
-      - name: Run optimizer (6)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-6.json" \
-          --extra run-6
-
-      - name: Run optimizer (7)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-7.json" \
-          --extra run-7
-
-      - name: Run optimizer (8)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-8.json" \
-          --extra run-8
-
-      - name: Run optimizer (9)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-9.json" \
-          --extra run-9
-
-      - name: Run optimizer (10)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-10.json" \
-          --extra run-10
+          for i in 1 2 3 4 5 6 7 8 9 10
+          do
+            echo "Run #$i"
+            python d2d.py ${{ matrix.problem }} \
+            -c ${{ matrix.drone-config-mapping }} \
+            -e ${{ matrix.energy-mode }} \
+            --pool-size 8 \
+            --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-$i.json" \
+            --extra run-$i
+          done
 
       - name: Upload solutions
         uses: actions/upload-artifact@v3
@@ -152,95 +75,18 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run optimizer (1)
+      - name: Run optimizer
         run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-1.json" \
-          --extra run-1
-
-      - name: Run optimizer (2)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-2.json" \
-          --extra run-2
-
-      - name: Run optimizer (3)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-3.json" \
-          --extra run-3
-
-      - name: Run optimizer (4)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-4.json" \
-          --extra run-4
-
-      - name: Run optimizer (5)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-5.json" \
-          --extra run-5
-
-      - name: Run optimizer (6)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-6.json" \
-          --extra run-6
-
-      - name: Run optimizer (7)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-7.json" \
-          --extra run-7
-
-      - name: Run optimizer (8)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-8.json" \
-          --extra run-8
-
-      - name: Run optimizer (9)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-9.json" \
-          --extra run-9
-
-      - name: Run optimizer (10)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-10.json" \
-          --extra run-10
+          for i in 1 2 3 4 5 6 7 8 9 10
+          do
+            echo "Run #$i"
+            python d2d.py ${{ matrix.problem }} \
+            -c ${{ matrix.drone-config-mapping }} \
+            -e ${{ matrix.energy-mode }} \
+            --pool-size 8 \
+            --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-$i.json" \
+            --extra run-$i
+          done
 
       - name: Upload solutions
         uses: actions/upload-artifact@v3
@@ -269,95 +115,18 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run optimizer (1)
+      - name: Run optimizer
         run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-1.json" \
-          --extra run-1
-
-      - name: Run optimizer (2)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-2.json" \
-          --extra run-2
-
-      - name: Run optimizer (3)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-3.json" \
-          --extra run-3
-
-      - name: Run optimizer (4)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-4.json" \
-          --extra run-4
-
-      - name: Run optimizer (5)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-5.json" \
-          --extra run-5
-
-      - name: Run optimizer (6)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-6.json" \
-          --extra run-6
-
-      - name: Run optimizer (7)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-7.json" \
-          --extra run-7
-
-      - name: Run optimizer (8)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-8.json" \
-          --extra run-8
-
-      - name: Run optimizer (9)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-9.json" \
-          --extra run-9
-
-      - name: Run optimizer (10)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-10.json" \
-          --extra run-10
+          for i in 1 2 3 4 5 6 7 8 9 10
+          do
+            echo "Run #$i"
+            python d2d.py ${{ matrix.problem }} \
+            -c ${{ matrix.drone-config-mapping }} \
+            -e ${{ matrix.energy-mode }} \
+            --pool-size 8 \
+            --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-$i.json" \
+            --extra run-$i
+          done
 
       - name: Upload solutions
         uses: actions/upload-artifact@v3
@@ -395,86 +164,18 @@ jobs:
           --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-1.json" \
           --extra run-1
 
-      - name: Run optimizer (2)
+      - name: Run optimizer
         run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-2.json" \
-          --extra run-2
-
-      - name: Run optimizer (3)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-3.json" \
-          --extra run-3
-
-      - name: Run optimizer (4)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-4.json" \
-          --extra run-4
-
-      - name: Run optimizer (5)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-5.json" \
-          --extra run-5
-
-      - name: Run optimizer (6)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-6.json" \
-          --extra run-6
-
-      - name: Run optimizer (7)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-7.json" \
-          --extra run-7
-
-      - name: Run optimizer (8)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-8.json" \
-          --extra run-8
-
-      - name: Run optimizer (9)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-9.json" \
-          --extra run-9
-
-      - name: Run optimizer (10)
-        run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-10.json" \
-          --extra run-10
+          for i in 1 2 3 4 5 6 7 8 9 10
+          do
+            echo "Run #$i"
+            python d2d.py ${{ matrix.problem }} \
+            -c ${{ matrix.drone-config-mapping }} \
+            -e ${{ matrix.energy-mode }} \
+            --pool-size 8 \
+            --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-$i.json" \
+            --extra run-$i
+          done
 
       - name: Upload solutions
         uses: actions/upload-artifact@v3
