@@ -141,7 +141,12 @@ def hypervolume(
     *normalized, ref_normalized_point = normalize_costs(pareto_costs)
 
     indicator = HV(ref_point=ref_normalized_point)
-    return indicator(np.array(normalized))
+    result = indicator(np.array(normalized))
+    if result is None:
+        message = f"Cannot calculate HV in hypervolume({pareto_costs!r}, ref_point={ref_point!r})"
+        raise ValueError(message)
+
+    return result
 
 
 def inverted_generational_distance(
@@ -160,7 +165,12 @@ def inverted_generational_distance(
     ref_costs = normalized[offset:]
 
     indicator = IGD(np.array(ref_costs))
-    return indicator(np.array(pareto_costs))
+    result = indicator(np.array(pareto_costs))
+    if result is None:
+        message = f"Cannot calculate IGD in inverted_generational_distance({pareto_costs!r}, ref_costs={ref_costs!r})"
+        raise ValueError(message)
+
+    return result
 
 
 def plot_multi_fronts(

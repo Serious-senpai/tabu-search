@@ -37,7 +37,7 @@ jobs:
 
       - name: Run optimizer
         run: |
-          for i in 1 2 3 4 5 6 7 8 9 10
+          for i in 0 1 2 3 4 5 6 7 8 9
           do
             echo "Run #$i"
             python d2d.py ${{ matrix.problem }} \
@@ -77,7 +77,7 @@ jobs:
 
       - name: Run optimizer
         run: |
-          for i in 1 2 3 4 5 6 7 8 9 10
+          for i in 0 1 2 3 4 5 6 7 8 9
           do
             echo "Run #$i"
             python d2d.py ${{ matrix.problem }} \
@@ -117,7 +117,7 @@ jobs:
 
       - name: Run optimizer
         run: |
-          for i in 1 2 3 4 5 6 7 8 9 10
+          for i in 0 1 2 3 4 5 6 7 8 9
           do
             echo "Run #$i"
             python d2d.py ${{ matrix.problem }} \
@@ -155,18 +155,49 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run optimizer (1)
+      - name: Run optimizer
         run: |
-          python d2d.py ${{ matrix.problem }} \
-          -c ${{ matrix.drone-config-mapping }} \
-          -e ${{ matrix.energy-mode }} \
-          --pool-size 8 \
-          --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-1.json" \
-          --extra run-1
+          for i in 0 1 2 3 4 5 6 7 8 9
+          do
+            echo "Run #$i"
+            python d2d.py ${{ matrix.problem }} \
+            -c ${{ matrix.drone-config-mapping }} \
+            -e ${{ matrix.energy-mode }} \
+            --pool-size 8 \
+            --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-$i.json" \
+            --extra run-$i
+          done
+
+      - name: Upload solutions
+        uses: actions/upload-artifact@v3
+        with:
+          name: d2d-summary
+          path: output-*.json
+          retention-days: 1
+
+  test-100:
+    name: 100-customer problems
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        problem: ["100.10.1", "100.10.2", "100.10.3", "100.10.4", "100.20.1", "100.20.2", "100.20.3", "100.20.4", "100.30.1", "100.30.2", "100.30.3", "100.30.4", "100.40.1", "100.40.2", "100.40.3", "100.40.4"]
+        drone-config-mapping: ["0 0 0 0", "1 1 1 1", "2 2 2 2", "3 3 3 3"]
+        energy-mode: ["linear", "non-linear", "endurance"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
       - name: Run optimizer
         run: |
-          for i in 1 2 3 4 5 6 7 8 9 10
+          for i in 0 1 2 3 4 5 6 7 8 9
           do
             echo "Run #$i"
             python d2d.py ${{ matrix.problem }} \
@@ -187,7 +218,7 @@ jobs:
   summary:
     name: Summarize solutions
     runs-on: ubuntu-latest
-    needs: [test-6, test-10, test-20, test-50]
+    needs: [test-6, test-10, test-20, test-50, test-100]
 
     steps:
       - name: Checkout repository
@@ -197,7 +228,7 @@ jobs:
         uses: actions/setup-python@v4
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r dev-requirements.txt
 
       - name: Download solutions
         uses: actions/download-artifact@v3

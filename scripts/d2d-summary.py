@@ -8,6 +8,8 @@ from collections import defaultdict
 from pathlib import Path
 from typing import DefaultDict, List, Literal, Optional, Tuple, TypedDict, TYPE_CHECKING
 
+from tqdm import tqdm
+
 from ts import utils
 
 
@@ -73,8 +75,8 @@ summary_dir = Path("d2d-summary/")
 fronts: DefaultDict[str, DefaultDict[Tuple[int, ...], DefaultDict[str, List[Tuple[int, List[Tuple[float, float]]]]]]] = defaultdict(
     lambda: defaultdict(lambda: defaultdict(list)),
 )
-files = sorted(os.listdir(summary_dir))
-for index, file in enumerate(files):
+files = list(enumerate(sorted(os.listdir(summary_dir))))
+for index, file in files:
     if file.startswith("output-"):
         with open(summary_dir / file, "r") as f:
             data: ParetoFrontJSON = json.load(f)
@@ -83,8 +85,8 @@ for index, file in enumerate(files):
         fronts[data["problem"]][tuple(data["drone_config_mapping"])][data["energy_mode"]].append((index, front))
 
 
-hv = [-1.0] * len(files)
-igd = [-1.0] * len(files)
+hv: List[Optional[float]] = [None] * len(files)
+igd: List[Optional[float]] = [None] * len(files)
 for problem in fronts.keys():
     for drone_config_mapping in fronts[problem].keys():
         for energy_mode in fronts[problem][drone_config_mapping].keys():
@@ -96,8 +98,8 @@ for problem in fronts.keys():
             )
             igd_ref_front = tuple(utils.build_pareto_front(itertools.chain(*[front for _, front in pareto_fronts])))
             for index, front in pareto_fronts:
-                hv[index] = utils.hypervolume(front, ref_point=hv_ref_point) or -1.0
-                igd[index] = utils.inverted_generational_distance(front, ref_costs=igd_ref_front) or -1.0
+                hv[index] = utils.hypervolume(front, ref_point=hv_ref_point)
+                igd[index] = utils.inverted_generational_distance(front, ref_costs=igd_ref_front)
 
 
 print("Calculated HV and IGD")
@@ -124,7 +126,7 @@ with open(summary_dir / "d2d-summary.csv", "w") as csv:
     csv.write(",".join(field_names) + "\n")
 
     plot_fronts: DefaultDict[str, List[Tuple[List[Tuple[float, float]], str]]] = defaultdict(list)
-    for index, file in enumerate(files):
+    for index, file in tqdm(files, desc="Summarize to CSV", ascii=" █"):
         if file.startswith("output-"):
             with open(summary_dir / file, "r") as f:
                 data = json.load(f)
@@ -200,10 +202,7 @@ with open(summary_dir / "d2d-summary.csv", "w") as csv:
             plot_fronts[plot_name].append((plot_front, "-".join(description)))
 
 
-print("Summarized to CSV file")
-
-
-for plot_name, fronts_collection in plot_fronts.items():
+for plot_name, fronts_collection in tqdm(plot_fronts.items(), desc="Save figures to PNG", ascii=" █"):
     utils.plot_multi_fronts(
         fronts_collection,
         dump=f"d2d-summary/{plot_name}.png",
