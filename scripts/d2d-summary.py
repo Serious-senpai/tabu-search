@@ -51,6 +51,7 @@ class ParetoFrontJSON(TypedDict):
     ]
     solutions: List[SolutionJSON]
     extra: Optional[str]
+    last_improved: int
     time: float
 
 
@@ -123,6 +124,7 @@ field_names = (
     "Solutions",
     "Hypervolume",
     "Inverted generational distance",
+    "Last improved",
     "Execution time",
 )
 with open(summary_dir / "d2d-summary.csv", "w") as csv:
@@ -148,6 +150,7 @@ with open(summary_dir / "d2d-summary.csv", "w") as csv:
                         wrap_double_quotes(", ".join(str(tuple(d["cost"])) for d in data["solutions"])),
                         str(hv[index]),
                         str(igd[index]),
+                        str(data["last_improved"]),
                         str(timedelta(seconds=data["time"])),
                     )
                 ) + "\n",
@@ -157,31 +160,25 @@ with open(summary_dir / "d2d-summary.csv", "w") as csv:
             for solution in data["solutions"]:
                 plot_front.append((solution["cost"][0], solution["cost"][1]))
 
-            plot_name = data["problem"]
+            plot_name = [data["problem"]]
 
             if namespace.iterations == 1:
-                s = str(data["iterations"])
-                plot_name += f"-{s}"
+                plot_name.append(str(data["iterations"]))
 
             if namespace.tabu_size == 1:
-                s = str(data["tabu_size"])
-                plot_name += f"-{s}"
+                plot_name.append(str(data["tabu_size"]))
 
             if namespace.drone_config_mapping == 1:
-                s = str(data["drone_config_mapping"])
-                plot_name += f"-{s}"
+                plot_name.append(str(data["drone_config_mapping"]))
 
             if namespace.energy_mode == 1:
-                s = str(data["energy_mode"])
-                plot_name += f"-{s}"
+                plot_name.append(str(data["energy_mode"]))
 
             if namespace.propagation_priority == 1:
-                s = str(data["propagation_priority"])
-                plot_name += f"-{s}"
+                plot_name.append(str(data["propagation_priority"]))
 
             if namespace.extra == 1:
-                s = str(data["extra"])
-                plot_name += f"-{s}"
+                plot_name.append(str(data["extra"]))
 
             description: List[str] = []
 
@@ -203,13 +200,13 @@ with open(summary_dir / "d2d-summary.csv", "w") as csv:
             if namespace.extra == 2:
                 description.append(str(data["extra"]))
 
-            plot_fronts[plot_name].append((plot_front, "-".join(description)))
+            plot_fronts["-".join(plot_name)].append((plot_front, "-".join(description)))
 
 
-for plot_name, fronts_collection in tqdm(plot_fronts.items(), desc="Save figures to PNG", ascii=" █"):
+for plot_filename, fronts_collection in tqdm(plot_fronts.items(), desc="Save figures to PNG", ascii=" █"):
     utils.plot_multi_fronts(
         fronts_collection,
-        dump=f"d2d-summary/{plot_name}.png",
+        dump=f"d2d-summary/{plot_filename}.png",
         xlabel="Service duration (s)",
         ylabel="Total waiting time (s)",
     )

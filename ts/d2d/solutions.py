@@ -5,7 +5,7 @@ import random
 import re
 from math import sqrt
 from os.path import join
-from typing import Any, ClassVar, Final, FrozenSet, List, Literal, Optional, Sequence, Set, Tuple, Union, TYPE_CHECKING, final
+from typing import Any, ClassVar, Dict, Final, FrozenSet, List, Literal, Optional, Sequence, Set, Tuple, Union, TYPE_CHECKING, final
 
 from matplotlib import axes, pyplot
 
@@ -35,6 +35,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
     )
     __config_imported: ClassVar[bool] = False
     problem: ClassVar[Optional[str]] = None
+    tabu_search_last_improved: ClassVar[int] = 0
     if TYPE_CHECKING:
         __drone_paths_fold: Final[FrozenSet[Tuple[int, ...]]]
         __technician_paths_fold: Final[FrozenSet[Tuple[int, ...]]]
@@ -574,6 +575,10 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
             return cls.drone_endurance_config[config_index]
 
         raise RuntimeError("Shouldn't reach here")
+
+    @classmethod
+    def after_iteration(cls, iteration: int, last_improved: int, pareto_costs: Dict[Tuple[float, ...], int]) -> None:
+        cls.tabu_search_last_improved = last_improved
 
     @classmethod
     def import_config(cls) -> None:

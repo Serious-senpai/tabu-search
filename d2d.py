@@ -276,6 +276,7 @@ if __name__ == "__main__":
                 "propagation_priority": namespace.propagation_priority,
                 "solutions": [to_json(s) for s in solutions],
                 "extra": namespace.extra,
+                "last_improved": d2d.D2DPathSolution.tabu_search_last_improved,
                 "time": total,
             }
             json.dump(data, f)
