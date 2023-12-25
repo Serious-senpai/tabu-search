@@ -13,14 +13,14 @@ __all__ = (
 class SolutionMetricsMixin(BaseMulticostComparison):
 
     __slots__ = (
-        "__cost",
+        "_cost",
         "drone_timespans",
         "drone_waiting_times",
         "technician_timespans",
         "technician_waiting_times",
     )
     if TYPE_CHECKING:
-        __cost: Optional[Tuple[float, float]]
+        _cost: Optional[Tuple[float, float]]
         drone_timespans: Final[Tuple[float, ...]]
         drone_waiting_times: Final[Tuple[Tuple[float, ...], ...]]
         technician_timespans: Final[Tuple[float, ...]]
@@ -41,14 +41,14 @@ class SolutionMetricsMixin(BaseMulticostComparison):
         self.technician_timespans = technician_timespans
         self.technician_waiting_times = technician_waiting_times
 
-        self.__cost = None
+        self._cost = None
 
     def cost(self) -> Tuple[float, float]:
         """The cost of the solution that this object represents."""
-        if self.__cost is None:
-            self.__cost = (
+        if self._cost is None:
+            self._cost = (
                 max(*self.drone_timespans, *self.technician_timespans),
                 sum(sum(t) for t in self.drone_waiting_times) + sum(self.technician_waiting_times),
             )
 
-        return self.__cost
+        return self._cost

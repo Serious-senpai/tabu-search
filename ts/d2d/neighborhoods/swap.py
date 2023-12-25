@@ -191,30 +191,6 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
                     config_index=solution.drone_config_mapping[second_drone],
                     offset=solution.drone_arrival_timestamps[second_drone][second_path_index - 1][-1] if second_path_index > 0 else 0.0,
                 )
-                if solution.calculate_total_weight(_first_path) > first_config.capacity or solution.calculate_total_weight(_second_path) > second_config.capacity:
-                    continue
-
-                if isinstance(first_config, DroneEnduranceConfig):
-                    if solution.calculate_drone_flight_duration(_first_path, arrival_timestamps=first_arrival_timestamps) > first_config.fixed_time:
-                        continue
-
-                    if solution.calculate_required_range(_first_path) > first_config.fixed_distance:
-                        continue
-
-                else:
-                    if solution.calculate_drone_energy_consumption(_first_path, config_index=solution.drone_config_mapping[first_drone]) > first_config.battery:
-                        continue
-
-                if isinstance(second_config, DroneEnduranceConfig):
-                    if solution.calculate_drone_flight_duration(_second_path, arrival_timestamps=second_arrival_timestamps) > second_config.fixed_time:
-                        continue
-
-                    if solution.calculate_required_range(_second_path) > second_config.fixed_distance:
-                        continue
-
-                else:
-                    if solution.calculate_drone_energy_consumption(_second_path, config_index=solution.drone_config_mapping[second_drone]) > second_config.battery:
-                        continue
 
                 _drone_timespans = list(drone_timespans)
                 _drone_timespans[first_drone] += first_arrival_timestamps[-1] - solution.drone_arrival_timestamps[first_drone][first_path_index][-1]
@@ -231,6 +207,63 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
                     technician_timespans=solution.technician_timespans,
                     technician_waiting_times=solution.technician_waiting_times,
                 )
+
+                violation = (
+                    solution.calculate_total_weight(_first_path)
+                    - first_config.capacity
+                ) / first_config.capacity
+                if violation > 0:
+                    factory.add_violation(violation)
+                
+                violation = (
+                    solution.calculate_total_weight(_second_path)
+                    - second_config.capacity
+                ) / second_config.capacity
+                if violation > 0:
+                    factory.add_violation(violation)
+
+                if isinstance(first_config, DroneEnduranceConfig):
+                    violation = (
+                        solution.calculate_drone_flight_duration(_first_path, arrival_timestamps=first_arrival_timestamps)
+                        - first_config.fixed_time
+                    ) / first_config.fixed_time
+                    if violation > 0:
+                        factory.add_violation(violation)
+
+                    violation = (
+                        solution.calculate_required_range(_first_path)
+                        - first_config.fixed_distance
+                    ) / first_config.fixed_distance
+                    if violation > 0:
+                        factory.add_violation(violation)
+
+                else:
+                    violation = (
+                        solution.calculate_drone_energy_consumption(_first_path, config_index=solution.drone_config_mapping[first_drone])
+                        - first_config.battery
+                    ) / first_config.battery
+                    if violation > 0:
+                        factory.add_violation(violation)
+
+                if isinstance(second_config, DroneEnduranceConfig):
+                    violation = (
+                        solution.calculate_drone_flight_duration(_second_path, arrival_timestamps=second_arrival_timestamps)
+                        - second_config.fixed_time
+                    ) / second_config.fixed_time
+                    if violation > 0:
+                        factory.add_violation(violation)
+
+                    violation = (solution.calculate_required_range(_second_path) - second_config.fixed_distance) / second_config.fixed_distance
+                    if violation > 0:
+                        factory.add_violation(violation)
+
+                else:
+                    violation = (
+                        solution.calculate_drone_energy_consumption(_second_path, config_index=solution.drone_config_mapping[second_drone])
+                        - second_config.battery
+                    ) / second_config.battery
+                    if violation > 0:
+                        factory.add_violation(violation)
 
                 if factory.add_to_pareto_set(results)[0]:
                     swaps_mapping[factory] = (
@@ -329,20 +362,6 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
                             offset=solution.drone_arrival_timestamps[drone][drone_path_index - 1][-1] if drone_path_index > 0 else 0.0,
                         )
 
-                        if solution.calculate_total_weight(_drone_path) > drone_config.capacity:
-                            continue
-
-                        if isinstance(drone_config, DroneEnduranceConfig):
-                            if solution.calculate_drone_flight_duration(_drone_path, arrival_timestamps=drone_arrival_timestamps) > drone_config.fixed_time:
-                                continue
-
-                            if solution.calculate_required_range(_drone_path) > drone_config.fixed_distance:
-                                continue
-
-                        else:
-                            if solution.calculate_drone_energy_consumption(_drone_path, config_index=solution.drone_config_mapping[drone]) > drone_config.battery:
-                                continue
-
                         _technician_timespans = list(solution.technician_timespans)
                         _technician_timespans[technician] = technician_arrival_timestamps[-1]
                         _drone_timespans = list(solution.drone_timespans)
@@ -361,6 +380,33 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
                             technician_timespans=tuple(_technician_timespans),
                             technician_waiting_times=tuple(_technician_waiting_times),
                         )
+
+                        violation = (solution.calculate_total_weight(_drone_path) - drone_config.capacity) / drone_config.capacity
+                        if violation > 0:
+                            factory.add_violation(violation)
+
+                        if isinstance(drone_config, DroneEnduranceConfig):
+                            violation = (
+                                solution.calculate_drone_flight_duration(_drone_path, arrival_timestamps=drone_arrival_timestamps)
+                                - drone_config.fixed_time
+                            ) / drone_config.fixed_time
+                            if violation > 0:
+                                factory.add_violation(violation)
+
+                            violation = (
+                                solution.calculate_required_range(_drone_path)
+                                - drone_config.fixed_distance
+                            ) / drone_config.fixed_distance
+                            if violation > 0:
+                                factory.add_violation(violation)
+
+                        else:
+                            violation = (
+                                solution.calculate_drone_energy_consumption(_drone_path, config_index=solution.drone_config_mapping[drone])
+                                - drone_config.battery
+                            ) / drone_config.battery
+                            if violation > 0:
+                                factory.add_violation(violation)
 
                         if factory.add_to_pareto_set(results)[0]:
                             swaps_mapping[factory] = (
@@ -408,20 +454,6 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
                         offset=offset,
                     )
 
-                    if solution.calculate_total_weight(_path) > config.capacity:
-                        continue
-
-                    if isinstance(config, DroneEnduranceConfig):
-                        if solution.calculate_drone_flight_duration(_path, arrival_timestamps=arrival_timestamps) > config.fixed_time:
-                            continue
-
-                        if solution.calculate_required_range(_path) > config.fixed_distance:
-                            continue
-
-                    else:
-                        if solution.calculate_drone_energy_consumption(_path, config_index=solution.drone_config_mapping[drone]) > config.battery:
-                            continue
-
                     _drone_timespans = list(solution.drone_timespans)
                     _drone_timespans[drone] += arrival_timestamps[-1] - solution.drone_arrival_timestamps[drone][path_index][-1]
 
@@ -438,6 +470,33 @@ class Swap(D2DBaseNeighborhood[Tuple[Tuple[int, int], Tuple[int, int]]]):
                         technician_timespans=solution.technician_timespans,
                         technician_waiting_times=solution.technician_waiting_times,
                     )
+
+                    violation = (solution.calculate_total_weight(_path) - config.capacity) / config.capacity
+                    if violation > 0:
+                        factory.add_violation(violation)
+
+                    if isinstance(config, DroneEnduranceConfig):
+                        violation = (
+                            solution.calculate_drone_flight_duration(_path, arrival_timestamps=arrival_timestamps)
+                            - config.fixed_time
+                        ) / config.fixed_time
+                        if violation > 0:
+                            factory.add_violation(violation)
+
+                        violation = (
+                            solution.calculate_required_range(_path)
+                            - config.fixed_distance
+                        ) / config.fixed_distance
+                        if violation > 0:
+                            factory.add_violation(violation)
+
+                    else:
+                        violation = (
+                            solution.calculate_drone_energy_consumption(_path, config_index=solution.drone_config_mapping[drone])
+                            - config.battery
+                        ) / config.battery
+                        if violation > 0:
+                            factory.add_violation(violation)
 
                     if factory.add_to_pareto_set(results)[0]:
                         swaps_mapping[factory] = (

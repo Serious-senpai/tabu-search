@@ -163,9 +163,6 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                         _first_path[first_point:first_point + neighborhood.length] = []
                         _second_path = (0,) + first_path[first_point:first_point + neighborhood.length] + (0,)
 
-                        if solution.calculate_total_weight(_second_path) > second_config.capacity:
-                            continue
-
                         first_arrival_timestamps = solution.calculate_drone_arrival_timestamps(
                             _first_path,
                             config_index=solution.drone_config_mapping[first_drone],
@@ -204,6 +201,10 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                             drone_timespans=tuple(_drone_timespans),
                             drone_waiting_times=tuple(tuple(w) for w in _drone_waiting_times),
                         )
+                        violation = (solution.calculate_total_weight(_second_path) - second_config.capacity) / second_config.capacity
+                        if violation > 0:
+                            factory.add_violation(violation)
+
                         if factory.add_to_pareto_set(results)[0]:
                             swaps_mapping[factory] = ((first_path[first_point], first_path[first_point + neighborhood.length - 1]), 0)
 
@@ -232,23 +233,6 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                                 offset=solution.drone_arrival_timestamps[second_drone][second_path_index - 1][-1] if second_path_index > 0 else 0.0,
                             )
 
-                            # The first drone path was shortened, hence it will not violate any constraints as long as the initial
-                            # path is also a feasible one
-
-                            if solution.calculate_total_weight(p2) > second_config.capacity:
-                                continue
-
-                            if isinstance(second_config, DroneEnduranceConfig):
-                                if solution.calculate_drone_flight_duration(p2, arrival_timestamps=second_arrival_timestamps) > second_config.fixed_time:
-                                    continue
-
-                                # No need to check for second_config.fixed_distance since the inserted segment also comes from another
-                                # drone path
-
-                            else:
-                                if solution.calculate_drone_energy_consumption(p2, config_index=solution.drone_config_mapping[second_drone]) > second_config.battery:
-                                    continue
-
                             _drone_timespans = list(solution.drone_timespans)
                             _drone_timespans[first_drone] += first_arrival_timestamps[-1] - solution.drone_arrival_timestamps[first_drone][first_path_index][-1]
                             _drone_timespans[second_drone] += second_arrival_timestamps[-1] - solution.drone_arrival_timestamps[second_drone][second_path_index][-1]
@@ -264,6 +248,33 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                                 drone_timespans=tuple(_drone_timespans),
                                 drone_waiting_times=tuple(tuple(w) for w in _drone_waiting_times),
                             )
+
+                            # The first drone path was shortened, hence it will not violate any constraints as long as the initial
+                            # path is also a feasible one
+
+                            violation = (solution.calculate_total_weight(p2) - second_config.capacity) / second_config.capacity
+                            if violation > 0:
+                                factory.add_violation(violation)
+
+                            if isinstance(second_config, DroneEnduranceConfig):
+                                violation = (
+                                    solution.calculate_drone_flight_duration(p2, arrival_timestamps=second_arrival_timestamps)
+                                    - second_config.fixed_time
+                                ) / second_config.fixed_time
+                                if violation > 0:
+                                    factory.add_violation(violation)
+
+                                # No need to check for second_config.fixed_distance since the inserted segment also comes from another
+                                # drone path
+
+                            else:
+                                violation = (
+                                    solution.calculate_drone_energy_consumption(p2, config_index=solution.drone_config_mapping[second_drone])
+                                    - second_config.battery
+                                ) / second_config.battery
+                                if violation > 0:
+                                    factory.add_violation(violation)
+
                             if factory.add_to_pareto_set(results)[0]:
                                 swaps_mapping[factory] = ((first_path[first_point], first_path[first_point + neighborhood.length - 1]), second_path[second_location])
 
@@ -348,29 +359,12 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                     _tech_path[tech_point:tech_point + neighborhood.length] = []
                     _drone_path = (0,) + tuple(tech_path[tech_point:tech_point + neighborhood.length]) + (0,)
 
-                    if solution.calculate_total_weight(_drone_path) > drone_config.capacity:
-                        return
-
                     tech_arrival_timestamps = solution.calculate_technician_arrival_timestamps(_tech_path)
                     drone_arrival_timestamps = solution.calculate_drone_arrival_timestamps(
                         _drone_path,
                         config_index=solution.drone_config_mapping[drone],
                         offset=solution.drone_timespans[drone],
                     )
-
-                    if isinstance(drone_config, DroneEnduranceConfig):
-                        if solution.calculate_drone_flight_duration(_drone_path, arrival_timestamps=drone_arrival_timestamps) > drone_config.fixed_time:
-                            return
-
-                        if solution.calculate_required_range(_drone_path) > drone_config.fixed_distance:
-                            return
-
-                    else:
-                        if solution.calculate_drone_energy_consumption(
-                            _drone_path,
-                            config_index=solution.drone_config_mapping[drone],
-                        ) > drone_config.battery:
-                            return
 
                     _technician_timespans = list(solution.technician_timespans)
                     _technician_timespans[technician] = tech_arrival_timestamps[-1]
@@ -397,6 +391,33 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                         drone_timespans=tuple(_drone_timespans),
                         drone_waiting_times=tuple(tuple(w) for w in _drone_total_waiting_times),
                     )
+
+                    violation = (solution.calculate_total_weight(_drone_path) - drone_config.capacity) / drone_config.capacity
+                    if violation > 0:
+                        factory.add_violation(violation)
+
+                    if isinstance(drone_config, DroneEnduranceConfig):
+                        violation = (
+                            solution.calculate_drone_flight_duration(_drone_path, arrival_timestamps=drone_arrival_timestamps)
+                            - drone_config.fixed_time
+                        ) / drone_config.fixed_time
+                        if violation > 0:
+                            factory.add_violation(violation)
+
+                        violation = (solution.calculate_required_range(_drone_path) - drone_config.fixed_distance) / drone_config.fixed_distance
+                        if violation > 0:
+                            factory.add_violation(violation)
+
+                    else:
+                        violation = (
+                            solution.calculate_drone_energy_consumption(
+                                _drone_path,
+                                config_index=solution.drone_config_mapping[drone],
+                            ) - drone_config.battery
+                        ) / drone_config.battery
+                        if violation > 0:
+                            factory.add_violation(violation)
+
                     if factory.add_to_pareto_set(results)[0]:
                         swaps_mapping[factory] = ((tech_path[tech_point], tech_path[tech_point + neighborhood.length - 1]), 0)
 
@@ -418,19 +439,6 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                             config_index=solution.drone_config_mapping[drone],
                             offset=solution.drone_arrival_timestamps[drone][drone_path_index - 1][-1] if drone_path_index > 0 else 0.0,
                         )
-                        if solution.calculate_total_weight(_drone_path) > drone_config.capacity:
-                            continue
-
-                        if isinstance(drone_config, DroneEnduranceConfig):
-                            if solution.calculate_drone_flight_duration(_drone_path, arrival_timestamps=drone_arrival_timestamps) > drone_config.fixed_time:
-                                continue
-
-                            if solution.calculate_required_range(_drone_path) > drone_config.fixed_distance:
-                                continue
-
-                        else:
-                            if solution.calculate_drone_energy_consumption(_drone_path, config_index=solution.drone_config_mapping[drone]) > drone_config.battery:
-                                continue
 
                         _technician_timespans = list(solution.technician_timespans)
                         _technician_timespans[technician] = tech_arrival_timestamps[-1]
@@ -455,6 +463,31 @@ class Insert(D2DBaseNeighborhood[Tuple[Tuple[int, int], int]]):
                             drone_timespans=tuple(_drone_timespans),
                             drone_waiting_times=tuple(tuple(w) for w in _drone_total_waiting_times),
                         )
+
+                        violation = (solution.calculate_total_weight(_drone_path) - drone_config.capacity) / drone_config.capacity
+                        if violation > 0:
+                            factory.add_violation(violation)
+
+                        if isinstance(drone_config, DroneEnduranceConfig):
+                            violation = (
+                                solution.calculate_drone_flight_duration(_drone_path, arrival_timestamps=drone_arrival_timestamps)
+                                - drone_config.fixed_time
+                            ) / drone_config.fixed_time
+                            if violation > 0:
+                                factory.add_violation(violation)
+
+                            violation = (solution.calculate_required_range(_drone_path) - drone_config.fixed_distance) / drone_config.fixed_distance
+                            if violation > 0:
+                                factory.add_violation(violation)
+
+                        else:
+                            violation = (
+                                solution.calculate_drone_energy_consumption(_drone_path, config_index=solution.drone_config_mapping[drone])
+                                - drone_config.battery
+                            ) / drone_config.battery
+                            if violation > 0:
+                                factory.add_violation(violation)
+
                         if factory.add_to_pareto_set(results)[0]:
                             swaps_mapping[factory] = ((tech_path[tech_point], tech_path[tech_point + neighborhood.length - 1]), drone_path[drone_location])
 
