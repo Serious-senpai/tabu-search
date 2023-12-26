@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 
 __all__ = ("SolutionFactory",)
-FINE_COEFFICIENT = 10 ** 6
+FINE_COEFFICIENT = 10 ** 9
 
 
 class SolutionFactory(SolutionMetricsMixin):
