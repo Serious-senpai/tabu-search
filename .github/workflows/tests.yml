@@ -186,7 +186,7 @@ jobs:
           coverage run scripts/d2d-summary.py --energy-mode 1 --propagation-priority 2
 
       - name: Run pytest
-        run: coverage run -m pytest -v
+        run: coverage run -m pytest tests
 
       - name: Combine coverage results
         run: |
