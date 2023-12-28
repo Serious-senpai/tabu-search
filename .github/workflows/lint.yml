@@ -17,72 +17,71 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
       - name: Setup Python
         uses: actions/setup-python@v4
 
       - name: Install dependencies
-        run: pip install -r dev-requirements.txt
+        run: pip install -r requirements.txt
 
       - name: Run autopep8
         run: autopep8 --exit-code --diff -aaar .
 
   mypy:
     name: Run mypy
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
       - name: Setup Python
         uses: actions/setup-python@v4
 
       - name: Install dependencies
-        run: pip install -r dev-requirements.txt
+        run: pip install -r requirements.txt
 
       - name: Run mypy
         run: mypy .
 
   flake8:
     name: Run flake8
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
       - name: Setup Python
         uses: actions/setup-python@v4
 
       - name: Install dependencies
-        run: pip install -r dev-requirements.txt
+        run: pip install -r requirements.txt
 
       - name: Run flake8
         run: flake8 .
 
   pyright:
     name: Run pyright
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
       - name: Setup Python
         uses: actions/setup-python@v4
 
       - name: Install dependencies
-        run: pip install -r dev-requirements.txt
+        run: pip install -r requirements.txt
 
       - name: Run pyright
         run: pyright . --warnings

@@ -25,7 +25,7 @@ class D2DBaseNeighborhood(MultiObjectiveNeighborhood[_D2DPathSolution, _T]):
     def __init__(self, solution: D2DPathSolution, /) -> None:
         super().__init__(solution)
         self.extras["problem"] = solution.problem
-        self.extras["drone_config_mapping"] = solution.drone_config_mapping
+        self.extras["drone_config"] = solution.drone_config
         self.extras["energy_mode"] = solution.energy_mode
         self.extras["precalculated_distances"] = solution.distances
 
@@ -33,7 +33,7 @@ class D2DBaseNeighborhood(MultiObjectiveNeighborhood[_D2DPathSolution, _T]):
         if self.cls.problem != self.extras["problem"]:
             self.cls.import_problem(
                 self.extras["problem"],
-                drone_config_mapping=self.extras["drone_config_mapping"],
+                drone_config=self.extras["drone_config"],
                 energy_mode=self.extras["energy_mode"],
                 precalculated_distances=self.extras["precalculated_distances"],
             )

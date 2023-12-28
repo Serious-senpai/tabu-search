@@ -28,12 +28,17 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
       - name: Setup Python
         uses: actions/setup-python@v4
 
       - name: Install dependencies
         run: pip install -r requirements.txt
+
+      - name: Build binary files
+        run: scripts/build.sh
 
       - name: Run optimizer
         run: |
@@ -67,12 +72,17 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
       - name: Setup Python
         uses: actions/setup-python@v4
 
       - name: Install dependencies
         run: pip install -r requirements.txt
+
+      - name: Build binary files
+        run: scripts/build.sh
 
       - name: Run optimizer
         run: |
@@ -106,12 +116,17 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
       - name: Setup Python
         uses: actions/setup-python@v4
 
       - name: Install dependencies
         run: pip install -r requirements.txt
+
+      - name: Build binary files
+        run: scripts/build.sh
 
       - name: Run optimizer
         run: |
@@ -145,12 +160,17 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
       - name: Setup Python
         uses: actions/setup-python@v4
 
       - name: Install dependencies
         run: pip install -r requirements.txt
+
+      - name: Build binary files
+        run: scripts/build.sh
 
       - name: Run optimizer
         run: |
@@ -184,12 +204,17 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
       - name: Setup Python
         uses: actions/setup-python@v4
 
       - name: Install dependencies
         run: pip install -r requirements.txt
+
+      - name: Build binary files
+        run: scripts/build.sh
 
       - name: Run optimizer
         run: |
@@ -219,12 +244,17 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
       - name: Setup Python
         uses: actions/setup-python@v4
 
       - name: Install dependencies
         run: pip install -r dev-requirements.txt
+
+      - name: Build binary files
+        run: scripts/build.sh
 
       - name: Download solutions
         uses: actions/download-artifact@v3

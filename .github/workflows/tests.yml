@@ -45,6 +45,9 @@ jobs:
       - name: Install dependencies
         run: pip install -r dev-requirements.txt
 
+      - name: Build binary files
+        run: scripts/build.sh
+
       - name: Test sample
         timeout-minutes: 60
         run: |
@@ -109,6 +112,9 @@ jobs:
       - name: Install dependencies
         run: pip install -r dev-requirements.txt
 
+      - name: Build binary files
+        run: scripts/build.sh
+
       - name: Test sample
         timeout-minutes: 60
         run: |
@@ -169,6 +175,9 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r dev-requirements.txt
+
+      - name: Build binary files
+        run: scripts/build.sh
 
       - name: Summarize solutions
         run: |
