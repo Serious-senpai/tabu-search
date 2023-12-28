@@ -22,7 +22,7 @@ jobs:
       fail-fast: false
       matrix:
         problem: ["6.10.1", "6.10.2", "6.10.3", "6.10.4", "6.20.1", "6.20.2", "6.20.3", "6.20.4", "6.5.1", "6.5.2", "6.5.3", "6.5.4"]
-        drone-config-mapping: ["0 0 0 0", "1 1 1 1", "2 2 2 2", "3 3 3 3"]
+        drone-config-mapping: [0, 1, 2, 3]
         energy-mode: ["linear", "non-linear", "endurance"]
 
     steps:
