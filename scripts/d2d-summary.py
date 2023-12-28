@@ -22,7 +22,7 @@ class Namespace(argparse.Namespace):
     if TYPE_CHECKING:
         iterations: Choices
         tabu_size: Choices
-        drone_config_mapping: Choices
+        drone_config: Choices
         energy_mode: Choices
         propagation_priority: Choices
         extra: Choices
@@ -38,7 +38,7 @@ class ParetoFrontJSON(TypedDict):
     problem: str
     iterations: int
     tabu_size: int
-    drone_config_mapping: List[int]
+    drone_config: int
     energy_mode: Literal["linear", "non-linear", "endurance"]
     propagation_priority: Literal[
         "none",
@@ -60,7 +60,7 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument("--iterations", default=0, type=int, choices=choices)
 parser.add_argument("--tabu-size", default=0, type=int, choices=choices)
-parser.add_argument("--drone-config-mapping", default=0, type=int, choices=choices)
+parser.add_argument("--drone-config", default=0, type=int, choices=choices)
 parser.add_argument("--energy-mode", default=0, type=int, choices=choices)
 parser.add_argument("--propagation-priority", default=0, type=int, choices=choices)
 parser.add_argument("--extra", default=0, type=int, choices=choices)
@@ -75,7 +75,7 @@ summary_dir = Path("d2d-summary/")
 
 
 # Attributes of a problem: problem, drone configuration, energy mode
-fronts: DefaultDict[str, DefaultDict[Tuple[int, ...], DefaultDict[str, List[Tuple[int, List[Tuple[float, float]]]]]]] = defaultdict(
+fronts: DefaultDict[str, DefaultDict[int, DefaultDict[str, List[Tuple[int, List[Tuple[float, float]]]]]]] = defaultdict(
     lambda: defaultdict(lambda: defaultdict(list)),
 )
 files = list(enumerate(sorted(os.listdir(summary_dir))))
@@ -85,15 +85,15 @@ for index, file in files:
             data: ParetoFrontJSON = json.load(f)
 
         front: List[Tuple[float, float]] = [(d["cost"][0], d["cost"][1]) for d in data["solutions"]]
-        fronts[data["problem"]][tuple(data["drone_config_mapping"])][data["energy_mode"]].append((index, front))
+        fronts[data["problem"]][data["drone_config"]][data["energy_mode"]].append((index, front))
 
 
 hv: List[Optional[float]] = [None] * len(files)
 igd: List[Optional[float]] = [None] * len(files)
 for problem in fronts.keys():
-    for drone_config_mapping in fronts[problem].keys():
-        for energy_mode in fronts[problem][drone_config_mapping].keys():
-            pareto_fronts = fronts[problem][drone_config_mapping][energy_mode]
+    for drone_config in fronts[problem].keys():
+        for energy_mode in fronts[problem][drone_config].keys():
+            pareto_fronts = fronts[problem][drone_config][energy_mode]
 
             hv_ref_point = (
                 max(max(cost[0] for cost in front) for _, front in pareto_fronts),
@@ -143,7 +143,7 @@ with open(summary_dir / "d2d-summary.csv", "w") as csv:
                         data["problem"],
                         str(data["iterations"]),
                         str(data["tabu_size"]),
-                        wrap_double_quotes(str(data["drone_config_mapping"])),
+                        str(data["drone_config"]),
                         data["energy_mode"],
                         data["propagation_priority"],
                         str(len(data["solutions"])),
@@ -168,8 +168,8 @@ with open(summary_dir / "d2d-summary.csv", "w") as csv:
             if namespace.tabu_size == 1:
                 plot_name.append(str(data["tabu_size"]))
 
-            if namespace.drone_config_mapping == 1:
-                plot_name.append(str(data["drone_config_mapping"]))
+            if namespace.drone_config == 1:
+                plot_name.append(str(data["drone_config"]))
 
             if namespace.energy_mode == 1:
                 plot_name.append(str(data["energy_mode"]))
@@ -188,8 +188,8 @@ with open(summary_dir / "d2d-summary.csv", "w") as csv:
             if namespace.tabu_size == 2:
                 description.append(str(data["tabu_size"]))
 
-            if namespace.drone_config_mapping == 2:
-                description.append(str(data["drone_config_mapping"]))
+            if namespace.drone_config == 2:
+                description.append(str(data["drone_config"]))
 
             if namespace.energy_mode == 2:
                 description.append(str(data["energy_mode"]))

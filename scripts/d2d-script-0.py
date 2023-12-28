@@ -62,7 +62,7 @@ for propagation_priority in (
         "d2d.py", namespace.problem,
         "--iterations", str(namespace.iterations),
         "--tabu-size", str(namespace.tabu_size),
-        "--drone-config-mapping", *map(str, namespace.drone_config_mapping),
+        "--drone-config", str(namespace.drone_config),
         "--energy-mode", namespace.energy_mode,
         "--propagation-priority", propagation_priority,
         "--dump", output,

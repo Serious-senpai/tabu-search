@@ -22,7 +22,7 @@ jobs:
       fail-fast: false
       matrix:
         problem: ["6.10.1", "6.10.2", "6.10.3", "6.10.4", "6.20.1", "6.20.2", "6.20.3", "6.20.4", "6.5.1", "6.5.2", "6.5.3", "6.5.4"]
-        drone-config-mapping: [0, 1, 2, 3]
+        drone-config: [0, 1, 2, 3]
         energy-mode: ["linear", "non-linear", "endurance"]
 
     steps:
@@ -46,10 +46,10 @@ jobs:
           do
             echo "Run #$i"
             python d2d.py ${{ matrix.problem }} \
-            -c ${{ matrix.drone-config-mapping }} \
+            -c ${{ matrix.drone-config }} \
             -e ${{ matrix.energy-mode }} \
             --pool-size 8 \
-            --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-$i.json" \
+            --dump "output-${{ matrix.problem }}-${{ matrix.drone-config }}-${{ matrix.energy-mode }}-$i.json" \
             --extra run-$i
           done
 
@@ -66,7 +66,7 @@ jobs:
       fail-fast: false
       matrix:
         problem: ["10.10.1", "10.10.2", "10.10.3", "10.10.4", "10.20.1", "10.20.2", "10.20.3", "10.20.4", "10.5.1", "10.5.2", "10.5.3", "10.5.4"]
-        drone-config-mapping: ["0 0 0 0", "1 1 1 1", "2 2 2 2", "3 3 3 3"]
+        drone-config: [0, 1, 2, 3]
         energy-mode: ["linear", "non-linear", "endurance"]
 
     steps:
@@ -90,10 +90,10 @@ jobs:
           do
             echo "Run #$i"
             python d2d.py ${{ matrix.problem }} \
-            -c ${{ matrix.drone-config-mapping }} \
+            -c ${{ matrix.drone-config }} \
             -e ${{ matrix.energy-mode }} \
             --pool-size 8 \
-            --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-$i.json" \
+            --dump "output-${{ matrix.problem }}-${{ matrix.drone-config }}-${{ matrix.energy-mode }}-$i.json" \
             --extra run-$i
           done
 
@@ -110,7 +110,7 @@ jobs:
       fail-fast: false
       matrix:
         problem: ["20.10.1", "20.10.2", "20.10.3", "20.10.4", "20.20.1", "20.20.2", "20.20.3", "20.20.4", "20.5.1", "20.5.2", "20.5.3", "20.5.4"]
-        drone-config-mapping: ["0 0 0 0", "1 1 1 1", "2 2 2 2", "3 3 3 3"]
+        drone-config: [0, 1, 2, 3]
         energy-mode: ["linear", "non-linear", "endurance"]
 
     steps:
@@ -134,10 +134,10 @@ jobs:
           do
             echo "Run #$i"
             python d2d.py ${{ matrix.problem }} \
-            -c ${{ matrix.drone-config-mapping }} \
+            -c ${{ matrix.drone-config }} \
             -e ${{ matrix.energy-mode }} \
             --pool-size 8 \
-            --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-$i.json" \
+            --dump "output-${{ matrix.problem }}-${{ matrix.drone-config }}-${{ matrix.energy-mode }}-$i.json" \
             --extra run-$i
           done
 
@@ -154,7 +154,7 @@ jobs:
       fail-fast: false
       matrix:
         problem: ["50.10.1", "50.10.2", "50.10.3", "50.10.4", "50.20.1", "50.20.2", "50.20.3", "50.20.4", "50.30.1", "50.30.2", "50.30.3", "50.30.4", "50.40.1", "50.40.2", "50.40.3", "50.40.4"]
-        drone-config-mapping: ["0 0 0 0", "1 1 1 1", "2 2 2 2", "3 3 3 3"]
+        drone-config: [0, 1, 2, 3]
         energy-mode: ["linear", "non-linear", "endurance"]
 
     steps:
@@ -178,10 +178,10 @@ jobs:
           do
             echo "Run #$i"
             python d2d.py ${{ matrix.problem }} \
-            -c ${{ matrix.drone-config-mapping }} \
+            -c ${{ matrix.drone-config }} \
             -e ${{ matrix.energy-mode }} \
             --pool-size 8 \
-            --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-$i.json" \
+            --dump "output-${{ matrix.problem }}-${{ matrix.drone-config }}-${{ matrix.energy-mode }}-$i.json" \
             --extra run-$i
           done
 
@@ -198,7 +198,7 @@ jobs:
       fail-fast: false
       matrix:
         problem: ["100.10.1", "100.10.2", "100.10.3", "100.10.4", "100.20.1", "100.20.2", "100.20.3", "100.20.4", "100.30.1", "100.30.2", "100.30.3", "100.30.4", "100.40.1", "100.40.2", "100.40.3", "100.40.4"]
-        drone-config-mapping: ["0 0 0 0", "1 1 1 1", "2 2 2 2", "3 3 3 3"]
+        drone-config: [0, 1, 2, 3]
         energy-mode: ["linear", "non-linear", "endurance"]
 
     steps:
@@ -222,10 +222,10 @@ jobs:
           do
             echo "Run #$i"
             python d2d.py ${{ matrix.problem }} \
-            -c ${{ matrix.drone-config-mapping }} \
+            -c ${{ matrix.drone-config }} \
             -e ${{ matrix.energy-mode }} \
             --pool-size 8 \
-            --dump "output-${{ matrix.problem }}-${{ matrix.drone-config-mapping }}-${{ matrix.energy-mode }}-$i.json" \
+            --dump "output-${{ matrix.problem }}-${{ matrix.drone-config }}-${{ matrix.energy-mode }}-$i.json" \
             --extra run-$i
           done
 
@@ -265,7 +265,7 @@ jobs:
       - name: Summarize solutions
         run: |
           export PYTHONPATH=$GITHUB_WORKSPACE
-          python scripts/d2d-summary.py --drone-config-mapping 1 --energy-mode 1 --extra 2
+          python scripts/d2d-summary.py --drone-config 1 --energy-mode 1 --extra 2
 
       - name: Upload summary as artifacts
         uses: actions/upload-artifact@v3

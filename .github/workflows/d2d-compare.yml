@@ -113,7 +113,7 @@ jobs:
         run: |
           problem=$(cat input.txt)
           python d2d.py "$problem" \
-          --drone-config-mapping 3 3 3 3 \
+          --drone-config 3 \
           --pool-size 8 \
           --dump PR#${{ github.event.issue.number }}-run#${{ matrix.counter }}.json
 
@@ -156,7 +156,7 @@ jobs:
         run: |
           problem=$(cat input.txt)
           python d2d.py "$problem" \
-          --drone-config-mapping 3 3 3 3 \
+          --drone-config 3 \
           --pool-size 8 \
           --dump main-run#${{ matrix.counter }}.json 
 

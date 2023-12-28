@@ -270,7 +270,7 @@ if __name__ == "__main__":
                 "problem": namespace.problem,
                 "iterations": namespace.iterations,
                 "tabu_size": namespace.tabu_size,
-                "drone_config_mapping": namespace.drone_config_mapping,
+                "drone_config": namespace.drone_config,
                 "energy_mode": namespace.energy_mode,
                 "propagation_priority": namespace.propagation_priority,
                 "solutions": [to_json(s) for s in solutions],
