@@ -10,9 +10,3 @@ Tabu search technique for solving optimization problems. TSP problems are taken 
 ```
 $ pip install -r requirements.txt
 ```
-
-## Developing
-- Install dependencies for development
-```
-$ pip install -r dev-requirements.txt
-```
