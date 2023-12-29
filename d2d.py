@@ -31,7 +31,7 @@ class Namespace(argparse.Namespace):
         problem: str
         iterations: int
         tabu_size: int
-        drone_config_mapping: List[int]
+        drone_config: int
         energy_mode: Literal["linear", "non-linear", "endurance"]
         propagation_priority: Literal[
             "none",
@@ -166,7 +166,7 @@ if __name__ == "__main__":
     parser.add_argument("problem", type=str, help="the problem name (e.g. \"6.5.1\", \"200.10.1\", ...)")
     parser.add_argument("-i", "--iterations", default=1500, type=int, help="the number of iterations to run the tabu search for (default: 1500)")
     parser.add_argument("-t", "--tabu-size", default=10, type=int, help="the tabu size for every neighborhood (default: 10)")
-    parser.add_argument("-c", "--drone-config-mapping", nargs="+", default=[0, 0, 0, 0], type=int, help="the energy configuration index for each drone (default: \"0 0 0 0\")")
+    parser.add_argument("-c", "--drone-config", default=0, type=int, help="the energy configuration index for each drone (default: 0)")
     parser.add_argument("-e", "--energy-mode", default=LINEAR, choices=[LINEAR, NON_LINEAR, ENDURANCE], help="the energy consumption mode to use (default: linear)")
     parser.add_argument(
         "-k",
@@ -192,7 +192,7 @@ if __name__ == "__main__":
 
     d2d.D2DPathSolution.import_problem(
         namespace.problem,
-        drone_config_mapping=tuple(namespace.drone_config_mapping),
+        drone_config=namespace.drone_config,
         energy_mode=namespace.energy_mode,
     )
     d2d.Swap.reset_tabu(maxlen=namespace.tabu_size)
@@ -270,7 +270,7 @@ if __name__ == "__main__":
                 "problem": namespace.problem,
                 "iterations": namespace.iterations,
                 "tabu_size": namespace.tabu_size,
-                "drone_config_mapping": namespace.drone_config_mapping,
+                "drone_config": namespace.drone_config,
                 "energy_mode": namespace.energy_mode,
                 "propagation_priority": namespace.propagation_priority,
                 "solutions": [to_json(s) for s in solutions],

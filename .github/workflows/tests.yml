@@ -43,7 +43,10 @@ jobs:
         uses: actions/setup-python@v4
 
       - name: Install dependencies
-        run: pip install -r dev-requirements.txt
+        run: pip install -r requirements.txt
+
+      - name: Build binary files
+        run: scripts/build.sh
 
       - name: Test sample
         timeout-minutes: 60
@@ -81,7 +84,7 @@ jobs:
         problem: ["20.10.1", "20.10.2", "20.10.3", "20.10.4"]
         iterations: [2000]
         tabu_size: [10]
-        drone_config: ["3 3 3 3"]
+        drone_config: [3]
         energy_mode: ["linear", "non-linear"]
         propagation_priority: ["min-distance", "max-distance", "ideal-distance"]
         max_propagation: [5]
@@ -90,7 +93,7 @@ jobs:
         - problem: "100.10.1"
           iterations: 500
           tabu_size: 10
-          drone_config: "3 3 3 3"
+          drone_config: 3
           energy_mode: "linear"
           propagation_priority: "none"
           max_propagation: 5
@@ -107,7 +110,10 @@ jobs:
         uses: actions/setup-python@v4
 
       - name: Install dependencies
-        run: pip install -r dev-requirements.txt
+        run: pip install -r requirements.txt
+
+      - name: Build binary files
+        run: scripts/build.sh
 
       - name: Test sample
         timeout-minutes: 60
@@ -116,7 +122,7 @@ jobs:
           d2d.py ${{ matrix.problem }} \
           --iterations ${{ matrix.iterations }} \
           --tabu-size ${{ matrix.tabu_size }} \
-          --drone-config-mapping ${{ matrix.drone_config }} \
+          --drone-config ${{ matrix.drone_config }} \
           --energy-mode ${{ matrix.energy_mode }} \
           --propagation-priority ${{ matrix.propagation_priority }} \
           --max-propagation ${{ matrix.max_propagation }} \
@@ -168,7 +174,10 @@ jobs:
         uses: actions/setup-python@v4
 
       - name: Install dependencies
-        run: pip install -r dev-requirements.txt
+        run: pip install -r requirements.txt
+
+      - name: Build binary files
+        run: scripts/build.sh
 
       - name: Summarize solutions
         run: |
@@ -177,7 +186,7 @@ jobs:
           coverage run scripts/d2d-summary.py --energy-mode 1 --propagation-priority 2
 
       - name: Run pytest
-        run: coverage run -m pytest -v
+        run: coverage run -m pytest tests
 
       - name: Combine coverage results
         run: |

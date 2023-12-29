@@ -21,7 +21,7 @@ class Namespace(argparse.Namespace):
         problem: str
         iterations: int
         tabu_size: int
-        drone_config_mapping: List[int]
+        drone_config: int
         energy_mode: Literal["linear", "non-linear"]
         max_propagation: int
         verbose: bool
@@ -32,7 +32,7 @@ parser = argparse.ArgumentParser(description="Compare different propagation prio
 parser.add_argument("problem", type=str, help="the problem name (e.g. \"6.5.1\", \"200.10.1\", ...)")
 parser.add_argument("-i", "--iterations", default=2000, type=int, help="the number of iterations to run the tabu search for (default: 2000)")
 parser.add_argument("-t", "--tabu-size", default=10, type=int, help="the tabu size for every neighborhood (default: 10)")
-parser.add_argument("-c", "--drone-config-mapping", nargs="+", default=[0, 0, 0, 0], type=int, help="the energy configuration index for each drone (default: \"0 0 0 0\")")
+parser.add_argument("-c", "--drone-config", default=0, type=int, help="the energy configuration index for each drone (default: 0)")
 parser.add_argument("-e", "--energy-mode", default=LINEAR, choices=[LINEAR, NON_LINEAR], help="the energy consumption mode to use (default: linear)")
 parser.add_argument("-m", "--max-propagation", default=5, type=int, help="maximum number of propagating solutions at a time (default: 5)")
 parser.add_argument("-v", "--verbose", action="store_true", help="whether to display the progress bar and plot the solution")
@@ -62,7 +62,7 @@ for propagation_priority in (
         "d2d.py", namespace.problem,
         "--iterations", str(namespace.iterations),
         "--tabu-size", str(namespace.tabu_size),
-        "--drone-config-mapping", *map(str, namespace.drone_config_mapping),
+        "--drone-config", str(namespace.drone_config),
         "--energy-mode", namespace.energy_mode,
         "--propagation-priority", propagation_priority,
         "--dump", output,
@@ -100,7 +100,7 @@ subprocess.Popen(
 
 d2d.D2DPathSolution.import_problem(
     namespace.problem,
-    drone_config_mapping=tuple(namespace.drone_config_mapping),
+    drone_config=namespace.drone_config,
     energy_mode=namespace.energy_mode,
 )
 

@@ -92,13 +92,17 @@ jobs:
       - name: Checkout PR branch
         uses: actions/checkout@v3
         with:
+          submodules: recursive
           ref: ${{ fromJSON(steps.get-branch.outputs.result).head.ref }}
 
       - name: Setup Python
         uses: actions/setup-python@v4
 
       - name: Install dependencies
-        run: pip install -r dev-requirements.txt
+        run: pip install -r requirements.txt
+
+      - name: Build binary files
+        run: scripts/build.sh
 
       - name: Download parsed input
         uses: actions/download-artifact@v3
@@ -109,7 +113,7 @@ jobs:
         run: |
           problem=$(cat input.txt)
           python d2d.py "$problem" \
-          --drone-config-mapping 3 3 3 3 \
+          --drone-config 3 \
           --pool-size 8 \
           --dump PR#${{ github.event.issue.number }}-run#${{ matrix.counter }}.json
 
@@ -131,13 +135,17 @@ jobs:
       - name: Checkout main branch
         uses: actions/checkout@v3
         with:
+          submodules: recursive
           ref: main
 
       - name: Setup Python
         uses: actions/setup-python@v4
 
       - name: Install dependencies
-        run: pip install -r dev-requirements.txt
+        run: pip install -r requirements.txt
+
+      - name: Build binary files
+        run: scripts/build.sh
 
       - name: Download parsed input
         uses: actions/download-artifact@v3
@@ -148,7 +156,7 @@ jobs:
         run: |
           problem=$(cat input.txt)
           python d2d.py "$problem" \
-          --drone-config-mapping 3 3 3 3 \
+          --drone-config 3 \
           --pool-size 8 \
           --dump main-run#${{ matrix.counter }}.json 
 
@@ -167,12 +175,17 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
       - name: Setup Python
         uses: actions/setup-python@v4
 
       - name: Install dependencies
-        run: pip install -r dev-requirements.txt
+        run: pip install -r requirements.txt
+
+      - name: Build binary files
+        run: scripts/build.sh
 
       - name: Download solutions
         uses: actions/download-artifact@v3

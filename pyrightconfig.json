@@ -1,0 +1,6 @@
+{
+    "ignore": [
+        "extern"
+    ],
+    "reportMissingModuleSource": false
+}
