@@ -2,7 +2,6 @@
 #include <pybind11/stl.h>
 
 #include "config.cpp"
-#include "neighborhoods/swap.cpp"
 
 namespace py = pybind11;
 
@@ -45,9 +44,5 @@ PYBIND11_MODULE(cpp_utils, m)
     m.def(
         "calculate_technician_total_waiting_time", &calculate_technician_total_waiting_time,
         py::arg("path"), py::kw_only(), py::arg("arrival_timestamps"),
-        py::call_guard<py::gil_scoped_release>());
-    m.def(
-        "swap", &neighborhoods::swap,
-        py::kw_only(), py::arg("original"), py::arg("first_length"), py::arg("second_length"),
         py::call_guard<py::gil_scoped_release>());
 }

@@ -1,4 +1,4 @@
-from typing import List, Literal, Sequence, Tuple
+from typing import List, Literal, Sequence
 
 
 __all__ = (
@@ -11,7 +11,6 @@ __all__ = (
     "calculate_technician_arrival_timestamps",
     "calculate_drone_total_waiting_time",
     "calculate_technician_total_waiting_time",
-    "swap",
 )
 
 
@@ -104,11 +103,3 @@ def calculate_technician_total_waiting_time(
     *,
     arrival_timestamps: Sequence[float],
 ) -> float: ...
-
-
-def swap(
-    *,
-    original: Tuple[Sequence[Sequence[int]], Sequence[Sequence[Sequence[int]]]],
-    first_length: int,
-    second_length: int,
-) -> Tuple[List[List[int]], List[List[List[int]]]]: ...
