@@ -18,7 +18,7 @@ iniconfig==2.0.0
 kiwisolver==1.4.5
 matplotlib==3.8.2
 mccabe==0.7.0
-mypy==1.7.0
+mypy==1.8.0
 mypy-extensions==1.0.0
 nodeenv==1.8.0
 numpy==1.26.2
