@@ -25,7 +25,7 @@ from .utils import (
     import_drone_nonlinear_config,
     import_truck_config,
 )
-from ..abc import MultiObjectiveNeighborhood, MultiObjectiveSolution
+from ..abc import MultiObjectiveNeighborhood, MultiObjectiveSolution, ParetoSet
 from ..utils import isclose
 
 
@@ -90,6 +90,8 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         drone_waiting_times: Optional[Tuple[Tuple[float, ...], ...]] = None,
         technician_timespans: Optional[Tuple[float, ...]] = None,
         technician_waiting_times: Optional[Tuple[float, ...]] = None,
+        fine: float = 0.0,
+        fine_coefficient: float = 100.0,
     ) -> None:
         self.__drone_paths_fold = frozenset(itertools.chain(*drone_paths))
         self.__technician_paths_fold = frozenset(technician_paths)
@@ -141,6 +143,8 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
                 calculate_technician_total_waiting_time(path, arrival_timestamps=arrival_timestamps)
                 for path, arrival_timestamps in zip(technician_paths, self.technician_arrival_timestamps)
             ),
+            fine=fine,
+            fine_coefficient=fine_coefficient,
         )
 
     @property
@@ -440,8 +444,16 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         raise RuntimeError("Shouldn't reach here")
 
     @classmethod
-    def after_iteration(cls, iteration: int, last_improved: int, pareto_costs: Dict[Tuple[float, ...], int]) -> None:
+    def after_iteration(cls, iteration: int, last_improved: int, current: List[D2DPathSolution], pareto_costs: Dict[Tuple[float, ...], int]) -> None:
         cls.tabu_search_last_improved = last_improved
+        for solution in current:
+            solution.bump_fine_coefficient()
+
+    def add_to_pareto_set(self, __s: Union[Set[D2DPathSolution], ParetoSet[D2DPathSolution]], /) -> Tuple[bool, Set[D2DPathSolution]]:
+        if self.feasible():
+            return super().add_to_pareto_set(__s)  # type: ignore  # dumb type checkers, mypy conflicts with pyright
+
+        return False, set()
 
     @classmethod
     def import_config(cls, drone_config: int) -> None:

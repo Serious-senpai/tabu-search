@@ -14,6 +14,8 @@ class SolutionMetricsMixin(BaseMulticostComparison):
 
     __slots__ = (
         "_cost",
+        "_fine",
+        "fine_coefficient",
         "drone_timespans",
         "drone_waiting_times",
         "technician_timespans",
@@ -21,6 +23,8 @@ class SolutionMetricsMixin(BaseMulticostComparison):
     )
     if TYPE_CHECKING:
         _cost: Optional[Tuple[float, float]]
+        _fine: float
+        fine_coefficient: float
         drone_timespans: Final[Tuple[float, ...]]
         drone_waiting_times: Final[Tuple[Tuple[float, ...], ...]]
         technician_timespans: Final[Tuple[float, ...]]
@@ -33,6 +37,8 @@ class SolutionMetricsMixin(BaseMulticostComparison):
         drone_waiting_times: Tuple[Tuple[float, ...], ...],
         technician_timespans: Tuple[float, ...],
         technician_waiting_times: Tuple[float, ...],
+        fine: float = 0.0,
+        fine_coefficient: float = 100.0,
         **kwargs: Any,
     ) -> None:
         super().__init__(*args, **kwargs)
@@ -42,6 +48,11 @@ class SolutionMetricsMixin(BaseMulticostComparison):
         self.technician_waiting_times = technician_waiting_times
 
         self._cost = None
+        self._fine = fine
+        self.fine_coefficient = fine_coefficient
+
+    def bump_fine_coefficient(self) -> None:
+        self.fine_coefficient *= 10.0
 
     def cost(self) -> Tuple[float, float]:
         """The cost of the solution that this object represents."""
@@ -51,4 +62,4 @@ class SolutionMetricsMixin(BaseMulticostComparison):
                 sum(sum(t) for t in self.drone_waiting_times) + sum(self.technician_waiting_times),
             )
 
-        return self._cost
+        return (self._cost[0] + self.fine_coefficient * self._fine, self._cost[1] + self.fine_coefficient * self._fine)

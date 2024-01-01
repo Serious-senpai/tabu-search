@@ -42,7 +42,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
         raise NotImplementedError
 
     @classmethod
-    def before_iteration(cls, iteration: int, last_improved: int, pareto_costs: Dict[Tuple[float, ...], int]) -> None:
+    def before_iteration(cls, iteration: int, last_improved: int, current: List[Self], pareto_costs: Dict[Tuple[float, ...], int]) -> None:
         """A hook to be called before each iteration
 
         The default implementation does nothing
@@ -53,13 +53,15 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
             The current tabu search iteration, starting from 0
         last_improved:
             The last iteration when Pareto front update occured
+        current:
+            The current solutions
         pareto_costs:
             The counter of costs of current Pareto-optimal solutions
         """
         return
 
     @classmethod
-    def after_iteration(cls, iteration: int, last_improved: int, pareto_costs: Dict[Tuple[float, ...], int]) -> None:
+    def after_iteration(cls, iteration: int, last_improved: int, current: List[Self], pareto_costs: Dict[Tuple[float, ...], int]) -> None:
         """A hook to be called after each iteration
 
         The default implementation does nothing
@@ -70,6 +72,8 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
             The current tabu search iteration, starting from 0
         last_improved:
             The last iteration when Pareto front update occured
+        current:
+            The current solutions
         pareto_costs:
             The counter of costs of current Pareto-optimal solutions
         """
@@ -138,7 +142,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
         last_improved = 0
         with Pool(pool_size) as pool:
             for iteration in iterations:
-                cls.before_iteration(iteration, last_improved, results.counter())
+                cls.before_iteration(iteration, last_improved, current, results.counter())
 
                 if isinstance(iterations, tqdm):
                     solution_display = ngettext(len(results) == 1, "solution", "solutions")
@@ -199,7 +203,7 @@ class MultiObjectiveSolution(BaseSolution, BaseMulticostComparison):
 
                 current = propagate[:max_propagation_value]
 
-                cls.after_iteration(iteration, last_improved, results.counter())
+                cls.after_iteration(iteration, last_improved, current, results.counter())
 
             post_optimized_results = set(r.post_optimization(pool=pool, pool_size=pool_size, use_tqdm=use_tqdm) for r in results)
 

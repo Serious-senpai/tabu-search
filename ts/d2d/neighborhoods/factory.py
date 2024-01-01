@@ -8,7 +8,6 @@ if TYPE_CHECKING:
 
 
 __all__ = ("SolutionFactory",)
-FINE_COEFFICIENT = 10 ** 6
 
 
 class SolutionFactory(SolutionMetricsMixin):
@@ -83,9 +82,7 @@ class SolutionFactory(SolutionMetricsMixin):
         self.__update_technicians = update_technicians
 
     def add_violation(self, violation: float) -> None:
-        fined = FINE_COEFFICIENT * violation
-        cost = (self.cost()[0] + fined, self.cost()[1] + fined)
-        self._cost = cost
+        self._fine += violation
 
     def from_solution(self, __s: D2DPathSolution, /) -> D2DPathSolution:
         if len(self.__append_drones) + len(self.__update_drones) > 0:

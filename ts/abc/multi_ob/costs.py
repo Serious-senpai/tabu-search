@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 from ...utils import cost_dominate
 
 
-__all__ = ("BaseMulticostComparison",)
+__all__ = ("BaseMulticostComparison", "ParetoSet")
 
 
 class BaseMulticostComparison:
@@ -29,7 +29,6 @@ class BaseMulticostComparison:
         """Whether this object dominates another one"""
         return cost_dominate(self.cost(), other.cost())
 
-    @final
     def add_to_pareto_set(self, __s: Union[Set[Self], ParetoSet[Self]], /) -> Tuple[bool, Set[Self]]:
         """Add this object to the provided Pareto set.
 
