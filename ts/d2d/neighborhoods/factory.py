@@ -134,6 +134,7 @@ class SolutionFactory(SolutionMetricsMixin):
             drone_waiting_times=drone_waiting_times,
             technician_timespans=self.technician_timespans,
             technician_waiting_times=self.technician_waiting_times,
+            fined=self._fined,
         )
 
     def __hash__(self) -> int:
