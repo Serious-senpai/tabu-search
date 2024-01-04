@@ -424,7 +424,7 @@ std::vector<double> calculate_drone_arrival_timestamps(
         auto config = config::DroneEnduranceConfig::instance;
         for (unsigned i = 1; i < n; i++)
         {
-            result.push_back(result.back() + config::Customer::distances[path[i - 1]][path[i]] + config->drone_speed);
+            result.push_back(result.back() + config::Customer::distances[path[i - 1]][path[i]] / config->drone_speed);
         }
     }
     else

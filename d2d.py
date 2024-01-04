@@ -196,6 +196,7 @@ if __name__ == "__main__":
         energy_mode=namespace.energy_mode,
     )
     d2d.Swap.reset_tabu(maxlen=namespace.tabu_size)
+    d2d.Insert.reset_tabu(maxlen=namespace.tabu_size)
 
     propagation_priority_key: Optional[Callable[[Dict[Tuple[float, ...], int], Tuple[float, ...], Tuple[float, ...], d2d.D2DPathSolution], float]] = None
     if namespace.propagation_priority == MIN_DISTANCE:

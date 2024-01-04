@@ -102,7 +102,7 @@ class D2DPathSolution(SolutionMetricsMixin, MultiObjectiveSolution):
         if drone_arrival_timestamps is None:
             def get_arrival_timestamps() -> Tuple[Tuple[Tuple[float, ...], ...], ...]:
                 result: List[List[Tuple[float, ...]]] = []
-                for drone, paths in enumerate(drone_paths):
+                for paths in drone_paths:
                     drone_arrivals: List[Tuple[float, ...]] = []
                     result.append(drone_arrivals)
 
