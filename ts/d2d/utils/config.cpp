@@ -518,7 +518,7 @@ double calculate_technician_total_waiting_time(
     double result = 0.0;
     for (unsigned i = 1; i < n - 1; i++)
     {
-        result += arrival_timestamps[i] - arrival_timestamps[i - 1] - config::Customer::customers[path[i]].technician_service_time;
+        result += arrival_timestamps.back() - arrival_timestamps[i] - config::Customer::customers[path[i]].technician_service_time;
     }
 
     return result;
