@@ -29,7 +29,7 @@ class Namespace(argparse.Namespace):
 
 
 class SolutionJSON(TypedDict):
-    cost: List[int]
+    cost: List[float]
     drone_paths: List[List[List[int]]]
     technician_paths: List[List[int]]
 
@@ -84,7 +84,7 @@ for index, file in files:
         with open(summary_dir / file, "r") as f:
             data: ParetoFrontJSON = json.load(f)
 
-        front: List[Tuple[float, float]] = [(d["cost"][0], d["cost"][1]) for d in data["solutions"]]
+        front = [(d["cost"][0], d["cost"][1]) for d in data["solutions"]]
         fronts[data["problem"]][data["drone_config"]][data["energy_mode"]].append((index, front))
 
 
